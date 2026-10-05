@@ -1,0 +1,10 @@
+.Rproj.user
+.Rhistory
+.RData
+.DS_Store
+# project-local library holding the development version of incidenceinflation
+.lib/
+# targets store
+_targets/
+# raw downloads are fetched by scripts/download_data.R
+data/raw/
