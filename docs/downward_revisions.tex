@@ -897,9 +897,9 @@ dataset.
 allowing for a batch improves any estimate, since the batch was placed where
 no estimate is made. The cases which matter are a batch whose footprint
 includes recent onset days, detected either shortly before the analysis date
-or not yet; these are the subject of a further study in progress. The data
-were also simulated from the models fitted, with shifts to nearby days and a
-gamma reporting delay.
+or not yet; these are examined in \S\ref{sec:frontier}. The data were also
+simulated from the models fitted, with shifts to nearby days and a gamma
+reporting delay.
 
 \paragraph{Caveats.} There are only five datasets per regime, so that
 differences of a few percentage points are within noise. Each fit is a single
@@ -909,6 +909,67 @@ days for which reporting is deemed complete are fixed at their latest reported
 count (\S\ref{sec:implementation}), so their posterior intervals have zero
 width; coverage is therefore not reported for the onset days in the footprint
 of the batch.
+
+\subsection{A batch among recent onset days}\label{sec:frontier}
+
+In a second study the batch covers onset days 47 to 53 of 60, which are among
+those still being estimated on day 60. Its intensity is again $\phi_b=0.25$,
+and sporadic revisions are as in the batch regime above. Two regimes were
+considered, with five datasets each: the batch is detected on day 57, three
+days before the analysis; or it is not detected until after day 60, so that its
+records are still present in the latest counts.
+
+Three models were fitted. As well as the full model there are two versions of
+the original model, which differ in how the counts are made non-decreasing
+beforehand: by the running maximum, as above; or by replacing each count by the
+smallest count reported from then on (the \emph{later minimum}), which removes
+records later withdrawn instead of retaining them. Both use only what is known
+on the analysis date. Here $\Emax=4$ and $\Xmax=30$.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llccc}
+\toprule
+ & & \multicolumn{3}{c}{Onset days covered by the batch} \\
+\cmidrule(lr){3-5}
+Regime & Model & Coverage & Abs.\ error & Bias \\
+\midrule
+Detected three days before & Original, running maximum & 0.54 & 0.07 & $0.05$ \\
+ & Original, later minimum & 0.97 & 0.02 & $-0.01$ \\
+ & Full & 1.00 & 0.02 & $0.00$ \\
+\addlinespace
+Not yet detected & Original, running maximum & 0.00 & 0.24 & $0.24$ \\
+ & Original, later minimum & 0.00 & 0.23 & $0.23$ \\
+ & Full & 0.00 & 0.23 & $0.23$ \\
+\bottomrule
+\end{tabular}
+\caption{Estimates for the seven onset days covered by a batch which lies
+among the onset days being estimated: means over five datasets (four for the
+full model in the first regime, where one fit failed). Measures are as in
+table~\ref{tab:simulation}.}
+\label{tab:frontier}
+\end{table}
+
+\begin{itemize}[itemsep=2pt]
+\item \emph{When the batch has been detected, the later minimum is enough.}
+The original model fitted to the later minimum estimated the affected onset
+days with an error of 2\% and coverage of 0.97, and the full model did no
+better. The running maximum, by contrast, left estimates 5\% too high with
+coverage of 0.54.
+\item \emph{When the batch has not been detected, nothing helps.} All three
+models overestimated the affected onset days by about 23\% and never covered
+the truth. The full model placed a posterior probability of only 0.06 on there
+being a batch, so that the risk it allows for made no practical difference.
+\item \emph{The full model is much slower in the first regime}: about an hour
+per fit against seven minutes, since the batch is then present among the onset
+days whose counts are sampled. With the larger limits used in the first study
+($\Emax=10$, $\Xmax=60$) these fits did not finish in three hours.
+\end{itemize}
+
+Taken with the results above, allowing for batches in the model has not been
+shown to improve any estimate. Its benefit is that such data can be fitted
+without altering them, and that batches are identified; for estimating case
+counts, the choice of how to make counts non-decreasing matters more.
 
 \section{Application: COVID-19 in the Netherlands}\label{sec:netherlands}
 
@@ -1355,6 +1416,158 @@ date of death (Sweden).}
 \label{tab:realrevisions}
 \end{table}
 
+\section{Application: Bundibugyo virus disease, 2026}\label{sec:bvd}
+
+\subsection{Data}
+
+For an outbreak of Bundibugyo virus disease in 2026, situation reports show the
+epidemic curve of confirmed cases by day of symptom onset, divided into those
+alive and those who have died. The curves of 44 situation reports, numbers 59
+to 140, dated from 12 July to 1 October 2026, were extracted from the published
+figures and verified by hand. Situation reports were not available for every
+day. Over this period the number of confirmed cases with a recorded onset day
+rose from 1817 to 6468. We analyse the total; the number who have died, by
+onset day, rises as patients die and so reflects the time from onset to death
+as well as delays in reporting.
+
+Between successive situation reports the count for an onset day rose 1054
+times and fell 116 times, removing 228 cases in all. Most falls were of a
+single case, but in the report of 6 September counts fell for 34 onset days at
+once, removing 138 cases, and the total number of cases fell from 5119 to
+5069. Eight consecutive onset days, 12 to 19 June, each lost between 7 and 13
+cases, about a fifth of their counts, some 80 days after onset; the remainder
+were smaller falls for onset days in May. Figure~\ref{fig:bvdtiles} shows the
+reporting delays for onset days from 12 July, for which reports are available
+from close to the day of onset.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{bvd_delay_tiles.png}
+\caption{Reporting delays for confirmed cases of Bundibugyo virus disease.
+Each tile is one onset day as seen in one situation report, placed at the
+delay from onset to that report and extending to the next. Colour shows the
+cases reported by then as a proportion of those in the latest report (1
+October): blue below one, red above.}
+\label{fig:bvdtiles}
+\end{figure}
+
+\subsection{Models}
+
+Three models were fitted as of six situation reports: 16 and 30 August, 5 and
+6 September (either side of the large correction), 20 September and 1 October
+2026, the latest. Onset days from mid-May were included, starting on a day
+chosen so that the seven-day periods over which $R_t$ is constant end on the
+analysis date.
+\begin{itemize}[itemsep=2pt]
+\item \emph{Original}: the original model fitted to the running maximum.
+\item \emph{Revisions}: sporadic revisions and misdating, with $\Emax$ one more
+than the largest fall in the data (4 before 6 September and 14 from then on).
+\item \emph{Revisions and batches}: as the last, with $\Emax=4$ and batches,
+$\Xmax=30$.
+\end{itemize}
+The renewal model was negative binomial. No serial interval has been published
+for Bundibugyo virus disease; we used one estimated for Ebola virus disease
+caused by Zaire ebolavirus in West Africa, with mean 15.3 and standard
+deviation 9.3 days \cite{who2014}. Priors for the mean and standard deviation
+of the reporting delay had means 10 and 6 days. Each fit was a single chain of
+600 iterations, of which the first half was discarded. Many onset days are
+first seen in the situation report of 12 July, long after onset, so that the
+starting distribution \eqref{eq:alpha0} applies to them.
+
+\subsection{Results}
+
+Table~\ref{tab:bvd} compares the estimates made at each of the first five
+analysis dates with the counts in the latest situation report, and
+figures~\ref{fig:bvdcases} and \ref{fig:bvdrt} show the estimates.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{2}{c}{Original} & \multicolumn{2}{c}{Revisions} & \multicolumn{2}{c}{Revisions and batches} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}
+Analysis date & Coverage & Abs.\ error & Coverage & Abs.\ error & Coverage & Abs.\ error \\
+\midrule
+16 August & 0.93 & 0.14 & 0.86 & 0.13 & 0.93 & 0.13 \\
+30 August & 0.93 & 0.17 & 1.00 & 0.18 & 1.00 & 0.20 \\
+5 September & 0.64 & 0.18 & 0.86 & 0.11 & 0.86 & 0.11 \\
+6 September & 0.43 & 0.23 & 1.00 & 0.12 & 1.00 & 0.12 \\
+20 September & 0.64 & 0.20 & 1.00 & 0.11 & 1.00 & 0.11 \\
+\addlinespace
+Mean & 0.71 & 0.18 & 0.94 & 0.13 & 0.96 & 0.13 \\
+\bottomrule
+\end{tabular}
+\caption{Estimates of confirmed cases of Bundibugyo virus disease for the
+latest 14 onset days, as of five analysis dates, compared with the counts in
+the situation report of 1 October 2026. Measures are as in
+table~\ref{tab:simulation}. For 20 September the comparison is with counts
+only 11 days later, which are still incomplete.}
+\label{tab:bvd}
+\end{table}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{bvd_cases.png}
+\caption{Estimates of confirmed cases of Bundibugyo virus disease by onset day,
+as of six situation reports (columns), for three models (rows).}
+\label{fig:bvdcases}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{bvd_Rt.png}
+\caption{Estimates of $R_t$ for Bundibugyo virus disease as of six situation
+reports: posterior medians and 90\% intervals.}
+\label{fig:bvdrt}
+\end{figure}
+
+\begin{itemize}[itemsep=2pt]
+\item \emph{Here the models with revisions did better than the original.}
+Averaged over the five dates, coverage was 0.94 and 0.96 against 0.71, and the
+absolute error 13\% against 18\%. The difference appears from 5 September, the
+day before the large correction, so it is not due to that correction. The
+models with revisions estimated a shorter reporting delay (a mean of about 7.6
+days against 8.9) together with a probability of about 7\% that a case is
+misdated and corrected later.
+\item \emph{Allowing for batches made no difference to the estimates} but made
+the fits faster after 6 September (about 35 minutes against 100), because the
+limit on erroneous records could remain small.
+\item \emph{The correction of 6 September was identified as batches.} From that
+date on, the model placed between five and seven batches detected on 6
+September in every posterior draw. The most consistent covers onset days from
+12 June to 22--24 June, with intensity about 0.4; others cover onset days in
+mid and late May and early June. Before 6 September the model placed one or
+two batches of low intensity, most often for onset days around 20--24 June,
+detected on 19 July, a situation report in which 12 cases were removed.
+\item \emph{Coverage was close to nominal}, in contrast to the COVID-19 data.
+The renewal model here is negative binomial throughout.
+\end{itemize}
+
+\subsection{The latest situation report}
+
+As of 1 October 2026, the models with revisions give an estimate of $R_t$ for
+the latest week (25 September to 1 October) of 0.90 (90\% interval 0.72 to
+1.12) without batches and 0.86 (0.64 to 1.15) with them, after about 0.8 in
+each of the two preceding weeks and 1.05 in the week before those. The original
+model gives 0.73 (0.57 to 0.92) for the latest week. For that week 74 cases had
+been reported, and the models with revisions put the eventual number at about
+300.
+
+To see how far these estimates depend on the serial interval assumed, the
+model with revisions and batches was refitted with a mean of 12 and a standard
+deviation of 6 days. The estimates of $R_t$ for the four weeks before the
+latest were unchanged to two decimal places, and that for the latest week was
+0.92 (0.72 to 1.18) in place of 0.86. Since $R_t$ is close to one throughout
+this period, it is insensitive to the serial interval.
+
+\paragraph{Caveats.} Each fit is a single short chain. The counts with which
+earlier estimates are compared are those of 1 October, which will themselves
+be revised. Estimates for the latest week rest on very few reported cases and,
+as the Netherlands data showed, are liable to follow the preceding week. The
+checks of \S\ref{sec:reporting} show that reporting in these data depends on
+the day of the week and varies between reports, which none of these models
+allows for.
+
 \section{Checking and extending the model of reporting}\label{sec:reporting}
 
 \subsection{Motivation}
@@ -1610,13 +1823,19 @@ report as true. They show that the extended model of reporting describes
 complete data better; they do not show that it improves estimates of recent
 case counts, which requires the extensions to be put into the sampler.
 
-\begin{thebibliography}{1}
+\begin{thebibliography}{2}
 \bibitem{bajaj2025}
 Bajaj S, Thompson R, Lambert B. 2025
 A renewal-equation approach to estimating $R_t$ and infectious disease case
 counts in the presence of reporting delays.
 \emph{Phil. Trans. R. Soc. A} \textbf{383}, 20240357.
 \href{https://doi.org/10.1098/rsta.2024.0357}{doi:10.1098/rsta.2024.0357}
+
+\bibitem{who2014}
+WHO Ebola Response Team. 2014
+Ebola virus disease in West Africa---the first 9 months of the epidemic and
+forward projections.
+\emph{N. Engl. J. Med.} \textbf{371}, 1481--1495.
 \end{thebibliography}
 
 \end{document}
