@@ -19,6 +19,7 @@ tar_source("R")
 n_replicates <- as.integer(Sys.getenv("PIPELINE_REPLICATES", "5"))
 n_iterations <- as.integer(Sys.getenv("PIPELINE_ITERATIONS", "700"))
 n_iterations_real <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_REAL", "800"))
+n_iterations_bvd <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_BVD", "600"))
 
 list(
   # ---- simulated data -------------------------------------------------------
@@ -312,6 +313,64 @@ list(
                 "outputs/sweden_cases_dates_nb.png", 10, 6),
       save_plot(plot_real_Rt_dates(filter_results(sweden_result_dates, TRUE), 7, serial),
                 "outputs/sweden_Rt_dates_nb.png", 10, 6))
+  }, format = "file", deployment = "main"),
+
+  # ---- Bundibugyo virus disease outbreak, 2026 --------------------------------
+  # the raw files are not tracked, so these targets need them to be present
+  tar_target(bvd_files,
+             list.files("data/raw/Ebola CFR", pattern = "^Varified.*\\.csv$",
+                        full.names = TRUE),
+             format = "file"),
+  tar_target(bvd_snapshots, build_bvd_snapshots(bvd_files)),
+  # reporting delays: cases reported by each delay, for onset dates from the
+  # first situation report onwards
+  tar_target(figure_bvd_delay_tiles,
+             save_plot(plot_delay_tiles(bvd_snapshots),
+                       "outputs/bvd_delay_tiles.png", 11, 6),
+             format = "file", deployment = "main"),
+  # analysis dates either side of the large correction made on 6 September,
+  # ending with the latest situation report
+  tar_target(bvd_dates_now,
+             as.Date(c("2026-08-16", "2026-08-30", "2026-09-05", "2026-09-06",
+                       "2026-09-20", "2026-10-01"))),
+  tar_target(bvd_analysis,
+             prepare_bvd_analysis(bvd_snapshots, bvd_dates_now),
+             pattern = map(bvd_dates_now), iteration = "list"),
+  tar_target(bvd_model, bvd_model_names()),
+  tar_target(bvd_result,
+             fit_bvd_analysis(bvd_analysis, bvd_model, n_iterations_bvd),
+             pattern = cross(bvd_analysis, bvd_model), iteration = "list",
+             priority = 1),
+  # sensitivity of the latest analysis to the serial interval assumed: a
+  # shorter and less variable alternative
+  tar_target(bvd_result_short_serial,
+             fit_bvd_analysis(bvd_analysis[[length(bvd_analysis)]],
+                              "revisions and batches", n_iterations_bvd,
+                              serial_parameters = list(mean = 12, sd = 6))),
+  tar_target(bvd_serial_sensitivity, {
+    latest <- bvd_result[purrr::map_lgl(bvd_result, function(result) {
+      result$analysis$date_now == max(bvd_dates_now) &
+        result$model == "revisions and batches"
+    })]
+    purrr::map_dfr(c(latest, list(bvd_result_short_serial)), function(result) {
+      dplyr::bind_cols(
+        dplyr::tibble(serial_mean = result$serial_parameters$mean,
+                      serial_sd = result$serial_parameters$sd),
+        dplyr::select(result$summary$Rt, "time_onset", "q05", "q50", "q95")) %>%
+        dplyr::left_join(result$analysis$dates, by = "time_onset")
+    })
+  }, deployment = "main"),
+  tar_target(bvd_scores, score_bvd_results(bvd_result), deployment = "main"),
+  tar_target(bvd_batches, summarise_bvd_batches(bvd_result), deployment = "main"),
+  tar_target(files_bvd, {
+    utils::write.csv(bvd_scores, "outputs/bvd_scores.csv", row.names = FALSE)
+    utils::write.csv(bvd_batches, "outputs/bvd_batches.csv", row.names = FALSE)
+    utils::write.csv(bvd_serial_sensitivity, "outputs/bvd_serial_sensitivity.csv",
+                     row.names = FALSE)
+    c("outputs/bvd_scores.csv", "outputs/bvd_batches.csv",
+      "outputs/bvd_serial_sensitivity.csv",
+      save_plot(plot_bvd_cases(bvd_result), "outputs/bvd_cases.png", 12, 7),
+      save_plot(plot_bvd_Rt(bvd_result), "outputs/bvd_Rt.png", 10, 6))
   }, format = "file", deployment = "main"),
 
   # ---- outputs ---------------------------------------------------------------

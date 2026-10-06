@@ -1355,6 +1355,201 @@ date of death (Sweden).}
 \label{tab:realrevisions}
 \end{table}
 
+\section{Checking and extending the model of reporting}\label{sec:reporting}
+
+\subsection{Motivation}
+
+In all of the models above, the delay from onset to report is an independent
+draw from one gamma distribution for every case. Cases are in practice
+reported in clumps: a backlog is cleared, a batch of laboratory results
+arrives, or little is entered over a weekend. This section checks the model of
+reporting against data and describes three extensions to it. The extensions
+have so far been implemented only for the checks described here, and not in
+the sampler.
+
+\subsection{A check made with hindsight}
+
+The check isolates the model of reporting from the renewal model. For onset
+days whose reporting is complete, we take the count in the latest report as
+the true count, $I(t)$. Counts are first made non-decreasing by replacing each
+by the smallest count reported from then on. Given $I(t)$, the model states
+that the cases newly reported between successive reports are binomial, as in
+\eqref{eq:original}. We find the delay distribution which fits best by maximum
+likelihood, simulate 200 datasets from the fitted model, and compare features
+of the simulated datasets with those of the data. A feature of the data is
+taken to be consistent with the model if it lies between the 5\% and 95\%
+quantiles of its simulated values.
+
+Write $e_j(t)$ and $v_j(t)$ for the expectation and variance, under the fitted
+model, of the number of cases with onset day $t$ newly reported in the
+interval $(t_{j-1},t_j]$, given the number not yet reported at $t_{j-1}$. The
+features compared are these.
+\begin{itemize}[itemsep=2pt]
+\item \emph{Dispersion within onset days}: the mean, over onset days and
+intervals, of $[C(t\given t_j)-C(t\given t_{j-1})-e_j(t)]^2/v_j(t)$, which is
+close to one under the model.
+\item \emph{Dispersion across reports}: for each report, the cases newly
+reported are summed over onset days and compared with their expectation,
+\begin{equation}\label{eq:zreport}
+z(t') := \frac{\sum_{t}\bigl[C(t\given t')-C(t\given t'_{-})-e(t,t')\bigr]}
+{\sqrt{\sum_{t}v(t,t')}},
+\end{equation}
+where $t'_{-}$ is the previous time at which onset day $t$ was reported and
+$e(t,t')$, $v(t,t')$ are the expectation and variance for the interval ending
+at $t'$. The feature is the mean of $z(t')^2$ over reports, again close to one
+under the model. It is large if some reports bring in more cases than expected
+for many onset days at once, and others fewer.
+\item \emph{Empty intervals}: the proportion of intervals in which no case is
+newly reported.
+\item \emph{The shape of the delay}: the mean, over onset days, of the
+proportion of $I(t)$ reported by delays of 3, 7, 14 and 28 days (or 1, 2, 4
+and 8 weeks for weekly data).
+\end{itemize}
+
+\subsection{Results for the gamma delay}
+
+The check was applied to six datasets: the two used in \cite{bajaj2025}
+(measles in the Netherlands in 2013 and dengue in Puerto Rico, for which we
+took onset weeks in the second half of 1994), the three of
+\S\ref{sec:netherlands} and \S\ref{sec:otherdata}, and confirmed cases by
+onset day in an outbreak of Bundibugyo virus disease in 2026, taken from the
+epidemic curves of successive situation reports. Table~\ref{tab:reportingchecks}
+gives the results.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+ & \multicolumn{2}{c}{Dispersion} & \multicolumn{2}{c}{Empty intervals} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Dataset & Within onset days & Across reports & Data & Model \\
+\midrule
+Measles, Netherlands, 2013 & 1.5 & 8.0 & 0.68 & 0.60 \\
+Dengue, Puerto Rico, 1994 (weekly) & 4.3 & 11.0 & 0.28 & 0.05 \\
+COVID-19 cases, Netherlands, 2020 & 3.3 & 14.8 & 0.35 & 0.20 \\
+COVID-19 cases, Hong Kong, 2020 & 1.4 & 2.4 & 0.41 & 0.27 \\
+COVID-19 deaths, Sweden, 2020 & 3.2 & 22.0 & 0.41 & 0.37 \\
+Bundibugyo virus disease, 2026 & 1.2 & 4.1 & 0.38 & 0.31 \\
+\bottomrule
+\end{tabular}
+\caption{Features of reporting in six datasets compared with the gamma delay
+which fits each best. Both measures of dispersion are close to one under the
+model; in no dataset did any of 200 simulated datasets reach the value seen in
+the data. For empty intervals, the final column is the median over simulated
+datasets.}
+\label{tab:reportingchecks}
+\end{table}
+
+The model fails in every dataset, including those of \cite{bajaj2025}. The
+largest discrepancy is in the dispersion across reports, which is between 2
+and 22 times that expected: the clumping is to a large extent shared across
+onset days within a report. There is also excess dispersion within onset days,
+there are more empty intervals than expected, and the shape of the delay is
+not well described; for the Netherlands in 2020, for example, 97.0\% of cases
+were reported within 28 days against a fitted 99.5\%.
+
+This is likely to matter for estimates of recent case counts. If the latest
+report is one in which unusually few cases were entered, the counts for every
+recent onset day are low together, and the model takes this as evidence about
+the number of cases.
+
+\subsection{Three extensions}
+
+Each extension can be included or omitted separately; with all three omitted
+the model is that of \cite{bajaj2025}.
+
+\paragraph{Effects of reports.} Let $m(t')>0$ be a multiplier on the rate at
+which cases not yet reported come to be reported in the interval ending with
+the report made at time $t'$, the same for every onset day. Equation (2.3) of
+\cite{bajaj2025} becomes
+\begin{equation}\label{eq:pmultiplier}
+p_\theta(t, t''-t'\given t') = 1-\Biggl[\frac{S_\theta(t\given t'')}{S_\theta(t\given t')}\Biggr]^{m(t'')},
+\end{equation}
+which is unchanged when $m(t'')=1$. Equivalently, the hazard of being reported
+is multiplied by $m(t'')$ throughout the interval. We take
+\begin{equation}\label{eq:multiplier}
+m(t') = \psi_{w(t')}\,z_{t'},
+\end{equation}
+the product of two effects.
+\begin{itemize}[itemsep=2pt]
+\item \emph{Day of the week.} $w(t')$ is the day of the week of the report and
+$\psi_1,\dots,\psi_7$ are parameters, constrained so that
+$\sum_w\log\psi_w=0$ over the days of the week on which reports are made.
+Omitting this effect sets $\psi_w=1$.
+\item \emph{A random effect.} Each report has its own effect $z_{t'}$, with
+$\log z_{t'}\sim\mathcal{N}(0,\sigma_z^2)$ independently across reports. The
+only parameter is $\sigma_z$; the $z_{t'}$ themselves are unknowns of the same
+kind as the true counts. Omitting this effect sets $z_{t'}=1$.
+\end{itemize}
+Conditional on the multipliers, onset days remain independent, so that the
+structure of the sampler is preserved. Each $z_{t'}$ is informed by every onset
+day still being reported in that report, and in particular by older onset days
+whose true counts are nearly known; this is what would allow a slow report to
+be recognised as such.
+
+\paragraph{A delay distribution with a heavier tail.} The gamma delay is mixed
+with a proportion $\chi$ of cases whose delay is exponential with mean
+$\mu_\chi$:
+\begin{equation}\label{eq:tail}
+S_\theta(t\given t') = (1-\chi)\,S^{\mathrm{gamma}}_{\mu,\sigma}(t\given t')
++ \chi\,\exp\bigl[-(t'-t)/\mu_\chi\bigr],
+\end{equation}
+with $\theta=(\mu,\sigma,\chi,\mu_\chi)$. Omitting this sets $\chi=0$. A
+log-normal delay was also tried in place of the gamma.
+
+\paragraph{Fitting with hindsight.} With $I(t)$ taken as known, the likelihood
+is a product over reports. For each report, the contribution is the product
+over onset days of binomial probabilities with $p$ given by
+\eqref{eq:pmultiplier}, integrated over $z_{t'}$; the integral is
+one-dimensional and is evaluated numerically. The parameters $\theta$,
+$\psi_w$ and $\sigma_z$ are then found by maximum likelihood. For the
+dispersion measures, $e$ and $v$ are calculated with $z_{t'}=1$, so that the
+measures retain their meaning; under a model with random effects of reports
+their values are no longer expected to be one, and are judged against
+simulation.
+
+\subsection{Results for the extended models}
+
+Table~\ref{tab:reportingmodelsbvd} gives the results for the outbreak of
+Bundibugyo virus disease, for onset days from 12 July to 27 August 2026
+(2731 cases). The comparison for the other five datasets is in progress.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccccc}
+\toprule
+Model & Parameters & Log-likelihood & AIC & $\sigma_z$ & Features consistent \\
+\midrule
+Gamma & 2 & $-992.4$ & 1988.7 & & 2 of 7 \\
+Log-normal & 2 & $-1007.6$ & 2019.2 & & 4 of 7 \\
+Gamma with tail & 4 & $-983.4$ & 1974.9 & & 5 of 7 \\
+Gamma, day of week & 8 & $-960.3$ & 1936.6 & & 3 of 7 \\
+Gamma, day of week, random effect & 9 & $-954.2$ & 1926.4 & 0.22 & 6 of 7 \\
+Gamma with tail, day of week, random effect & 11 & $-946.4$ & 1914.8 & 0.23 & 7 of 7 \\
+\bottomrule
+\end{tabular}
+\caption{Models of reporting fitted with hindsight to confirmed cases of
+Bundibugyo virus disease. The seven features are the two measures of
+dispersion, the proportion of empty intervals and the proportions reported by
+3, 7, 14 and 28 days.}
+\label{tab:reportingmodelsbvd}
+\end{table}
+
+With all three extensions the model is consistent with every feature examined,
+and each extension contributes something different. The effect of the day of
+the week gives the largest improvement in fit: reports made on a Tuesday bring
+in cases at a little over half the usual rate, and the other days lie within
+about 30\% of the average. The random effect of reports accounts for the
+remaining dispersion, with $\sigma_z\approx0.2$. The tail corrects the shape of
+the delay and the proportion of empty intervals. The log-normal delay fits
+worse than the gamma.
+
+\paragraph{Caveats.} These checks use parameters estimated by maximum
+likelihood, not a posterior distribution, and take the counts in the latest
+report as true. They show that the extended model of reporting describes
+complete data better; they do not show that it improves estimates of recent
+case counts, which requires the extensions to be put into the sampler.
+
 \begin{thebibliography}{1}
 \bibitem{bajaj2025}
 Bajaj S, Thompson R, Lambert B. 2025

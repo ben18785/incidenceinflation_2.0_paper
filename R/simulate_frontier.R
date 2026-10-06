@@ -68,6 +68,20 @@ later_minimum_snapshots <- function(snapshots) {
     dplyr::ungroup()
 }
 
+#' Settings for fits in the study of batches near the analysis date
+#'
+#' The limits on erroneous records and on batch records per onset day are
+#' smaller than in the first study. Sporadic revisions are rare in these data
+#' and the batch holds about a dozen records per onset day, so the limits are
+#' ample; with the larger limits, fits in which a batch covers onset days
+#' still being estimated took many hours.
+frontier_fit_settings <- function() {
+  settings <- fit_settings()
+  settings$max_erroneous <- 4
+  settings$priors$batches$max_batch <- 30
+  settings
+}
+
 #' Fits one of frontier_model_names() to a dataset and scores it
 fit_frontier_model <- function(dataset, model, niterations) {
   snapshots <- dataset$snapshots
@@ -79,7 +93,7 @@ fit_frontier_model <- function(dataset, model, niterations) {
     dataset$settings$Rt_piece_width,
     niterations = niterations,
     seed = dataset$replicate,
-    settings = utils::modifyList(fit_settings(), list(max_erroneous = 10))))
+    settings = frontier_fit_settings()))
   fit_summary$model <- model
   list(regime = dataset$regime,
        replicate = dataset$replicate,
