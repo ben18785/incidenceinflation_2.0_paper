@@ -42,7 +42,9 @@ list(
       simulated_dataset$settings$serial_parameters,
       simulated_dataset$settings$Rt_piece_width,
       niterations = n_iterations,
-      seed = simulated_dataset$replicate))
+      seed = simulated_dataset$replicate,
+      # several misdated records can be held for an onset day at once
+      settings = utils::modifyList(fit_settings(), list(max_erroneous = 10))))
     list(regime = simulated_dataset$regime,
          replicate = simulated_dataset$replicate,
          summary = fit_summary,
@@ -105,6 +107,35 @@ list(
   tar_target(rivm_score,
              score_real_fit(rivm_fit_summary, rivm_analysis),
              pattern = map(rivm_fit_summary)),
+  # the full model without batches, to separate the effects of misdating and
+  # of batches
+  tar_target(rivm_fit_summary_no_batches, {
+    settings <- rivm_settings
+    settings$priors$batches <- NULL
+    fit_summary <- summarise_fit(fit_model(
+      rivm_analysis$snapshots, "full",
+      serial_parameters = list(mean = 5, sd = 3),
+      Rt_piece_width = 7,
+      niterations = n_iterations_real,
+      seed = 1,
+      settings = settings))
+    fit_summary$model <- "full without batches"
+    fit_summary
+  }),
+  tar_target(rivm_score_all,
+             dplyr::bind_rows(
+               rivm_score,
+               score_real_fit(rivm_fit_summary_no_batches, rivm_analysis)),
+             deployment = "main"),
+  tar_target(rivm_batches,
+             rivm_fit_summary[[3]]$batches %>%
+               dplyr::count(.data$start, .data$width, .data$time_detected,
+                            name = "n_draws") %>%
+               dplyr::arrange(dplyr::desc(.data$n_draws)) %>%
+               dplyr::mutate(
+                 proportion_of_draws = .data$n_draws /
+                   nrow(rivm_fit_summary[[3]]$batch_parameters)),
+             deployment = "main"),
 
   # ---- outputs ---------------------------------------------------------------
   tar_target(file_scores, {
@@ -112,9 +143,10 @@ list(
     utils::write.csv(simulated_score, "outputs/simulation_scores.csv", row.names = FALSE)
     utils::write.csv(simulated_score_summary, "outputs/simulation_score_summary.csv",
                      row.names = FALSE)
-    utils::write.csv(rivm_score, "outputs/rivm_scores.csv", row.names = FALSE)
+    utils::write.csv(rivm_score_all, "outputs/rivm_scores.csv", row.names = FALSE)
+    utils::write.csv(rivm_batches, "outputs/rivm_batches.csv", row.names = FALSE)
     c("outputs/simulation_scores.csv", "outputs/simulation_score_summary.csv",
-      "outputs/rivm_scores.csv")
+      "outputs/rivm_scores.csv", "outputs/rivm_batches.csv")
   }, format = "file"),
   tar_target(figure_simulation_scores,
              save_plot(plot_simulation_scores(simulated_score),
@@ -129,7 +161,7 @@ list(
                        "outputs/rivm_nowcast.png", 9, 4),
              format = "file"),
   tar_target(file_report,
-             write_report(simulated_score_summary, simulated_score, rivm_score,
+             write_report(simulated_score_summary, simulated_score, rivm_score_all,
                           rivm_revisions, "outputs/results.md"),
              format = "file")
 )

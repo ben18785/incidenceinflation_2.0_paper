@@ -10,48 +10,48 @@ Errors, biases and widths of 90% intervals for cases are relative to the mean tr
 
 | regime | model | n_fits | n_failed | recent_coverage | recent_abs_error | recent_bias | recent_width | Rt_last_bias | Rt_last_coverage | footprint_coverage | footprint_bias |
 |---|---|---|---|---|---|---|---|---|---|---|---|
-| none | original | 1 | 0 | 0 | 0.3 | 0.3 | 0.14 | 0.13 | 0 | NaN | NaN |
-| none | sporadic | 1 | 0 | 0 | 0.28 | 0.28 | 0.16 | 0.14 | 0 | NaN | NaN |
-| none | full | 1 | 0 | 0.07 | 0.28 | 0.28 | 0.15 | 0.13 | 0 | NaN | NaN |
-| sporadic | original | 1 | 0 | 0 | 0.42 | 0.42 | 0.16 | 0.15 | 0 | NaN | NaN |
-| sporadic | sporadic | 1 | 0 | 0 | 0.48 | 0.48 | 0.22 | 0.21 | 0 | NaN | NaN |
-| sporadic | full | 1 | 0 | 0 | 0.4 | 0.4 | 0.17 | 0.15 | 0 | NaN | NaN |
-| misdating | original | 1 | 0 | 0 | 0.36 | 0.36 | 0.17 | 0.15 | 0 | NaN | NaN |
-| misdating | sporadic | 1 | 0 | 0 | 0.32 | 0.32 | 0.2 | 0.14 | 0 | NaN | NaN |
-| misdating | full | 1 | 0 | 0 | 0.34 | 0.34 | 0.2 | 0.13 | 0 | NaN | NaN |
-| batch | original | 1 | 0 | 0 | 0.32 | 0.32 | 0.16 | 0.11 | 0 | 0 | 0.24 |
-| batch | sporadic | 1 | 1 | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN |
-| batch | full | 1 | 0 | 0 | 0.27 | 0.27 | 0.16 | 0.09 | 0 | 0.86 | 0 |
-| combined | original | 1 | 0 | 0.07 | 0.36 | 0.36 | 0.14 | 0.15 | 0 | 0 | 0.27 |
-| combined | sporadic | 1 | 1 | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN |
-| combined | full | 1 | 0 | 0 | 0.32 | 0.32 | 0.16 | 0.11 | 0 | 0.71 | 0 |
+| none | original | 5 | 0 | 0.89 | 0.05 | -0.01 | 0.18 | 0.01 | 1 | NaN | NaN |
+| none | sporadic | 5 | 0 | 0.89 | 0.05 | -0.01 | 0.18 | 0.01 | 1 | NaN | NaN |
+| none | full | 5 | 0 | 0.89 | 0.05 | -0.01 | 0.18 | 0.01 | 1 | NaN | NaN |
+| sporadic | original | 5 | 0 | 0.93 | 0.06 | 0.01 | 0.21 | 0.01 | 1 | NaN | NaN |
+| sporadic | sporadic | 5 | 0 | 0.91 | 0.06 | 0 | 0.22 | 0.01 | 1 | NaN | NaN |
+| sporadic | full | 5 | 0 | 0.91 | 0.06 | 0 | 0.22 | 0.01 | 1 | NaN | NaN |
+| misdating | original | 5 | 0 | 0.8 | 0.06 | 0.03 | 0.22 | 0.02 | 0.8 | NaN | NaN |
+| misdating | sporadic | 5 | 0 | 0.89 | 0.06 | 0.02 | 0.23 | 0.02 | 0.8 | NaN | NaN |
+| misdating | full | 5 | 0 | 0.93 | 0.07 | -0.01 | 0.26 | 0.01 | 0.8 | NaN | NaN |
+| batch | original | 5 | 0 | 0.9 | 0.05 | -0.01 | 0.19 | -0.02 | 0.8 | 0 | 0.26 |
+| batch | sporadic | 5 | 5 | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN |
+| batch | full | 5 | 0 | 0.91 | 0.05 | 0 | 0.2 | -0.02 | 0.8 | 0.94 | 0 |
+| combined | original | 5 | 0 | 0.77 | 0.07 | 0.04 | 0.21 | 0.02 | 0.8 | 0 | 0.25 |
+| combined | sporadic | 5 | 5 | NaN | NaN | NaN | NaN | NaN | NaN | NaN | NaN |
+| combined | full | 5 | 0 | 0.84 | 0.06 | 0.02 | 0.23 | 0.02 | 0.8 | 0.51 | 0 |
 
 Posterior medians of parameters (means across replicates) and run time in seconds:
 
 | regime | model | reporting_mean | reporting_sd | eta | rho | pi | p_any_batch | seconds |
 |---|---|---|---|---|---|---|---|---|
-| none | original | 6.849 | 4.148 | NaN | NaN | NaN | NaN | 4.812 |
-| none | sporadic | 6.879 | 3.976 | 0.021 | 0.262 | 0 | NaN | 5.378 |
-| none | full | 6.743 | 3.985 | 0.009 | 0.331 | 0.019 | 0 | 11.251 |
-| sporadic | original | 6.849 | 4.148 | NaN | NaN | NaN | NaN | 4.573 |
-| sporadic | sporadic | 6.879 | 3.976 | 0.024 | 0.197 | 0 | NaN | 5.379 |
-| sporadic | full | 6.782 | 3.982 | 0.016 | 0.258 | 0.031 | 1 | 9.991 |
-| misdating | original | 6.849 | 4.148 | NaN | NaN | NaN | NaN | 4.392 |
-| misdating | sporadic | 6.879 | 3.976 | 0.022 | 0.154 | 0 | NaN | 5.014 |
-| misdating | full | 6.811 | 3.93 | 0.018 | 0.126 | 0.04 | 1 | 10.535 |
-| batch | original | 6.849 | 4.148 | NaN | NaN | NaN | NaN | 4.573 |
-| batch | sporadic | NaN | NaN | NaN | NaN | NaN | NaN | 0.004 |
-| batch | full | 6.92 | 4.03 | 0.009 | 0.306 | 0.039 | 1 | 10.674 |
-| combined | original | 6.849 | 4.148 | NaN | NaN | NaN | NaN | 4.436 |
-| combined | sporadic | NaN | NaN | NaN | NaN | NaN | NaN | 0.009 |
-| combined | full | 6.859 | 3.986 | 0.009 | 0.132 | 0.036 | 1 | 11.837 |
+| none | original | 5.025 | 3.004 | NaN | NaN | NaN | NaN | 340.854 |
+| none | sporadic | 5.022 | 2.996 | 0.001 | 0.268 | 0 | NaN | 565.056 |
+| none | full | 5.018 | 2.999 | 0.002 | 0.389 | 0.001 | 0.049 | 1771.559 |
+| sporadic | original | 4.928 | 2.941 | NaN | NaN | NaN | NaN | 315.037 |
+| sporadic | sporadic | 4.991 | 2.982 | 0.024 | 0.153 | 0 | NaN | 514.149 |
+| sporadic | full | 4.965 | 2.956 | 0.019 | 0.171 | 0.006 | 0.079 | 1589.787 |
+| misdating | original | 5.08 | 3.161 | NaN | NaN | NaN | NaN | 325.544 |
+| misdating | sporadic | 5.499 | 3.555 | 0.108 | 0.189 | 0 | NaN | 585.592 |
+| misdating | full | 5.003 | 3.025 | 0.015 | 0.165 | 0.089 | 0.176 | 2207.752 |
+| batch | original | 4.977 | 2.988 | NaN | NaN | NaN | NaN | 305.321 |
+| batch | sporadic | NaN | NaN | NaN | NaN | NaN | NaN | 0.014 |
+| batch | full | 4.987 | 2.995 | 0.002 | 0.18 | 0.004 | 1 | 1957.677 |
+| combined | original | 5.04 | 3.111 | NaN | NaN | NaN | NaN | 305.44 |
+| combined | sporadic | NaN | NaN | NaN | NaN | NaN | NaN | 0.006 |
+| combined | full | 5.025 | 3.048 | 0.021 | 0.17 | 0.096 | 1 | 1867.222 |
 
 Fits which failed:
 
 | regime | model | error | n |
 |---|---|---|---|
-| batch | sporadic | Reported cases are revised downwards by more than max_erroneous: increase max_erroneous. | 1 |
-| combined | sporadic | Reported cases are revised downwards by more than max_erroneous: increase max_erroneous. | 1 |
+| batch | sporadic | Reported cases are revised downwards by more than max_erroneous: increase max_erroneous. | 5 |
+| combined | sporadic | Reported cases are revised downwards by more than max_erroneous: increase max_erroneous. | 5 |
 
 ## Netherlands COVID-19 cases by symptom onset date
 
@@ -66,6 +66,7 @@ Parameters are posterior medians with 90% intervals.
 
 | model | seconds | failed | error | recent_coverage | recent_abs_error | recent_bias | recent_width | reporting_mean | reporting_sd | eta | rho | pi | p_any_batch |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| original | 3.823 | FALSE |  | 0.286 | 0.171 | -0.163 | 0.036 | 7.09 (7.09, 7.09) | 4.11 (4.11, 4.11) |  |  |  |  |
-| sporadic | 4.252 | FALSE |  | 0.143 | 0.168 | -0.156 | 0.049 | 7.07 (7.07, 7.15) | 4.05 (4.04, 4.05) | 0.00965 (0.00965, 0.0127) | 0.16 (0.139, 0.16) | 0 (0, 0) |  |
-| full | 50.413 | FALSE |  | 0.071 | 0.179 | -0.154 | 0.038 | 7.22 (7.18, 7.22) | 4.11 (4.11, 4.11) | 0.0102 (0.0087, 0.0102) | 0.115 (0.115, 0.165) | 0.0464 (0.0464, 0.0489) | 1 |
+| original | 620.579 | FALSE |  | 0.071 | 0.156 | 0.023 | 0.136 | 8.15 (8.07, 8.2) | 5 (4.93, 5.04) |  |  |  |  |
+| sporadic | 741.659 | FALSE |  | 0.143 | 0.16 | 0.018 | 0.129 | 8.29 (8.23, 8.36) | 5.14 (5.07, 5.21) | 0.0182 (0.0156, 0.0214) | 0.184 (0.149, 0.24) | 0 (0, 0) |  |
+| full | 9755.818 | FALSE |  | 0.571 | 0.103 | -0.033 | 0.134 | 7.19 (7.09, 7.26) | 3.76 (3.65, 3.83) | 0.00027 (7.28e-05, 0.000443) | 0.0592 (0.056, 0.0633) | 0.0415 (0.0379, 0.0459) | 1 |
+| full without batches | 1610.922 | FALSE |  | 0.714 | 0.1 | -0.046 | 0.128 | 7.09 (7.03, 7.18) | 3.7 (3.63, 3.76) | 0.000229 (0.000138, 0.000305) | 0.0594 (0.0543, 0.0628) | 0.0423 (0.0405, 0.0445) |  |
