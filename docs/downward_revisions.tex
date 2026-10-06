@@ -812,33 +812,36 @@ shows the first dataset from each regime.
 \toprule
  & & \multicolumn{3}{c}{Latest 14 onset days} & \multicolumn{2}{c}{Batch onset days} & \\
 \cmidrule(lr){3-5}\cmidrule(lr){6-7}
-Regime & Model & Coverage & Abs.\ error & Bias & Abs.\ error & Bias & $R_t$ bias \\
+Regime & Model & Coverage & Abs.\ error & Bias & Abs.\ error & Bias & Latest $R_t$ \\
 \midrule
-None & Original & 0.89 & 0.05 & $-0.01$ & & & $0.01$ \\
- & Sporadic & 0.89 & 0.05 & $-0.01$ & & & $0.01$ \\
- & Full & 0.89 & 0.05 & $-0.01$ & & & $0.01$ \\
+None & Original & 0.89 & 0.05 & $-0.01$ & & & 0.91 \\
+ & Sporadic & 0.89 & 0.05 & $-0.01$ & & & 0.91 \\
+ & Full & 0.89 & 0.05 & $-0.01$ & & & 0.91 \\
 \addlinespace
-Sporadic & Original & 0.93 & 0.06 & $0.01$ & & & $0.01$ \\
- & Sporadic & 0.91 & 0.06 & $0.00$ & & & $0.01$ \\
- & Full & 0.91 & 0.06 & $0.00$ & & & $0.01$ \\
+Sporadic & Original & 0.93 & 0.06 & $0.01$ & & & 0.91 \\
+ & Sporadic & 0.91 & 0.06 & $0.00$ & & & 0.91 \\
+ & Full & 0.91 & 0.06 & $0.00$ & & & 0.91 \\
 \addlinespace
-Misdating & Original & 0.80 & 0.06 & $0.03$ & & & $0.02$ \\
- & Sporadic & 0.89 & 0.06 & $0.02$ & & & $0.02$ \\
- & Full & 0.93 & 0.07 & $-0.01$ & & & $0.01$ \\
+Misdating & Original & 0.80 & 0.06 & $0.03$ & & & 0.92 \\
+ & Sporadic & 0.89 & 0.06 & $0.02$ & & & 0.92 \\
+ & Full & 0.93 & 0.07 & $-0.01$ & & & 0.91 \\
 \addlinespace
-Batch & Original & 0.90 & 0.05 & $-0.01$ & 0.26 & $0.26$ & $-0.02$ \\
+Batch & Original & 0.90 & 0.05 & $-0.01$ & 0.26 & $0.26$ & 0.88 \\
  & Sporadic & \multicolumn{6}{c}{could not be fitted} \\
- & Full & 0.91 & 0.05 & $0.00$ & 0.00 & $0.00$ & $-0.02$ \\
+ & Full & 0.91 & 0.05 & $0.00$ & 0.00 & $0.00$ & 0.88 \\
 \addlinespace
-Combined & Original & 0.77 & 0.07 & $0.04$ & 0.25 & $0.25$ & $0.02$ \\
+Combined & Original & 0.77 & 0.07 & $0.04$ & 0.25 & $0.25$ & 0.92 \\
  & Sporadic & \multicolumn{6}{c}{could not be fitted} \\
- & Full & 0.84 & 0.06 & $0.02$ & 0.01 & $0.00$ & $0.02$ \\
+ & Full & 0.84 & 0.06 & $0.02$ & 0.01 & $0.00$ & 0.92 \\
 \bottomrule
 \end{tabular}
 \caption{Performance on simulated data: means across five datasets per regime.
 Coverage is that of 90\% posterior intervals. Absolute error and bias are those
-of the posterior median, relative to the mean true count. The final column is
-the bias of the posterior median of $R_t$ for the latest period.}
+of the posterior median of the case count, relative to the mean true count:
+a bias of $0.03$ means that estimates were on average 3\% of the mean count too
+high. The final column is the estimate of $R_t$ for the latest period, onset
+days 46 to 60, for which the true value is $0.9$: the posterior median,
+averaged across datasets.}
 \label{tab:simulation}
 \end{table}
 

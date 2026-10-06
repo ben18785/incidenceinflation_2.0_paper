@@ -87,3 +87,97 @@ summarise_revisions <- function(df) {
     largest_fall_from_peak = max(changes$fall_from_peak),
     n_onset_days_below_first = dplyr::n_distinct(changes$time_onset[changes$below_first]))
 }
+
+# ---- Hong Kong case list -----------------------------------------------------
+
+#' Reads one archived version of the Hong Kong COVID-19 case list
+#'
+#' @param path path to a hk_case_list_<yyyymmdd>.csv file
+#' @return a tibble with columns date_file, case_no, date_report, onset (as
+#' given: a date as text, or e.g. "Asymptomatic" or "Unknown") and date_onset
+#' (NA unless onset is a date)
+read_hk_case_list <- function(path) {
+  date_file <- as.Date(sub(".*_(\\d{8})\\.csv$", "\\1", path), format = "%Y%m%d")
+  df <- utils::read.csv(path, check.names = FALSE, stringsAsFactors = FALSE,
+                        fileEncoding = "UTF-8-BOM")
+  onset <- trimws(df[["Date of onset"]])
+  dplyr::tibble(
+    date_file = date_file,
+    case_no = suppressWarnings(as.integer(df[["Case no."]])),
+    date_report = as.Date(df[["Report date"]], format = "%d/%m/%Y"),
+    onset = onset,
+    date_onset = as.Date(onset, format = "%d/%m/%Y")) %>%
+    dplyr::filter(!is.na(.data$case_no))
+}
+
+#' Reads every archived version of the Hong Kong case list in a directory
+read_hk_case_lists <- function(dir_raw) {
+  paths <- sort(list.files(dir_raw, pattern = "\\.csv$", full.names = TRUE))
+  purrr::map_dfr(paths, read_hk_case_list)
+}
+
+#' Builds snapshots of cases by symptom onset date from the Hong Kong case lists
+#'
+#' Only cases with a date of onset are counted: asymptomatic cases, and those
+#' whose onset date is unknown or pending, are not.
+#'
+#' @param case_lists as returned by read_hk_case_lists()
+#' @return a tibble with columns date_onset, date_reported, cases_reported
+build_hk_onset_snapshots <- function(case_lists, date_onset_min) {
+  counts <- case_lists %>%
+    dplyr::filter(!is.na(.data$date_onset),
+                  .data$date_onset >= as.Date(date_onset_min),
+                  .data$date_onset <= .data$date_file) %>%
+    dplyr::count(.data$date_onset, date_reported = .data$date_file,
+                 name = "cases_reported")
+  dates_reported <- sort(unique(case_lists$date_file))
+  dates_onset <- seq(as.Date(date_onset_min), max(dates_reported), by = 1)
+  tidyr::expand_grid(date_onset = dates_onset, date_reported = dates_reported) %>%
+    dplyr::filter(.data$date_reported >= .data$date_onset) %>%
+    dplyr::left_join(counts, by = c("date_onset", "date_reported")) %>%
+    dplyr::mutate(cases_reported = dplyr::coalesce(.data$cases_reported, 0L))
+}
+
+#' Finds every change to a case's onset date between successive versions
+#'
+#' Because cases keep their case number, each change in the counts by onset
+#' date can be traced to individual cases.
+#'
+#' @param case_lists as returned by read_hk_case_lists()
+#' @return a tibble with a row for each change: the date of the file in which
+#' it first appears, the case number, the onset recorded before and after, and
+#' its type: "added" (a new case), "removed" (a case no longer listed),
+#' "moved" (one onset date replaced by another), "onset learned" (a date
+#' replaces a non-date), "onset withdrawn" (a non-date replaces a date) or
+#' "other" (one non-date replaced by another)
+find_hk_onset_changes <- function(case_lists) {
+  dates <- sort(unique(case_lists$date_file))
+  by_date <- split(case_lists[, c("case_no", "onset", "date_onset")],
+                   case_lists$date_file)
+  purrr::map_dfr(seq_along(dates)[-1], function(i) {
+    before <- by_date[[as.character(dates[i - 1])]]
+    after <- by_date[[as.character(dates[i])]]
+    joined <- dplyr::full_join(before, after, by = "case_no",
+                               suffix = c("_before", "_after"))
+    in_before <- joined$case_no %in% before$case_no
+    in_after <- joined$case_no %in% after$case_no
+    is_date_before <- !is.na(joined$date_onset_before)
+    is_date_after <- !is.na(joined$date_onset_after)
+    type <- dplyr::case_when(
+      !in_before ~ "added",
+      !in_after ~ "removed",
+      joined$onset_before == joined$onset_after ~ "unchanged",
+      # the same date written in a different format
+      is_date_before & is_date_after &
+        joined$date_onset_before == joined$date_onset_after ~ "unchanged",
+      is_date_before & is_date_after ~ "moved",
+      !is_date_before & is_date_after ~ "onset learned",
+      is_date_before & !is_date_after ~ "onset withdrawn",
+      TRUE ~ "other")
+    joined %>%
+      dplyr::mutate(date_file = dates[i], type = type) %>%
+      dplyr::filter(.data$type != "unchanged") %>%
+      dplyr::select("date_file", "case_no", "onset_before", "onset_after",
+                    "date_onset_before", "date_onset_after", "type")
+  })
+}

@@ -186,3 +186,157 @@ write_report <- function(score_summary, scores, real_scores, real_revisions,
   writeLines(lines, filename)
   filename
 }
+
+estimator_colours <- function() {
+  c("reported" = "#E69F00", "naive" = "#E69F00", "known later" = "black",
+    "gold standard" = "black", "original model" = "#0072B2",
+    "model with misdating" = "#009E73")
+}
+
+estimator_label <- function(model) {
+  ifelse(model == "original", "original model", "model with misdating")
+}
+
+format_date_now <- function(date) {
+  labels <- format(as.Date(date), "%d %b %Y")
+  factor(labels, levels = unique(labels[order(as.Date(date))]))
+}
+
+#' Case counts by onset date with the periods used for reporting delays
+plot_real_cases_periods <- function(ecdf_df) {
+  cases <- ecdf_df %>%
+    dplyr::select("date_onset", "cases_final", "period_index") %>%
+    unique()
+  periods <- cases %>%
+    dplyr::group_by(.data$period_index) %>%
+    dplyr::summarise(start = min(.data$date_onset) - 0.5,
+                     end = max(.data$date_onset) + 0.5,
+                     middle = mean(.data$date_onset)) %>%
+    dplyr::mutate(label = paste0("(", tolower(utils::as.roman(.data$period_index)), ")"))
+  ggplot2::ggplot(cases) +
+    ggplot2::geom_rect(data = periods,
+                       ggplot2::aes(xmin = .data$start, xmax = .data$end,
+                                    ymin = 0, ymax = Inf,
+                                    fill = factor(.data$period_index)),
+                       alpha = 0.3) +
+    ggplot2::geom_line(ggplot2::aes(x = .data$date_onset, y = .data$cases_final)) +
+    ggplot2::geom_text(data = periods,
+                       ggplot2::aes(x = .data$middle, y = Inf, label = .data$label),
+                       vjust = 2) +
+    ggplot2::scale_fill_brewer(palette = "Dark2", guide = "none") +
+    ggplot2::labs(x = "Onset date", y = "Cases") +
+    theme_paper()
+}
+
+#' Empirical distributions of reporting delay for each onset date, by period
+plot_real_ecdf <- function(ecdf_df) {
+  ecdf_df <- ecdf_df %>%
+    dplyr::group_by(.data$period_index) %>%
+    dplyr::mutate(period = paste0(
+      "(", tolower(utils::as.roman(.data$period_index)), ") ",
+      format(min(.data$date_onset), "%d %b"), " to ",
+      format(max(.data$date_onset), "%d %b"))) %>%
+    dplyr::ungroup()
+  average <- ecdf_df %>%
+    dplyr::group_by(.data$period, .data$delay) %>%
+    dplyr::summarise(ecdf = mean(.data$ecdf), .groups = "drop")
+  medians <- average %>%
+    dplyr::group_by(.data$period) %>%
+    dplyr::summarise(delay = min(.data$delay[.data$ecdf >= 0.5]))
+  ggplot2::ggplot(ecdf_df, ggplot2::aes(x = .data$delay, y = .data$ecdf)) +
+    ggplot2::geom_line(ggplot2::aes(group = .data$date_onset,
+                                    colour = .data$cases_final), alpha = 0.5) +
+    ggplot2::geom_line(data = average, colour = "orange", linetype = 2,
+                       linewidth = 0.8) +
+    ggplot2::geom_segment(data = medians, colour = "orange",
+                          ggplot2::aes(x = 0, xend = .data$delay, y = 0.5, yend = 0.5)) +
+    ggplot2::geom_segment(data = medians, colour = "orange",
+                          ggplot2::aes(x = .data$delay, xend = .data$delay,
+                                       y = 0, yend = 0.5)) +
+    ggplot2::facet_wrap(~period) +
+    ggplot2::scale_colour_viridis_c() +
+    ggplot2::labs(x = "Reporting delay, days", y = "eCDF", colour = "Cases\nknown later") +
+    theme_paper() +
+    ggplot2::theme(legend.position = "right")
+}
+
+#' Estimates of case counts across a range of analysis dates
+#'
+#' @param results a list with an element for each analysis date and model,
+#' each holding 'analysis' and the fit 'summary'
+plot_real_cases_dates <- function(results) {
+  estimates <- purrr::map_dfr(results, function(result) {
+    if(!is.null(result$summary$error))
+      return(NULL)
+    result$summary$cases %>%
+      dplyr::left_join(result$analysis$dates, by = "time_onset") %>%
+      dplyr::mutate(date_now = result$analysis$date_now,
+                    series = estimator_label(result$model))
+  })
+  observed <- purrr::map_dfr(results, function(result) {
+    reported <- result$analysis$snapshots %>%
+      dplyr::group_by(.data$time_onset) %>%
+      dplyr::arrange(.data$time_reported, .by_group = TRUE) %>%
+      dplyr::summarise(cases = dplyr::last(.data$cases_reported)) %>%
+      dplyr::mutate(series = "reported")
+    later <- result$analysis$later %>%
+      dplyr::transmute(.data$time_onset, cases = .data$cases_later,
+                       series = "known later")
+    dplyr::bind_rows(reported, later) %>%
+      dplyr::left_join(result$analysis$dates, by = "time_onset") %>%
+      dplyr::mutate(date_now = result$analysis$date_now)
+  }) %>%
+    unique()
+  estimates$panel <- format_date_now(estimates$date_now)
+  observed$panel <- factor(format(observed$date_now, "%d %b %Y"),
+                           levels = levels(estimates$panel))
+  ggplot2::ggplot(mapping = ggplot2::aes(x = .data$date)) +
+    ggplot2::geom_ribbon(data = estimates,
+                         ggplot2::aes(ymin = .data$q05, ymax = .data$q95,
+                                      fill = .data$series), alpha = 0.35) +
+    ggplot2::geom_line(data = observed,
+                       ggplot2::aes(y = .data$cases, colour = .data$series)) +
+    ggplot2::geom_line(data = estimates,
+                       ggplot2::aes(y = .data$q50, colour = .data$series)) +
+    ggplot2::facet_wrap(~panel) +
+    ggplot2::scale_colour_manual(values = estimator_colours()) +
+    ggplot2::scale_fill_manual(values = estimator_colours(), guide = "none") +
+    ggplot2::labs(x = "Onset date", y = "Cases", colour = NULL) +
+    theme_paper()
+}
+
+#' Estimates of Rt across a range of analysis dates
+plot_real_Rt_dates <- function(results, Rt_piece_width, serial_parameters) {
+  estimates <- purrr::map_dfr(results, function(result) {
+    if(!is.null(result$summary$error))
+      return(NULL)
+    result$summary$Rt %>%
+      dplyr::select("time_onset", "q05", "q50", "q95") %>%
+      dplyr::mutate(estimator = estimator_label(result$model),
+                    date_now = result$analysis$date_now) %>%
+      dplyr::left_join(result$analysis$dates, by = "time_onset")
+  })
+  analyses <- purrr::map(results, "analysis")
+  analyses <- analyses[!duplicated(purrr::map_chr(analyses, ~as.character(.$date_now)))]
+  simple <- purrr::map_dfr(analyses, function(analysis) {
+    estimate_Rt_naive_and_gold(analysis, Rt_piece_width, serial_parameters) %>%
+      dplyr::mutate(date_now = analysis$date_now) %>%
+      dplyr::left_join(analysis$dates, by = "time_onset")
+  })
+  df <- dplyr::bind_rows(estimates, simple) %>%
+    dplyr::mutate(estimator = factor(.data$estimator, levels = c(
+      "naive", "gold standard", "original model", "model with misdating")))
+  df$panel <- format_date_now(df$date_now)
+  ggplot2::ggplot(df, ggplot2::aes(x = .data$date)) +
+    ggplot2::geom_hline(yintercept = 1, linetype = 2) +
+    ggplot2::geom_ribbon(ggplot2::aes(ymin = .data$q05, ymax = .data$q95,
+                                      fill = .data$estimator), alpha = 0.35) +
+    ggplot2::geom_line(ggplot2::aes(y = .data$q50, colour = .data$estimator)) +
+    ggplot2::facet_wrap(~panel) +
+    ggplot2::scale_colour_manual(values = estimator_colours()) +
+    ggplot2::scale_fill_manual(values = estimator_colours()) +
+    ggplot2::coord_cartesian(ylim = c(0, 2.5)) +
+    ggplot2::labs(x = "Onset date", y = expression(R[t]), colour = "Estimator",
+                  fill = "Estimator") +
+    theme_paper()
+}

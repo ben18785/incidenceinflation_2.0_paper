@@ -18,7 +18,7 @@ tar_source("R")
 
 n_replicates <- as.integer(Sys.getenv("PIPELINE_REPLICATES", "5"))
 n_iterations <- as.integer(Sys.getenv("PIPELINE_ITERATIONS", "700"))
-n_iterations_real <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_REAL", "1000"))
+n_iterations_real <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_REAL", "800"))
 
 list(
   # ---- simulated data -------------------------------------------------------
@@ -136,6 +136,68 @@ list(
                  proportion_of_draws = .data$n_draws /
                    nrow(rivm_fit_summary[[3]]$batch_parameters)),
              deployment = "main"),
+
+  # ---- Netherlands: a range of analysis dates --------------------------------
+  # reporting delays as seen with hindsight
+  tar_target(rivm_ecdf,
+             reporting_delay_ecdf(rivm_snapshots, "2020-07-01", "2020-09-12")),
+  tar_target(figure_rivm_cases_periods,
+             save_plot(plot_real_cases_periods(rivm_ecdf),
+                       "outputs/rivm_cases_periods.png", 9, 3.2),
+             format = "file", deployment = "main"),
+  tar_target(figure_rivm_ecdf,
+             save_plot(plot_real_ecdf(rivm_ecdf),
+                       "outputs/rivm_ecdf.png", 9, 3.6),
+             format = "file", deployment = "main"),
+  tar_target(rivm_dates_now,
+             as.Date(c("2020-08-03", "2020-08-11", "2020-08-19",
+                       "2020-08-27", "2020-09-04", "2020-09-12"))),
+  tar_target(rivm_analysis_dates,
+             prepare_real_analysis(rivm_snapshots, "2020-07-01", rivm_dates_now),
+             pattern = map(rivm_dates_now), iteration = "list"),
+  # the original model and the model with sporadic revisions and misdating
+  # (batches are left out, since they did not help for these data)
+  tar_target(rivm_model_dates, c("original", "full")),
+  tar_target(rivm_result_dates, {
+    settings <- fit_settings()
+    settings$max_erroneous <- max(3, incidenceinflation::max_downward_revision(
+      rivm_analysis_dates$snapshots) + 1)
+    settings$priors$reporting <- list(mean_mu = 7, mean_sigma = 10,
+                                      sd_mu = 5, sd_sigma = 5)
+    settings$priors$revisions$eta_mu <- 0.005
+    settings$priors$revisions$eta_sigma <- 0.005
+    settings$priors$batches <- NULL
+    list(model = rivm_model_dates,
+         analysis = rivm_analysis_dates,
+         summary = summarise_fit(fit_model(
+           rivm_analysis_dates$snapshots, rivm_model_dates,
+           serial_parameters = list(mean = 5, sd = 3),
+           Rt_piece_width = 7,
+           niterations = n_iterations_real,
+           seed = 1,
+           settings = settings)))
+  }, pattern = cross(rivm_analysis_dates, rivm_model_dates), iteration = "list"),
+  tar_target(rivm_score_dates,
+             purrr::map_dfr(rivm_result_dates, function(result) {
+               dplyr::bind_cols(
+                 dplyr::tibble(date_now = result$analysis$date_now),
+                 score_real_fit(result$summary, result$analysis))
+             }),
+             deployment = "main"),
+  tar_target(figure_rivm_cases_dates,
+             save_plot(plot_real_cases_dates(rivm_result_dates),
+                       "outputs/rivm_cases_dates.png", 10, 6),
+             format = "file", deployment = "main"),
+  tar_target(figure_rivm_Rt_dates,
+             save_plot(plot_real_Rt_dates(rivm_result_dates, 7,
+                                          list(mean = 5, sd = 3)),
+                       "outputs/rivm_Rt_dates.png", 10, 6),
+             format = "file", deployment = "main"),
+  tar_target(file_rivm_score_dates, {
+    utils::write.csv(rivm_score_dates, "outputs/rivm_scores_dates.csv",
+                     row.names = FALSE)
+    "outputs/rivm_scores_dates.csv"
+  }, format = "file", deployment = "main"),
 
   # ---- outputs ---------------------------------------------------------------
   tar_target(file_scores, {
