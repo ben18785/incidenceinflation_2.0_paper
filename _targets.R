@@ -373,6 +373,49 @@ list(
       save_plot(plot_bvd_Rt(bvd_result), "outputs/bvd_Rt.png", 10, 6))
   }, format = "file", deployment = "main"),
 
+  # ---- comparison of mechanisms in the model of reporting ---------------------
+  tar_target(comparison_snapshots, list(
+    bvd = dplyr::select(bvd_snapshots, "date_onset", "date_reported", "cases_reported"),
+    measles = build_measles_snapshots(),
+    sweden = sweden_snapshots,
+    hk = hk_snapshots)),
+  tar_target(comparison_analysis, {
+    datasets <- comparison_datasets()
+    purrr::flatten(purrr::imap(datasets, function(dataset, name) {
+      purrr::map(dataset$dates_now, function(date_now) {
+        analysis <- prepare_comparison_analysis(
+          comparison_snapshots[[dataset$key]], dataset$date_earliest, date_now)
+        analysis$dataset <- name
+        analysis$serial_parameters <- dataset$serial_parameters
+        analysis
+      })
+    }))
+  }, iteration = "list"),
+  tar_target(comparison_model, comparison_models()),
+  tar_target(comparison_result,
+             fit_comparison_model(comparison_analysis, comparison_model,
+                                  comparison_analysis$serial_parameters,
+                                  n_iterations_bvd),
+             pattern = cross(comparison_analysis, comparison_model),
+             iteration = "list"),
+  tar_target(comparison_scores,
+             purrr::map_dfr(comparison_result,
+                            ~score_comparison_result(., .$analysis$dataset)),
+             deployment = "main"),
+  tar_target(comparison_summary, summarise_comparison(comparison_scores),
+             deployment = "main"),
+  tar_target(files_comparison, {
+    utils::write.csv(comparison_scores, "outputs/comparison_scores.csv", row.names = FALSE)
+    utils::write.csv(comparison_summary$by_dataset,
+                     "outputs/comparison_by_dataset.csv", row.names = FALSE)
+    utils::write.csv(comparison_summary$overall,
+                     "outputs/comparison_overall.csv", row.names = FALSE)
+    c("outputs/comparison_scores.csv", "outputs/comparison_by_dataset.csv",
+      "outputs/comparison_overall.csv",
+      save_plot(plot_comparison_scores(comparison_scores),
+                "outputs/comparison_scores.png", 10, 7))
+  }, format = "file", deployment = "main"),
+
   # ---- outputs ---------------------------------------------------------------
   tar_target(file_scores, {
     dir.create("outputs", showWarnings = FALSE)
