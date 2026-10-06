@@ -71,6 +71,32 @@ list(
                        "outputs/simulation_examples.png", 9, 10),
              format = "file", deployment = "main"),
 
+  # ---- simulated data: a batch near the analysis date -------------------------
+  tar_target(frontier_grid,
+             tidyr::expand_grid(frontier_regimes(),
+                                replicate = seq_len(n_replicates))),
+  tar_target(frontier_dataset,
+             simulate_frontier_dataset(frontier_grid, frontier_grid$replicate),
+             pattern = map(frontier_grid), iteration = "list"),
+  tar_target(frontier_model, frontier_model_names()),
+  tar_target(frontier_result,
+             fit_frontier_model(frontier_dataset, frontier_model, n_iterations),
+             pattern = cross(frontier_dataset, frontier_model), iteration = "list"),
+  tar_target(frontier_score, purrr::map_dfr(frontier_result, "score"),
+             deployment = "main"),
+  tar_target(frontier_score_summary, summarise_frontier_scores(frontier_score),
+             deployment = "main"),
+  tar_target(files_frontier, {
+    utils::write.csv(frontier_score, "outputs/frontier_scores.csv", row.names = FALSE)
+    utils::write.csv(frontier_score_summary, "outputs/frontier_score_summary.csv",
+                     row.names = FALSE)
+    c("outputs/frontier_scores.csv", "outputs/frontier_score_summary.csv",
+      save_plot(plot_frontier_examples(frontier_dataset, frontier_result),
+                "outputs/frontier_examples.png", 9, 5.5),
+      save_plot(plot_frontier_scores(frontier_score),
+                "outputs/frontier_scores.png", 9, 3.8))
+  }, format = "file", deployment = "main"),
+
   # ---- Netherlands COVID-19 cases by symptom onset date ----------------------
   tar_target(rivm_file, "data/processed/rivm_onset_snapshots.csv", format = "file"),
   tar_target(rivm_snapshots,
@@ -199,6 +225,93 @@ list(
     utils::write.csv(rivm_score_dates, "outputs/rivm_scores_dates.csv",
                      row.names = FALSE)
     "outputs/rivm_scores_dates.csv"
+  }, format = "file", deployment = "main"),
+
+  # ---- negative binomial renewal model, and further datasets ------------------
+  tar_target(renewal_is_nb, c(FALSE, TRUE)),
+
+  # Netherlands with a negative binomial renewal model (the Poisson fits are
+  # rivm_result_dates)
+  tar_target(rivm_nb_result_dates,
+             fit_real_analysis(rivm_analysis_dates, rivm_model_dates,
+                               is_negative_binomial = TRUE,
+                               dataset = "Netherlands",
+                               serial_parameters = list(mean = 5, sd = 3),
+                               Rt_piece_width = 7,
+                               niterations = n_iterations_real),
+             pattern = cross(rivm_analysis_dates, rivm_model_dates),
+             iteration = "list"),
+
+  # Hong Kong: cases by onset date during the wave of July and August 2020
+  tar_target(hk_file, "data/processed/hk_onset_snapshots.csv", format = "file"),
+  tar_target(hk_snapshots, read_snapshots(hk_file)),
+  tar_target(hk_dates_now, as.Date("2020-06-29") + 7 * (3:7) - 1),
+  tar_target(hk_analysis_dates,
+             prepare_real_analysis(hk_snapshots, "2020-06-29", hk_dates_now),
+             pattern = map(hk_dates_now), iteration = "list"),
+  tar_target(hk_result_dates,
+             fit_real_analysis(hk_analysis_dates, rivm_model_dates,
+                               is_negative_binomial = renewal_is_nb,
+                               dataset = "Hong Kong",
+                               serial_parameters = list(mean = 5, sd = 3),
+                               Rt_piece_width = 7,
+                               niterations = n_iterations_real),
+             pattern = cross(hk_analysis_dates, rivm_model_dates, renewal_is_nb),
+             iteration = "list"),
+
+  # Sweden: deaths by date of death during autumn 2020
+  tar_target(sweden_file, "data/processed/sweden_deaths_snapshots.csv",
+             format = "file"),
+  tar_target(sweden_snapshots, read_snapshots(sweden_file, "date_event")),
+  tar_target(sweden_dates_now, as.Date("2020-10-05") + 7 * (6:10) - 1),
+  tar_target(sweden_analysis_dates,
+             prepare_real_analysis(sweden_snapshots, "2020-10-05", sweden_dates_now),
+             pattern = map(sweden_dates_now), iteration = "list"),
+  tar_target(sweden_result_dates,
+             fit_real_analysis(sweden_analysis_dates, rivm_model_dates,
+                               is_negative_binomial = renewal_is_nb,
+                               dataset = "Sweden",
+                               serial_parameters = list(mean = 5, sd = 3),
+                               Rt_piece_width = 7,
+                               niterations = n_iterations_real),
+             pattern = cross(sweden_analysis_dates, rivm_model_dates, renewal_is_nb),
+             iteration = "list"),
+
+  tar_target(real_scores, {
+    netherlands_poisson <- purrr::map(rivm_result_dates, function(result) {
+      result$dataset <- "Netherlands"
+      result$is_negative_binomial <- FALSE
+      result
+    })
+    score_real_results(c(netherlands_poisson, rivm_nb_result_dates,
+                         hk_result_dates, sweden_result_dates))
+  }, deployment = "main"),
+  tar_target(real_score_summary, summarise_real_scores(real_scores),
+             deployment = "main"),
+  tar_target(file_real_scores, {
+    utils::write.csv(real_scores, "outputs/real_scores.csv", row.names = FALSE)
+    utils::write.csv(real_score_summary, "outputs/real_score_summary.csv",
+                     row.names = FALSE)
+    c("outputs/real_scores.csv", "outputs/real_score_summary.csv")
+  }, format = "file", deployment = "main"),
+  tar_target(figures_real_nb, {
+    serial <- list(mean = 5, sd = 3)
+    c(save_plot(plot_real_cases_dates(rivm_nb_result_dates),
+                "outputs/rivm_cases_dates_nb.png", 10, 6),
+      save_plot(plot_real_Rt_dates(rivm_nb_result_dates, 7, serial),
+                "outputs/rivm_Rt_dates_nb.png", 10, 6),
+      save_plot(plot_real_cases_dates(filter_results(hk_result_dates, FALSE)),
+                "outputs/hk_cases_dates_poisson.png", 10, 6),
+      save_plot(plot_real_cases_dates(filter_results(hk_result_dates, TRUE)),
+                "outputs/hk_cases_dates_nb.png", 10, 6),
+      save_plot(plot_real_Rt_dates(filter_results(hk_result_dates, TRUE), 7, serial),
+                "outputs/hk_Rt_dates_nb.png", 10, 6),
+      save_plot(plot_real_cases_dates(filter_results(sweden_result_dates, FALSE)),
+                "outputs/sweden_cases_dates_poisson.png", 10, 6),
+      save_plot(plot_real_cases_dates(filter_results(sweden_result_dates, TRUE)),
+                "outputs/sweden_cases_dates_nb.png", 10, 6),
+      save_plot(plot_real_Rt_dates(filter_results(sweden_result_dates, TRUE), 7, serial),
+                "outputs/sweden_Rt_dates_nb.png", 10, 6))
   }, format = "file", deployment = "main"),
 
   # ---- outputs ---------------------------------------------------------------

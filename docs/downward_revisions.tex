@@ -877,13 +877,29 @@ $0.10$). The sporadic model accounted for misdated records with a larger rate
 of spurious records ($\eta=0.11$) and overestimated the mean reporting delay
 (5.5 days, against a true value of 5).
 \item \emph{A batch.} For the onset days in the footprint of the batch, the
-original model overestimated the true counts by about a quarter, since the
-running maximum retains the records of the batch. The full model identified
-the batch in every dataset and recovered the true counts. The sporadic model
-could not be fitted, since falls of this size are impossible under it.
-\item \emph{Combined.} The full model again recovered the counts for the onset
-days in the footprint, with an absolute error of under 1\%.
+original model overestimated the true counts by about a quarter, and the full
+model did not. This comparison says less than it appears to. The footprint lies
+well before the analysis date, among the onset days whose counts are not
+estimated but fixed at the latest reported count
+(\S\ref{sec:implementation}); by then the records of the batch have been
+withdrawn, so the latest reported count is the true count. The error of the
+original model arises because it was given the running maximum, which retains
+the records of the batch, and any method which used the latest count for these
+onset days would do as well as the full model. For the onset days which are
+estimated, the two models performed alike. What the full model does show is
+that it can be fitted to such data, which the sporadic model cannot (falls of
+this size are impossible under it), and that it identified the batch in every
+dataset.
+\item \emph{Combined.} As for a batch alone.
 \end{itemize}
+
+\paragraph{What these simulations do not show.} They do not show that
+allowing for a batch improves any estimate, since the batch was placed where
+no estimate is made. The cases which matter are a batch whose footprint
+includes recent onset days, detected either shortly before the analysis date
+or not yet; these are the subject of a further study in progress. The data
+were also simulated from the models fitted, with shifts to nearby days and a
+gamma reporting delay.
 
 \paragraph{Caveats.} There are only five datasets per regime, so that
 differences of a few percentage points are within noise. Each fit is a single
@@ -1092,6 +1108,43 @@ intervals.
 every date, for both models.
 \end{itemize}
 
+\subsection{A negative binomial renewal model}
+
+Since the intervals above are too narrow, the fits at the six analysis dates
+were repeated with a negative binomial renewal model in place of the Poisson
+one: the count for an onset day has variance $\mu+\mu^2/\kappa$, where $\mu$
+is its mean under equation (2.1) of \cite{bajaj2025}, and $\kappa$ was given a
+gamma prior with mean and standard deviation 20.
+Table~\ref{tab:netherlandsnb} gives the results averaged over the six dates.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llcccc}
+\toprule
+Renewal model & Model & Coverage & Abs.\ error & Bias & Width \\
+\midrule
+Poisson & Original & 0.12 & 0.20 & $0.04$ & 0.14 \\
+ & With misdating & 0.24 & 0.18 & $0.00$ & 0.14 \\
+\addlinespace
+Negative binomial & Original & 0.24 & 0.23 & $-0.03$ & 0.31 \\
+ & With misdating & 0.38 & 0.21 & $-0.04$ & 0.32 \\
+\bottomrule
+\end{tabular}
+\caption{Estimates of case counts for the latest 14 onset days in the
+Netherlands: means over six analysis dates. Width is the mean width of the 90\%
+interval relative to the mean count; other measures are as in
+table~\ref{tab:simulation}.}
+\label{tab:netherlandsnb}
+\end{table}
+
+The negative binomial model roughly doubled the width of the intervals and
+raised coverage, but only to 0.24 and 0.38, still far below 0.9, and the
+estimates were no more accurate. The posterior median of $\kappa$ averaged
+about 8.5. Overdispersion in the renewal process therefore accounts for only
+part of the overconfidence; the errors of extrapolation described above are
+not of this kind. Fits of the model with misdating took about an hour each,
+twice as long as with the Poisson model.
+
 \paragraph{Caveats.} These analyses concern one period in one country. The
 serial interval was assumed rather than estimated, each fit is a single chain
 of 800 iterations whose convergence was not assessed, and the counts known on
@@ -1099,10 +1152,11 @@ of 800 iterations whose convergence was not assessed, and the counts known on
 rise abruptly at the end of August (figure~\ref{fig:rivmdelays}), which may
 reflect a change in reporting as well as in transmission.
 
-\section{Other data}\label{sec:otherdata}
+\section{Further applications}\label{sec:otherdata}
 
-Two further sets of snapshots have been assembled, to which the models have
-not yet been fitted.
+The original model and the model with misdating were fitted to two further
+sets of snapshots, at five analysis dates a week apart, with both Poisson and
+negative binomial renewal models. Settings were as for the Netherlands.
 
 \subsection{Hong Kong: a history of a line list}
 
@@ -1156,16 +1210,150 @@ more than twice as common, and were supplied a median of two weeks after the
 case was first listed.
 \end{itemize}
 
+\paragraph{Estimates.} The models were fitted to the counts by onset day for
+onset days from 29 June 2020, as of five dates from 19 July to 16 August 2020,
+spanning the rise and fall of a wave which peaked at about 130 cases a day.
+Estimates were compared with the counts in the version of 31 March 2021
+(table~\ref{tab:hongkongfits}, figure~\ref{fig:hkcases}).
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llccccc}
+\toprule
+Renewal model & Model & Dates & Coverage & Abs.\ error & Bias & Width \\
+\midrule
+Poisson & Original & 5 & 0.59 & 0.16 & $0.06$ & 0.33 \\
+ & With misdating & 5 & 0.60 & 0.17 & $0.06$ & 0.34 \\
+\addlinespace
+Negative binomial & Original & 4 & 0.79 & 0.13 & $0.06$ & 0.44 \\
+ & With misdating & 4 & 0.82 & 0.13 & $0.05$ & 0.45 \\
+\bottomrule
+\end{tabular}
+\caption{Estimates of case counts for the latest 14 onset days in Hong Kong:
+means over analysis dates. Measures are as in table~\ref{tab:netherlandsnb}.
+The negative binomial fits for the first date failed (see text), so those rows
+are means over four dates and are not directly comparable with the rows
+above.}
+\label{tab:hongkongfits}
+\end{table}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{hk_cases_dates_nb.png}
+\caption{Estimates of cases by onset day in Hong Kong as of four analysis
+dates, with a negative binomial renewal model. Colours are as in
+figure~\ref{fig:rivmcasesdates}; black shows the counts in the version of
+31 March 2021. The fifth panel shows the data for the analysis date at which
+the fits failed.}
+\label{fig:hkcases}
+\end{figure}
+
+Allowing for misdating made no difference: the misdating probability was
+estimated at 1\% to 2\%, in keeping with table~\ref{tab:hongkong}. The negative
+binomial model gave coverage of about 0.8, closer to nominal than for the
+Netherlands, and smaller errors. Both negative binomial fits for the first
+analysis date, at which there are only 21 onset days, stopped with an error in
+the software, which has yet to be traced.
+
 \subsection{Sweden: deaths by date of death}
 
 The Public Health Agency of Sweden published deaths from COVID-19 by date of
-death, and each day's publication has been archived and
-compiled.\footnote{\url{https://github.com/adamaltmejd/covid}} These are counts
-by date of death rather than of onset, to which the renewal model applies less
-naturally, but they are revised in the same way. For deaths in 2020, as
-published up to 31 March 2021, there were 2{,}193 upward revisions to the count
-for a date of death and 208 downward revisions, none by more than three: 234
-deaths were removed, against 9{,}340 added.
+death, and each publication has been archived and
+compiled.\footnote{\url{https://github.com/adamaltmejd/covid}} For deaths in
+2020, as published up to 31 March 2021, there were 2{,}193 upward revisions to
+the count for a date of death and 208 downward revisions, none by more than
+three: 234 deaths were removed, against 9{,}340 added.
+
+\paragraph{The renewal model applied to deaths.} These are counts by date of
+death, not of onset, and a death does not give rise to later deaths. The
+renewal equation can nonetheless be applied, with a different interpretation.
+Suppose that infections have expectation $i(t)=R(t)\sum_s\omega_s\,i(t-s)$ and
+that a proportion of them die, after a delay with distribution $f$, so that
+deaths have expectation $d(t)\propto\sum_u f_u\,i(t-u)$. Then
+\begin{equation}\label{eq:deaths}
+d(t) = R_D(t)\sum_s\omega_s\,d(t-s),
+\qquad
+R_D(t) := \frac{\sum_u f_u\,i(t-u)}{\sum_u f_u\,i(t-u)/R(t-u)} .
+\end{equation}
+Expected deaths therefore satisfy a renewal equation with the same weights
+$\omega_s$, and with a reproduction number $R_D(t)$ which is a weighted
+harmonic mean of $R$ over the preceding period, the weights being $f_u\,i(t-u)$.
+If $R$ is constant then $R_D=R$. This assumes that the proportion dying and the
+distribution $f$ are constant. We therefore use the same $\omega_s$ as for
+cases, and regard the quantity estimated as $R_D$: the reproduction number
+some three weeks earlier, smoothed, and not a measure of current transmission.
+The Poisson renewal model understates the variability of deaths, so the
+negative binomial model is the more appropriate here.
+
+\paragraph{Estimates.} The models were fitted to deaths with dates of death
+from 5 October 2020, as of five dates from 15 November to 13 December 2020, and
+compared with the counts published by 31 March 2021
+(table~\ref{tab:swedenfits}, figure~\ref{fig:swedencases}).
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llcccc}
+\toprule
+Renewal model & Model & Coverage & Abs.\ error & Bias & Width \\
+\midrule
+Poisson & Original & 0.60 & 0.48 & $0.45$ & 0.67 \\
+ & With misdating & 0.64 & 0.45 & $0.44$ & 0.72 \\
+\addlinespace
+Negative binomial & Original & 0.66 & 0.42 & $0.39$ & 0.82 \\
+ & With misdating & 0.67 & 0.43 & $0.40$ & 0.86 \\
+\bottomrule
+\end{tabular}
+\caption{Estimates of deaths for the latest 14 dates of death in Sweden: means
+over five analysis dates. Measures are as in table~\ref{tab:netherlandsnb}.}
+\label{tab:swedenfits}
+\end{table}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{sweden_cases_dates_nb.png}
+\caption{Estimates of deaths by date of death in Sweden as of five analysis
+dates, with a negative binomial renewal model. Colours are as in
+figure~\ref{fig:rivmcasesdates}; black shows the counts published by 31 March
+2021. The vertical axis gives deaths.}
+\label{fig:swedencases}
+\end{figure}
+
+The estimates for Sweden are poor. Recent deaths were overestimated by about
+40\% on average, and by 70\% to 100\% at the first two analysis dates, where
+both models projected a steep rise which did not occur. The cause has not been
+established. Deaths in Sweden were not published every day and were reported
+with a long and uneven delay, which a single gamma distribution may describe
+badly; the model would then misjudge how complete the latest counts are.
+Allowing for misdating made little difference.
+
+\subsection{Downward revisions in the three datasets}
+
+Table~\ref{tab:realrevisions} gives the downward revisions in each dataset
+over the period analysed, following each onset day or date of death to the
+latest publication available. In every case they are few and small, they occur
+about a month after onset, and no publication shows a fall across several
+adjacent days. These data therefore show whether the extended models do harm
+when revisions are slight, but cannot show whether they help when revisions
+are substantial.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccc}
+\toprule
+ & Netherlands & Hong Kong & Sweden \\
+\midrule
+Period & 1 Jul--8 Sep 2020 & 29 Jun--16 Aug 2020 & 5 Oct--13 Dec 2020 \\
+Downward revisions & 159 & 11 & 23 \\
+Removed & 185 & 14 & 26 \\
+Added & 29{,}243 & 2{,}645 & 2{,}170 \\
+Largest fall from an earlier count & 5 & 4 & 2 \\
+Median delay at a downward revision (days) & 34 & 26 & 34 \\
+\bottomrule
+\end{tabular}
+\caption{Downward revisions to counts by onset day (Netherlands, Hong Kong) or
+date of death (Sweden).}
+\label{tab:realrevisions}
+\end{table}
 
 \begin{thebibliography}{1}
 \bibitem{bajaj2025}
