@@ -1,8 +1,10 @@
 # incidenceinflation 2.0: paper pipeline
 
-A [targets](https://books.ropensci.org/targets/) pipeline applying the model
-described in `incidenceinflation_2.0/docs/downward_revisions.tex` to simulated
-and real data.
+The write-up of the model (`docs/downward_revisions.tex`) and a
+[targets](https://books.ropensci.org/targets/) pipeline applying it to
+simulated and real data. The write-up includes the figures which the pipeline
+writes to `outputs/`, and its results tables are copied from
+`outputs/results.md`, so both need updating by hand if the pipeline is rerun.
 
 ## Setup
 
@@ -67,6 +69,7 @@ the counts for the same onset dates as known on 15 October.
 
 ## Layout
 
+- `docs/`: the write-up.
 - `_targets.R`: the pipeline.
 - `R/`: functions used by the pipeline.
 - `scripts/`: one-off setup scripts.

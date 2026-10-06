@@ -1,5 +1,5 @@
-# Pipeline applying the model of incidenceinflation_2.0/docs/downward_revisions.tex
-# to simulated and real data. Run with targets::tar_make().
+# Pipeline applying the model of docs/downward_revisions.tex to simulated and
+# real data. Run with targets::tar_make().
 
 library(targets)
 library(tarchetypes)

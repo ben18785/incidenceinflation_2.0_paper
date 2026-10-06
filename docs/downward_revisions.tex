@@ -2,7 +2,12 @@
 \usepackage[margin=2.5cm]{geometry}
 \usepackage{amsmath,amssymb}
 \usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{booktabs}
 \usepackage[hidelinks]{hyperref}
+
+% figures are written by the pipeline to outputs/ at the top of the repository
+\graphicspath{{../outputs/}{outputs/}}
 
 \newcommand{\given}{\,|\,}
 \newcommand{\bin}{\operatorname{binomial}}
@@ -253,7 +258,7 @@ the forward probabilities. By \eqref{eq:feasible} it must be at least as large
 as the largest fall in reported cases seen in the data, and should exceed it.
 \end{itemize}
 
-\section{Implementation}
+\section{Implementation}\label{sec:implementation}
 
 The model is implemented in version 2.0 of the \texttt{incidenceinflation} R
 package. Supplying initial values of $(\eta,\rho)$ to the sampler switches the
@@ -741,6 +746,247 @@ rarely distinguish two batches covering the same onset days from one.
 laboratory for each case, as in a line list, the mark is observed directly and
 the batches need not be inferred from falls in the counts.
 \end{itemize}
+
+\section{Simulation study}\label{sec:simulation}
+
+The numbers and figures in this section and the next are produced by the
+pipeline in this repository (\texttt{\_targets.R}); the tables are copied from
+\texttt{outputs/results.md}.
+
+\subsection{Design}
+
+Data were simulated for $T=60$ onset days and observed daily up to day 60. In
+all cases $R_t=1.3$ for the first 30 onset days and $0.9$ thereafter, the
+serial interval had mean 5 and standard deviation 3 days, and the reporting
+delay had mean 5 and standard deviation 3 days. Five regimes were considered,
+which differ in how reported counts are revised (table~\ref{tab:regimes}).
+Where cases are misdated, shifts of $\pm1$ day each have probability $0.35$
+and shifts of $\pm2$ days each have probability $0.15$. Where there is a
+batch, its footprint is onset days 28 to 34, its intensity is $\phi_b=0.25$
+and it is detected on day 48. Five datasets were simulated under each regime.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llllc}
+\toprule
+Regime & $\eta$ & $\rho$ & $\pi$ & Batch \\
+\midrule
+None & -- & -- & -- & no \\
+Sporadic & 0.03 & 0.15 & -- & no \\
+Misdating & 0.005 & 0.15 & 0.10 & no \\
+Batch & 0.005 & 0.15 & -- & yes \\
+Combined & 0.03 & 0.15 & 0.10 & yes \\
+\bottomrule
+\end{tabular}
+\caption{Regimes under which data were simulated.}\label{tab:regimes}
+\end{table}
+
+Three models were fitted to each dataset.
+\begin{itemize}[itemsep=2pt]
+\item \emph{Original}: the model of \cite{bajaj2025}, in which reported counts
+can only rise. Since it cannot be fitted to counts which fall, the reported
+counts for each onset day were first replaced by their running maximum.
+\item \emph{Sporadic}: the model of \S3, with $\Emax=10$.
+\item \emph{Full}: the model of \S3 with the extensions of
+\S\ref{sec:misdating} and \S\ref{sec:batches}, with $\Emax=10$ and $\Xmax=60$.
+\end{itemize}
+$R_t$ was piecewise-constant over periods of 15 onset days. Each fit was a
+single chain of 700 iterations, of which the first half was discarded. Priors
+were: $R_t\sim\operatorname{gamma}(1,1)$; gamma priors for the mean and
+standard deviation of the reporting delay with means 5 and 3 and standard
+deviations 10 and 5; a gamma prior for $\eta$ with mean and standard deviation
+$0.02$; $\rho\sim\operatorname{beta}(1,4)$; $\pi\sim\operatorname{beta}(1,9)$;
+and, for batches, $\beta\sim\operatorname{beta}(1,199)$, $\zeta=4$,
+$\rho_B=0.05$ and a gamma prior for $\phi_b$ with mean $0.3$ and standard
+deviation $0.2$.
+
+\subsection{Results}
+
+Table~\ref{tab:simulation} and figure~\ref{fig:simulationscores} summarise how
+well each model recovered the true case counts. Figure~\ref{fig:simulationexamples}
+shows the first dataset from each regime.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llcccccc}
+\toprule
+ & & \multicolumn{3}{c}{Latest 14 onset days} & \multicolumn{2}{c}{Batch onset days} & \\
+\cmidrule(lr){3-5}\cmidrule(lr){6-7}
+Regime & Model & Coverage & Abs.\ error & Bias & Abs.\ error & Bias & $R_t$ bias \\
+\midrule
+None & Original & 0.89 & 0.05 & $-0.01$ & & & $0.01$ \\
+ & Sporadic & 0.89 & 0.05 & $-0.01$ & & & $0.01$ \\
+ & Full & 0.89 & 0.05 & $-0.01$ & & & $0.01$ \\
+\addlinespace
+Sporadic & Original & 0.93 & 0.06 & $0.01$ & & & $0.01$ \\
+ & Sporadic & 0.91 & 0.06 & $0.00$ & & & $0.01$ \\
+ & Full & 0.91 & 0.06 & $0.00$ & & & $0.01$ \\
+\addlinespace
+Misdating & Original & 0.80 & 0.06 & $0.03$ & & & $0.02$ \\
+ & Sporadic & 0.89 & 0.06 & $0.02$ & & & $0.02$ \\
+ & Full & 0.93 & 0.07 & $-0.01$ & & & $0.01$ \\
+\addlinespace
+Batch & Original & 0.90 & 0.05 & $-0.01$ & 0.26 & $0.26$ & $-0.02$ \\
+ & Sporadic & \multicolumn{6}{c}{could not be fitted} \\
+ & Full & 0.91 & 0.05 & $0.00$ & 0.00 & $0.00$ & $-0.02$ \\
+\addlinespace
+Combined & Original & 0.77 & 0.07 & $0.04$ & 0.25 & $0.25$ & $0.02$ \\
+ & Sporadic & \multicolumn{6}{c}{could not be fitted} \\
+ & Full & 0.84 & 0.06 & $0.02$ & 0.01 & $0.00$ & $0.02$ \\
+\bottomrule
+\end{tabular}
+\caption{Performance on simulated data: means across five datasets per regime.
+Coverage is that of 90\% posterior intervals. Absolute error and bias are those
+of the posterior median, relative to the mean true count. The final column is
+the bias of the posterior median of $R_t$ for the latest period.}
+\label{tab:simulation}
+\end{table}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{simulation_scores.png}
+\caption{Performance of each model on each simulated dataset (points) and the
+mean across datasets (bars), by the regime used to simulate.}
+\label{fig:simulationscores}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.95\textwidth]{simulation_examples.png}
+\caption{Estimates of true case counts for the first dataset simulated under
+each regime (rows), for each model (columns).}
+\label{fig:simulationexamples}
+\end{figure}
+
+\begin{itemize}[itemsep=2pt]
+\item \emph{No revisions.} The three models gave the same results. The full
+model placed little posterior probability on there being any batch (0.05 on
+average).
+\item \emph{Sporadic revisions.} The three models performed equally well. The
+sporadic model recovered the revision parameters (posterior medians averaging
+$\eta=0.024$ and $\rho=0.15$, against true values of $0.03$ and $0.15$), but at
+this rate of revision replacing counts by their running maximum served as well
+for the purpose of estimating recent case counts.
+\item \emph{Misdating.} The full model had the best coverage for recent onset
+days (0.93, against 0.80 for the original model) and recovered the misdating
+probability (posterior median averaging $0.089$, against a true value of
+$0.10$). The sporadic model accounted for misdated records with a larger rate
+of spurious records ($\eta=0.11$) and overestimated the mean reporting delay
+(5.5 days, against a true value of 5).
+\item \emph{A batch.} For the onset days in the footprint of the batch, the
+original model overestimated the true counts by about a quarter, since the
+running maximum retains the records of the batch. The full model identified
+the batch in every dataset and recovered the true counts. The sporadic model
+could not be fitted, since falls of this size are impossible under it.
+\item \emph{Combined.} The full model again recovered the counts for the onset
+days in the footprint, with an absolute error of under 1\%.
+\end{itemize}
+
+\paragraph{Caveats.} There are only five datasets per regime, so that
+differences of a few percentage points are within noise. Each fit is a single
+short chain and convergence was not assessed formally. The full model took
+about half an hour per fit, against five to ten minutes for the others. Onset
+days for which reporting is deemed complete are fixed at their latest reported
+count (\S\ref{sec:implementation}), so their posterior intervals have zero
+width; coverage is therefore not reported for the onset days in the footprint
+of the batch.
+
+\section{Application: COVID-19 in the Netherlands}\label{sec:netherlands}
+
+\subsection{Data}
+
+During 2020 the Dutch National Institute for Public Health and the Environment
+(RIVM) published a file each day listing every case of COVID-19 known at the
+time, with a date for each case and an indication of what the date represents:
+the day of symptom onset, of a positive laboratory result or of notification.
+RIVM retained only the latest file, but the daily files were archived by
+volunteers.\footnote{\url{https://github.com/mzelst/covid-19}} Counting, in each
+daily file, the cases whose date is a day of symptom onset gives snapshots of
+cases by onset day (figure~\ref{fig:rivmsnapshots}).
+
+We consider onset days from 1 July to 1 September 2020 and the files published
+up to 1 September, as if the analysis were made on that day. Among the
+resulting 1953 changes between successive files for the same onset day, the
+reported count rose in 1226 and fell in 48; no fall exceeded three cases, and
+53 cases were removed in total against 16{,}707 added. A case whose onset day
+is not yet known is listed under another date and moves to its onset day if
+this is later learned, which is one way in which counts by onset day can rise
+long after onset.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.85\textwidth]{rivm_snapshots.png}
+\caption{Cases by day of symptom onset in the Netherlands, as reported in
+every seventh daily file from 1 July to 15 October 2020.}
+\label{fig:rivmsnapshots}
+\end{figure}
+
+\subsection{Models}
+
+The three models of \S\ref{sec:simulation} were fitted, along with the full
+model without batches. $R_t$ was piecewise-constant over periods of seven
+onset days and the serial interval was assumed to have mean 5 and standard
+deviation 3 days. We took $\Emax=4$ and $\Xmax=30$. Priors were as in
+\S\ref{sec:simulation}, except that the priors for the mean and standard
+deviation of the reporting delay had means 7 and 5, and the prior for $\eta$
+had mean and standard deviation $0.005$. Each fit was a single chain of 800
+iterations, of which the first half was discarded. Estimates were compared with
+the counts for the same onset days in the file published on 15 October 2020.
+
+\subsection{Results}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccccccc}
+\toprule
+ & \multicolumn{3}{c}{Latest 14 onset days} & \multicolumn{2}{c}{Reporting delay} & & \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-6}
+Model & Coverage & Abs.\ error & Bias & Mean & SD & $\rho$ & $\pi$ \\
+\midrule
+Original & 0.07 & 0.16 & $0.02$ & 8.2 & 5.0 & & \\
+Sporadic & 0.14 & 0.16 & $0.02$ & 8.3 & 5.1 & 0.18 & \\
+Full without batches & 0.71 & 0.10 & $-0.05$ & 7.1 & 3.7 & 0.059 & 0.042 \\
+Full & 0.57 & 0.10 & $-0.03$ & 7.2 & 3.8 & 0.059 & 0.042 \\
+\bottomrule
+\end{tabular}
+\caption{Estimates for the Netherlands made as of 1 September 2020, compared
+with the counts known on 15 October 2020. Coverage, absolute error and bias are
+as in table~\ref{tab:simulation}. Parameters are posterior medians.}
+\label{tab:netherlands}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{rivm_nowcast.png}
+\caption{Estimates of cases by onset day in the Netherlands made as of
+1 September 2020, for three of the models.}
+\label{fig:rivmnowcast}
+\end{figure}
+
+Table~\ref{tab:netherlands} and figure~\ref{fig:rivmnowcast} show the results.
+\begin{itemize}[itemsep=2pt]
+\item \emph{Misdating improved the estimates.} With misdating, the absolute
+error for the latest 14 onset days fell from 16\% to 10\% and the coverage of
+90\% intervals rose from about 0.1 to between 0.6 and 0.7. The misdating
+probability was estimated at about 4\% and the estimated reporting delay was
+shorter and less variable. Late additions to the count for an onset day, which
+the other models must attribute to the tail of the reporting delay, are
+instead attributed to corrections.
+\item \emph{Batches did not.} The full model performed no better with batches
+than without, and took six times as long. It nonetheless placed between two and
+five batches of low intensity in every posterior draw, although there is no
+large coincident fall in these data. We suspect these to be spurious: a batch
+of low intensity is a flexible way of explaining small departures from the
+rest of the model.
+\item \emph{All models were overconfident.} Coverage was below the nominal 90\%
+in every case, and no model anticipated the counts for the final two onset
+days, when cases were rising sharply. The renewal model here is Poisson; a
+negative binomial renewal model would widen the intervals.
+\end{itemize}
+
+\paragraph{Caveats.} This is a single analysis date in a single country. The
+serial interval was assumed rather than estimated, and the counts known on
+15 October are themselves subject to later revision.
 
 \begin{thebibliography}{1}
 \bibitem{bajaj2025}
