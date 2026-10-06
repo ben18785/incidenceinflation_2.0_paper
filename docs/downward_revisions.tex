@@ -1510,9 +1510,10 @@ simulation.
 
 \subsection{Results for the extended models}
 
-Table~\ref{tab:reportingmodelsbvd} gives the results for the outbreak of
-Bundibugyo virus disease, for onset days from 12 July to 27 August 2026
-(2731 cases). The comparison for the other five datasets is in progress.
+Table~\ref{tab:reportingmodelsbvd} gives the results in full for the outbreak
+of Bundibugyo virus disease, for onset days from 12 July to 27 August 2026
+(2731 cases), and table~\ref{tab:reportingmodelsall} summarises all six
+datasets.
 
 \begin{table}[h]
 \centering
@@ -1543,6 +1544,65 @@ about 30\% of the average. The random effect of reports accounts for the
 remaining dispersion, with $\sigma_z\approx0.2$. The tail corrects the shape of
 the delay and the proportion of empty intervals. The log-normal delay fits
 worse than the gamma.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{2}{c}{Log-likelihood} & \multicolumn{2}{c}{Features consistent} & & \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}
+Dataset & Gamma & All three & Gamma & All three & $\sigma_z$ & Largest gain from \\
+\midrule
+Bundibugyo virus disease, 2026 & $-992$ & $-946$ & 2 & 7 & 0.23 & day of week \\
+Dengue, Puerto Rico, 1994 & $-831$ & $-543$ & 0 & 7 & 0.31 & tail, random effect \\
+Measles, Netherlands, 2013 & $-2855$ & $-2239$ & 2 & 4 & 0.48 & day of week \\
+COVID-19 deaths, Sweden, 2020 & $-1802$ & $-1281$ & 2 & 3 & 0.35 & day of week \\
+COVID-19 cases, Hong Kong, 2020 & $-1546$ & $-1473$ & 0 & 4 & 0.24 & shape of delay \\
+COVID-19 cases, Netherlands, 2020 & $-7744$ & (see text) & 0 & -- & -- & shape of delay \\
+\bottomrule
+\end{tabular}
+\caption{The gamma delay compared with the model with all three extensions
+(for dengue, which is weekly, there is no effect of the day of the week).
+`Features consistent' is out of seven.}
+\label{tab:reportingmodelsall}
+\end{table}
+
+Across the datasets:
+\begin{itemize}[itemsep=2pt]
+\item \emph{The extensions improve the fit substantially everywhere}, and for
+two datasets (Bundibugyo virus disease and dengue) the extended model is
+consistent with every feature examined.
+\item \emph{The effect of the day of the week is large where reporting follows
+the working week.} For measles, reports at the weekend brought in cases at
+about one twenty-fifth of the weekday rate. For Sweden, where reports were
+published from Tuesday to Friday, Tuesday reports ran at about 0.4 of the
+average rate and Wednesday reports at about 1.7. It was negligible for Hong
+Kong and for the Netherlands in 2020.
+\item \emph{A random effect of reports remains after allowing for the day of
+the week}, with $\sigma_z$ between 0.2 and 0.5, and brings the dispersion
+across reports into line with the data in every dataset where it could be
+estimated.
+\item \emph{The exponential tail does not always help.} It contributed nothing
+for measles. For Hong Kong a log-normal delay alone (log-likelihood $-1454$)
+fitted better than the gamma with all three extensions, so that the shape of
+the delay there needs something else.
+\item \emph{Some features remain inconsistent.} For measles, Sweden and Hong
+Kong there are still more empty intervals than the model produces, and for
+Sweden and Hong Kong the dispersion within onset days is still somewhat too
+high. Both point to clumping within an onset day, which none of the three
+extensions addresses.
+\item \emph{For the Netherlands in 2020 the model with random effects could
+not be fitted sensibly.} The gamma with a tail improved the log-likelihood
+greatly, to $-5827$, and the day of the week made no difference. But when
+random effects of reports were added, the fit moved to a very short delay
+combined with multipliers far from one ($\sigma_z$ above 1): the multipliers
+were being used to change the shape of the delay, not to describe variation
+between reports. The scale of the multipliers and the scale of the delay are
+only weakly distinguished when $\sigma_z$ is large, and in the sampler
+$\sigma_z$ would need an informative prior. For these data the shape of the
+delay is the outstanding problem: even with the tail, the dispersion across
+reports remained near 15.
+\end{itemize}
 
 \paragraph{Caveats.} These checks use parameters estimated by maximum
 likelihood, not a posterior distribution, and take the counts in the latest
