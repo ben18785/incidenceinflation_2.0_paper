@@ -244,8 +244,8 @@ summarise_comparison <- function(scores) {
     dplyr::group_by(.data$model) %>%
     dplyr::summarise(
       n_fits = dplyr::n(),
+      n_better = sum(.data$wis_relative < 1),
       wis_relative = exp(mean(log(.data$wis_relative))),
-      proportion_better = mean(.data$wis_relative < 1),
       coverage_90 = mean(.data$coverage_90), coverage_50 = mean(.data$coverage_50),
       .groups = "drop")
   list(

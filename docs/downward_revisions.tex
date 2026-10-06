@@ -1577,8 +1577,8 @@ draw from one gamma distribution for every case. Cases are in practice
 reported in clumps: a backlog is cleared, a batch of laboratory results
 arrives, or little is entered over a weekend. This section checks the model of
 reporting against data and describes three extensions to it. The extensions
-have so far been implemented only for the checks described here, and not in
-the sampler.
+were first examined with the checks described here, and have since been put
+into the sampler (\S\ref{sec:reportingsampler}).
 
 \subsection{A check made with hindsight}
 
@@ -1821,7 +1821,163 @@ reports remained near 15.
 likelihood, not a posterior distribution, and take the counts in the latest
 report as true. They show that the extended model of reporting describes
 complete data better; they do not show that it improves estimates of recent
-case counts, which requires the extensions to be put into the sampler.
+case counts, which is examined in \S\ref{sec:comparison}.
+
+\subsection{The extensions in the sampler}\label{sec:reportingsampler}
+
+The three extensions are implemented in the package, each switched on
+separately and all off by default, in which case results are unchanged. They
+act through a single quantity, the probability that a case remains undetected,
+and so combine with sporadic revisions, misdating and batches without change to
+those.
+
+\paragraph{Daily multipliers.} The multiplier \eqref{eq:multiplier} belongs to
+a report and applies to every day since the report before it. Writing $m_k$
+for the multiplier of the first report made on or after day $k$, the
+probability that a case with onset day $t$ remains undetected at the end of
+day $t'$ is
+\begin{equation}\label{eq:Seffective}
+\log S^{*}_\theta(t\given t') = \log S_\theta(t\given t)
+-\sum_{k=t+1}^{t'} m_k\,\bigl[\log S_\theta(t\given k-1)-\log S_\theta(t\given k)\bigr],
+\end{equation}
+where $S_\theta$ is \eqref{eq:tail} if the tail is included. $S^{*}_\theta$
+replaces $S_\theta$ wherever the latter appears: in the probability that a
+genuine case is newly reported, in the rates at which erroneous and batch
+records are entered, in the starting distributions, and in \eqref{eq:Stilde}.
+Days for which no later report exists have $m_k=1$.
+
+\paragraph{Sampling.} Four steps are added to each iteration, each conditional
+on the true counts and all other parameters.
+\begin{itemize}[itemsep=2pt]
+\item \emph{The tail.} $(\chi,\mu_\chi)$ are updated together by random-walk
+Metropolis on $(\operatorname{logit}\chi,\log\mu_\chi)$, with a beta prior for
+$\chi$ and a gamma prior for $\mu_\chi$.
+\item \emph{The day of the week.} The free $\log\psi_w$ are updated together by
+random-walk Metropolis, each with a normal prior of mean zero.
+\item \emph{The random effects of reports.} Updating each $z_{t'}$ in turn
+against the full likelihood would be slow, since every onset day still being
+reported is involved. Instead, $\log z_{t'}$ is restricted to a grid of 61
+values from $-3$ to $3$, and new values are proposed for a block of reports at
+once from an approximation to their conditional distribution: that obtained by
+taking reported counts never to fall, so that the cases newly reported in each
+interval are binomial and the reports separate. The proposal is accepted or
+rejected using the exact likelihood, so that the approximation affects only
+the rate of acceptance, which is high when erroneous records are few.
+\item \emph{The spread of the random effects.} With an inverse-gamma prior for
+$\sigma_z^2$, it is drawn directly from its inverse-gamma conditional
+distribution given the $z_{t'}$.
+\end{itemize}
+In view of the difficulty with the Netherlands data described above, the prior
+for $\sigma_z^2$ is informative by default: inverse-gamma with shape 3 and
+scale 0.2, which has mean 0.1 (a standard deviation of about 0.3).
+
+\paragraph{Other changes.} The onset days treated as completely reported are
+now determined from the delay distribution including its tail. Data can be
+simulated with all three extensions. Metropolis steps now reject a proposal
+whose probability cannot be evaluated, which had stopped a small number of
+earlier fits.
+
+\paragraph{Checks.} With no erroneous records the likelihood equals a product
+of binomial probabilities calculated directly from \eqref{eq:pmultiplier}. The
+likelihood agrees with the frequencies of trajectories simulated with a tail,
+multipliers and erroneous records together. The update of the random effects of
+reports was compared with their conditional posterior obtained by enumeration
+in a small example. A short run recovers an effect of the day of the week
+simulated with reports at weekends at a tenth of the usual rate.
+
+\subsection{Which mechanisms improve estimates of recent counts?}\label{sec:comparison}
+
+The checks above concern how well a model describes reporting once it is
+complete. To see which mechanisms improve estimates made at the time, six
+models were fitted to four datasets as of a series of analysis dates, 17 in
+all: five for Bundibugyo virus disease (9 August to 5 September 2026, before
+the large correction) and four each for measles in the Netherlands, deaths in
+Sweden and cases in Hong Kong. Every model includes sporadic revisions, within
+which the extensions act, and a negative binomial renewal model:
+\begin{itemize}[itemsep=2pt]
+\item sporadic revisions only;
+\item with the tail;
+\item with the effect of the day of the week;
+\item with the effects of the day of the week and of reports;
+\item with all three;
+\item with misdating (\S\ref{sec:misdating}), for reference.
+\end{itemize}
+Each fit was a single chain of 600 iterations. Estimates for the latest 14
+onset days were compared with the counts in the last report available for each
+onset day, using the weighted interval score formed from the posterior median
+and the central 50\% and 90\% intervals, divided by the mean count. The score
+rewards both accuracy and calibration, and smaller is better.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccccc}
+\toprule
+ & Sporadic & Tail & Day of & Day of week, & All & Misdating \\
+ & only & & week & report & three & \\
+\midrule
+Bundibugyo virus disease & 0.129 & 0.174 & 0.117 & 0.164 & 0.549 & 0.099 \\
+Measles, Netherlands & 0.414 & 0.399 & 0.304 & 0.423 & 0.323 & 0.415 \\
+COVID-19 deaths, Sweden & 0.217 & 0.242 & 0.125 & 0.165 & 0.113 & 0.242 \\
+COVID-19 cases, Hong Kong & 0.085 & 0.094 & 0.083 & 0.066 & 0.090 & 0.078 \\
+\addlinespace
+Relative to sporadic only & 1.00 & 1.11 & 0.81 & 1.00 & 1.24 & 0.94 \\
+Better than sporadic only & & 9 of 17 & 13 of 17 & 10 of 17 & 8 of 17 & 10 of 17 \\
+\bottomrule
+\end{tabular}
+\caption{Weighted interval score for the latest 14 onset days, averaged over
+analysis dates. `Relative to sporadic only' is the geometric mean, over the 17
+analyses, of the ratio of a model's score to that of the model with sporadic
+revisions only for the same dataset and date; the last row counts the analyses
+in which the ratio is below one.}
+\label{tab:comparison}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{comparison_scores.png}
+\caption{Weighted interval score of each model for each dataset. Points are
+analysis dates, joined by lines; bars are means.}
+\label{fig:comparison}
+\end{figure}
+
+\begin{itemize}[itemsep=2pt]
+\item \emph{The effect of the day of the week is the one extension which
+clearly helps.} It improved the score in 13 of the 17 analyses, by about a
+fifth on average, and most where reporting follows the working week: the score
+fell from 0.217 to 0.125 for Sweden and from 0.414 to 0.304 for measles. It
+made little difference for Hong Kong, where no such pattern was found.
+\item \emph{Adding a random effect of each report did not help on balance.} It
+improved every analysis for Hong Kong, but made the scores for the other three
+datasets worse than with the day of the week alone. The effect of the latest
+reports, which matters most, is the one about which there is least
+information, since it must be separated from the unknown counts of the latest
+onset days.
+\item \emph{The tail made estimates worse, sometimes badly.} For Bundibugyo
+virus disease with all three extensions, the tail was estimated to hold about
+a third of cases with a mean delay of over 100 days, and recent counts were
+overestimated by 76\% on average. The cause appears to be that cases continued
+to be added to onset days already months old, which the model can explain only
+by a very long tail; it then expects the same of recent onset days. With
+hindsight and onset days followed from the start, the tail fitted to the same
+outbreak had a mean of 8 days (table~\ref{tab:reportingmodelsbvd}). A tail
+which describes complete data well is therefore not safely estimated while
+reporting is incomplete.
+\item \emph{Misdating helped for Bundibugyo virus disease} (a score of 0.099
+against 0.129, better in four of five analyses) and slightly for Hong Kong,
+and made no difference or a little harm elsewhere. It offers another account
+of late additions to old onset days, as corrections, which does not carry over
+to recent onset days in the way the tail does.
+\item \emph{Coverage remained below nominal} for every model: 90\% intervals
+covered between 64\% and 73\% of counts overall.
+\end{itemize}
+
+\paragraph{Caveats.} There are 17 analyses, of four datasets, each a single
+short chain; differences between adjacent columns for one dataset are within
+what a different seed might produce. For measles every model underestimated
+recent counts by about a half, for reasons not yet established, so that the
+comparison there is among poor estimates. The Netherlands COVID-19 data were
+left out, since their delay distribution is not described by any of these
+models.
 
 \begin{thebibliography}{2}
 \bibitem{bajaj2025}
