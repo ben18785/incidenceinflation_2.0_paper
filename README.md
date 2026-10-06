@@ -76,3 +76,7 @@ the counts for the same onset dates as known on 15 October.
 - `data/raw/`: downloaded files (not tracked).
 - `data/processed/`: snapshot tables derived from the raw files (tracked).
 - `outputs/`: figures, tables and `results.md`, written by the pipeline.
+
+Further snapshot data in `data/processed/`, not yet analysed: Hong Kong COVID-19
+cases by onset date with every change to an individual case's onset date
+(`scripts/download_hk.R`), and Swedish COVID-19 deaths by date of death.

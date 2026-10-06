@@ -958,7 +958,7 @@ had mean and standard deviation $0.005$. Each fit was a single chain of 800
 iterations, of which the first half was discarded. Estimates were compared with
 the counts for the same onset days in the file published on 15 October 2020.
 
-\subsection{Results}
+\subsection{Results for a single analysis date}
 
 \begin{table}[h]
 \centering
@@ -990,7 +990,7 @@ as in table~\ref{tab:simulation}. Parameters are posterior medians.}
 
 Table~\ref{tab:netherlands} and figure~\ref{fig:rivmnowcast} show the results.
 \begin{itemize}[itemsep=2pt]
-\item \emph{Misdating improved the estimates.} With misdating, the absolute
+\item \emph{Misdating improved the estimates at this date.} With misdating, the absolute
 error for the latest 14 onset days fell from 16\% to 10\% and the coverage of
 90\% intervals rose from about 0.1 to between 0.6 and 0.7. The misdating
 probability was estimated at about 4\% and the estimated reporting delay was
@@ -1009,9 +1009,95 @@ days, when cases were rising sharply. The renewal model here is Poisson; a
 negative binomial renewal model would widen the intervals.
 \end{itemize}
 
-\paragraph{Caveats.} This is a single analysis date in a single country. The
-serial interval was assumed rather than estimated, and the counts known on
-15 October are themselves subject to later revision.
+\subsection{Results across a range of analysis dates}
+
+To see whether the results for 1 September are typical, the original model and
+the full model without batches (here called the model with misdating) were
+fitted as of six dates a week apart, from 4 August to 8 September 2020. The
+dates were chosen to fall at the end of one of the seven-day periods over which
+$R_t$ is constant; otherwise the latest period holds only a few onset days,
+about which the data say very little. Figure~\ref{fig:rivmcasesdates} shows the
+estimates of case counts and table~\ref{tab:netherlandsdates} their accuracy.
+Figure~\ref{fig:rivmrtdates} shows the estimates of $R_t$, along with two
+simpler estimates obtained from equation (2.4) of \cite{bajaj2025} by taking a
+series of counts as complete: a \emph{naive} estimate, which uses the counts
+reported by the analysis date, and a \emph{gold standard}, which uses the
+counts known on 15 October.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccccc}
+\toprule
+ & \multicolumn{3}{c}{Original model} & \multicolumn{3}{c}{Model with misdating} \\
+\cmidrule(lr){2-4}\cmidrule(lr){5-7}
+Analysis date & Coverage & Abs.\ error & Bias & Coverage & Abs.\ error & Bias \\
+\midrule
+4 August & 0.00 & 0.25 & $-0.25$ & 0.00 & 0.27 & $-0.27$ \\
+11 August & 0.07 & 0.29 & $0.22$ & 0.07 & 0.27 & $0.18$ \\
+18 August & 0.14 & 0.19 & $0.17$ & 0.14 & 0.19 & $0.16$ \\
+25 August & 0.21 & 0.15 & $0.15$ & 0.43 & 0.12 & $0.11$ \\
+1 September & 0.07 & 0.16 & $0.02$ & 0.71 & 0.10 & $-0.05$ \\
+8 September & 0.21 & 0.16 & $-0.08$ & 0.07 & 0.15 & $-0.14$ \\
+\addlinespace
+Mean & 0.12 & 0.20 & & 0.24 & 0.18 & \\
+\bottomrule
+\end{tabular}
+\caption{Estimates of case counts for the latest 14 onset days in the
+Netherlands, as of six analysis dates, compared with the counts known on
+15 October 2020. Measures are as in table~\ref{tab:simulation}.}
+\label{tab:netherlandsdates}
+\end{table}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{rivm_cases_dates.png}
+\caption{Estimates of cases by onset day in the Netherlands as of six analysis
+dates (panels). Orange: cases reported by the analysis date. Black: cases known
+on 15 October 2020. Blue and green: posterior medians and 90\% intervals from
+the original model and the model with misdating.}
+\label{fig:rivmcasesdates}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{rivm_Rt_dates.png}
+\caption{Estimates of $R_t$ in the Netherlands as of six analysis dates
+(panels): medians and 90\% intervals. The naive estimate takes the counts
+reported by the analysis date as complete; the gold standard uses the counts
+known on 15 October 2020.}
+\label{fig:rivmrtdates}
+\end{figure}
+
+\begin{itemize}[itemsep=2pt]
+\item \emph{The result for 1 September is not typical.} Averaged over the six
+dates, misdating reduced the absolute error for the latest 14 onset days only
+from 20\% to 18\%, and raised coverage only from 0.12 to 0.24. It helped
+clearly on 25 August and 1 September, made little difference on the first
+three dates and gave lower coverage on 8 September.
+\item \emph{Both models correct the naive estimate of $R_t$.} The naive
+estimate for the latest week was between 0.3 and 0.4 at every date, because
+few of that week's cases had yet been reported. Both models removed this
+artefact.
+\item \emph{Neither model anticipates a change in transmission in the latest
+week.} For the latest week the estimates of $R_t$ stayed close to those for the
+week before. Where transmission had changed, they were wrong: on 11 August both
+models gave about 1.4 where the gold standard is about 1.0, and projected
+continued growth in cases which did not occur; on 8 September both gave about
+1.2 where the gold standard is about 1.45, and underestimated a sharp rise.
+\item \emph{Intervals are too narrow.} Coverage was far below 90\% at every
+date for both models. Errors of this kind, in which the latest week is
+extrapolated from the one before, are not reflected in the posterior
+intervals.
+\item \emph{Estimates for onset days more than about a week old are good} at
+every date, for both models.
+\end{itemize}
+
+\paragraph{Caveats.} These analyses concern one period in one country. The
+serial interval was assumed rather than estimated, each fit is a single chain
+of 800 iterations whose convergence was not assessed, and the counts known on
+15 October are themselves subject to later revision. The counts by onset day
+rise abruptly at the end of August (figure~\ref{fig:rivmdelays}), which may
+reflect a change in reporting as well as in transmission.
 
 \section{Other data}\label{sec:otherdata}
 
