@@ -149,9 +149,11 @@ list(
              save_plot(plot_real_ecdf(rivm_ecdf),
                        "outputs/rivm_ecdf.png", 9, 3.6),
              format = "file", deployment = "main"),
+  # analysis dates a week apart, chosen so that each falls at the end of one of
+  # the seven-day periods over which Rt is constant: otherwise the latest
+  # period holds only a few onset days, about which the data say very little
   tar_target(rivm_dates_now,
-             as.Date(c("2020-08-03", "2020-08-11", "2020-08-19",
-                       "2020-08-27", "2020-09-04", "2020-09-12"))),
+             as.Date("2020-07-01") + 7 * (5:10) - 1),
   tar_target(rivm_analysis_dates,
              prepare_real_analysis(rivm_snapshots, "2020-07-01", rivm_dates_now),
              pattern = map(rivm_dates_now), iteration = "list"),

@@ -924,6 +924,28 @@ every seventh daily file from 1 July to 15 October 2020.}
 \label{fig:rivmsnapshots}
 \end{figure}
 
+\paragraph{Reporting delays.} Figure~\ref{fig:rivmdelays} shows, with
+hindsight, how quickly cases came to be reported. For each onset day it gives
+the count reported by each delay as a proportion of the count known on
+15 October. Half of the cases eventually known were reported within six or
+seven days of onset. The curves have a long tail: after 40 days, a few percent
+of the cases eventually known had yet to appear. For some onset days the
+proportion falls from one day to the next, where counts were revised
+downwards.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{rivm_cases_periods.png}\\[4pt]
+\includegraphics[width=\textwidth]{rivm_ecdf.png}
+\caption{Top: cases by onset day in the Netherlands as known on 15 October
+2020, divided into three periods. Bottom: for each onset day within each
+period, the proportion of the cases known on 15 October which had been
+reported by each delay (lines, coloured by the count known on 15 October). The
+dashed orange line is the mean across onset days and the solid orange lines
+mark the delay by which half had been reported.}
+\label{fig:rivmdelays}
+\end{figure}
+
 \subsection{Models}
 
 The three models of \S\ref{sec:simulation} were fitted, along with the full
@@ -990,6 +1012,74 @@ negative binomial renewal model would widen the intervals.
 \paragraph{Caveats.} This is a single analysis date in a single country. The
 serial interval was assumed rather than estimated, and the counts known on
 15 October are themselves subject to later revision.
+
+\section{Other data}\label{sec:otherdata}
+
+Two further sets of snapshots have been assembled, to which the models have
+not yet been fitted.
+
+\subsection{Hong Kong: a history of a line list}
+
+The Centre for Health Protection in Hong Kong published a list of every case
+of COVID-19, giving a case number, the date of report and the date of symptom
+onset. Each day's version of the list has been retained by the government's
+open data portal.\footnote{\url{https://data.gov.hk}, historical archive of
+\texttt{enhanced\_sur\_covid\_19\_eng.csv}.} We obtained the 357 versions from
+4 April 2020 to 31 March 2021. The last of these lists 11{,}462 cases, of which
+8{,}040 have a date of onset; most of the remainder are recorded as
+asymptomatic.
+
+Because a case keeps its number, every change in the counts by onset day can
+be traced to an individual case, which the counts alone do not allow.
+Table~\ref{tab:hongkong} gives every change to the onset recorded for a case
+between successive versions.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrl}
+\toprule
+Change & Cases & Effect on counts by onset day \\
+\midrule
+Onset date replaced by a different date & 17 & one falls, another rises \\
+Onset date withdrawn & 25 & one falls \\
+Onset date supplied where there was none & 110 & one rises \\
+Case removed from the list & 0 & \\
+\bottomrule
+\end{tabular}
+\caption{Changes to the onset recorded for individual cases in Hong Kong
+between successive daily versions of the case list, 4 April 2020 to 31 March
+2021. Of the 25 onset dates withdrawn, 20 were replaced by `asymptomatic' and
+5 by `pending'.}
+\label{tab:hongkong}
+\end{table}
+
+Three points bear on the models above.
+\begin{itemize}[itemsep=2pt]
+\item \emph{No case was deleted.} Every fall in a count by onset day arose
+because an onset date was replaced or withdrawn. In these data, the spurious
+records of \S3 correspond to cases reclassified as asymptomatic, not to
+records which were removed.
+\item \emph{Onset dates were seldom moved to a nearby day.} Of the 17 moves,
+only 4 were by one or two days. Several appear to be corrections of errors of
+entry: shifts of 14, 30 and 31 days, and an onset year entered as 1900 and
+corrected the next day. The shift distribution $h$ of \S\ref{sec:misdating},
+which is confined to nearby days, does not describe these.
+\item \emph{Revisions were rare, and mostly upward.} About 0.5\% of the cases
+with an onset date had it replaced or withdrawn. Onset dates supplied late were
+more than twice as common, and were supplied a median of two weeks after the
+case was first listed.
+\end{itemize}
+
+\subsection{Sweden: deaths by date of death}
+
+The Public Health Agency of Sweden published deaths from COVID-19 by date of
+death, and each day's publication has been archived and
+compiled.\footnote{\url{https://github.com/adamaltmejd/covid}} These are counts
+by date of death rather than of onset, to which the renewal model applies less
+naturally, but they are revised in the same way. For deaths in 2020, as
+published up to 31 March 2021, there were 2{,}193 upward revisions to the count
+for a date of death and 208 downward revisions, none by more than three: 234
+deaths were removed, against 9{,}340 added.
 
 \begin{thebibliography}{1}
 \bibitem{bajaj2025}
