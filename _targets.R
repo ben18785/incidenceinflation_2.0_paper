@@ -21,6 +21,7 @@ n_iterations <- as.integer(Sys.getenv("PIPELINE_ITERATIONS", "700"))
 n_iterations_real <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_REAL", "800"))
 n_iterations_bvd <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_BVD", "600"))
 n_iterations_demo <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_DEMO", "1500"))
+n_chains_bvd <- as.integer(Sys.getenv("PIPELINE_CHAINS_BVD", "3"))
 
 list(
   # ---- simulated data -------------------------------------------------------
@@ -514,15 +515,33 @@ list(
   tar_target(bvd_cp_analysis,
              prepare_bvd_changepoint_analysis(bvd_snapshots, bvd_dates_now),
              pattern = map(bvd_dates_now), iteration = "list"),
-  tar_target(bvd_cp_result,
-             fit_bvd_changepoints(bvd_cp_analysis, n_iterations_demo),
-             pattern = map(bvd_cp_analysis), iteration = "list"),
+  # several chains for each analysis date, from different starting values
+  tar_target(bvd_cp_chain_index, seq_len(n_chains_bvd)),
+  tar_target(bvd_cp_chain,
+             fit_bvd_changepoint_chain(bvd_cp_analysis, bvd_cp_chain_index,
+                                       n_iterations_demo),
+             pattern = cross(bvd_cp_analysis, bvd_cp_chain_index),
+             iteration = "list"),
+  tar_target(bvd_cp_result, {
+    dates <- purrr::map_chr(bvd_cp_chain, ~as.character(.$analysis$date_now))
+    purrr::map(split(bvd_cp_chain, dates), combine_bvd_chains)
+  }, deployment = "main"),
+  tar_target(bvd_cp_diagnostics,
+             purrr::map_dfr(bvd_cp_result, function(result) {
+               dplyr::bind_cols(
+                 dplyr::tibble(date_now = result$analysis$date_now,
+                               n_chains = result$n_chains,
+                               rhat_cases_max = max(result$rhat_cases$rhat, na.rm = TRUE)),
+                 result$diagnostics)
+             }), deployment = "main"),
   tar_target(bvd_cp_scores, score_bvd_changepoints(bvd_cp_result),
              deployment = "main"),
   tar_target(files_bvd_cp, {
     latest <- bvd_cp_result[[which.max(purrr::map_dbl(
       bvd_cp_result, ~as.numeric(.$analysis$date_now)))]]
     utils::write.csv(bvd_cp_scores, "outputs/bvd_changepoint_scores.csv",
+                     row.names = FALSE)
+    utils::write.csv(bvd_cp_diagnostics, "outputs/bvd_changepoint_diagnostics.csv",
                      row.names = FALSE)
     utils::write.csv(summarise_bvd_changepoint_parameters(latest),
                      "outputs/bvd_changepoint_parameters.csv", row.names = FALSE)
@@ -532,7 +551,9 @@ list(
       save_plot(plot_bvd_changepoint_parameters(latest),
                 "outputs/bvd_changepoint_parameters.png", 12, 10),
       save_plot(plot_bvd_changepoint_cases(bvd_cp_result),
-                "outputs/bvd_changepoint_cases.png", 12, 7))
+                "outputs/bvd_changepoint_cases.png", 12, 7),
+      save_plot(plot_bvd_changepoint_convergence(latest),
+                "outputs/bvd_changepoint_convergence.png", 12, 8))
   }, format = "file", deployment = "main"),
   tar_target(bvd_cp_checks,
              bvd_changepoint_checks(bvd_cp_result[[which.max(purrr::map_dbl(

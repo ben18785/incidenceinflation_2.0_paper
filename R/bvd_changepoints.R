@@ -4,52 +4,113 @@
 
 #' Prepares the snapshots as of a date, from the date of the first situation
 #' report
-prepare_bvd_changepoint_analysis <- function(snapshots, date_now) {
+#'
+#' Onset days before the first report are not analysed, since nothing is known
+#' of how they were reported soon after onset. Their counts, as given in the
+#' report of the analysis date, are kept as known earlier cases for the
+#' renewal equation (for the serial_max days before the first onset day
+#' analysed).
+prepare_bvd_changepoint_analysis <- function(snapshots, date_now, serial_max = 40) {
+  date_now <- as.Date(date_now)
   analysis <- prepare_bvd_analysis(snapshots, date_now,
                                    date_earliest = min(snapshots$date_reported),
                                    Rt_piece_width = 1)
-  analysis$weekday_first <- as.integer(format(min(analysis$dates$date), "%u"))
+  date_start <- min(analysis$dates$date)
+  analysis$weekday_first <- as.integer(format(date_start, "%u"))
+  known <- snapshots %>%
+    dplyr::filter(.data$date_reported <= date_now) %>%
+    dplyr::filter(.data$date_reported == max(.data$date_reported),
+                  .data$date_onset < date_start,
+                  .data$date_onset >= date_start - serial_max)
+  before <- dplyr::tibble(date = seq(date_start - serial_max, date_start - 1, by = 1)) %>%
+    dplyr::left_join(dplyr::select(known, date = "date_onset", "cases_reported"),
+                     by = "date") %>%
+    dplyr::mutate(cases = dplyr::coalesce(as.numeric(.data$cases_reported), 0))
+  analysis$cases_before <- before$cases
+  analysis$dates_before <- before$date
   analysis
 }
 
-#' Fits the model with changes in Rt and in the delay to an analysis
+#' Runs one chain of the model with changes in Rt and in the delay
 #'
-#' The model is that of fit_changepoint_comparison(): sporadic revisions, an
-#' effect of the day of the week of each report and a negative binomial
-#' renewal model. Draws of all quantities are kept (thinned to at most
-#' n_draws) for plot_bvd_changepoint_detail().
-fit_bvd_changepoints <- function(analysis, niterations, n_draws = 400,
-                                 serial_parameters = list(mean = 15.3, sd = 9.3)) {
+#' The model has sporadic revisions, an effect of the day of the week of each
+#' report and a negative binomial renewal model, with the cases of earlier
+#' onset days supplied as known. Chains differ in their seed and in the
+#' values from which they start. Draws of all quantities after the first half
+#' are kept, thinned to at most n_draws.
+fit_bvd_changepoint_chain <- function(analysis, chain, niterations, n_draws = 300,
+                                      serial_parameters = list(mean = 15.3, sd = 9.3)) {
+  set.seed(1000 * chain + as.integer(analysis$date_now) %% 1000)
   settings <- fit_settings()
-  mechanisms <- dplyr::filter(changepoint_models(),
-                              .data$model == "Rt and delay changes")
+  snapshots <- analysis$snapshots
+  onset_times <- sort(unique(snapshots$time_onset))
+  data <- dplyr::mutate(snapshots, Rt_index = 1)
+  largest_reported <- snapshots %>%
+    dplyr::group_by(.data$time_onset) %>%
+    dplyr::summarise(cases_true = max(.data$cases_reported))
+  days_before_end <- max(onset_times) - largest_reported$time_onset
+  # starting values which differ between chains
+  inflation <- c(2, 1, 3.5)[(chain - 1) %% 3 + 1]
+  initial_cases_true <- largest_reported %>%
+    dplyr::mutate(cases_true = ceiling(
+      .data$cases_true * (1 + inflation * exp(-days_before_end / 4)) +
+        5 * (days_before_end < 5)))
+  initial_reporting <- list(list(mean = 7, sd = 4), list(mean = 4, sd = 2.5),
+                            list(mean = 11, sd = 7))[[(chain - 1) %% 3 + 1]]
+  initial_overdispersion <- c(10, 3, 30)[(chain - 1) %% 3 + 1]
+
+  largest_fall <- incidenceinflation::max_downward_revision(snapshots)
   initial <- settings$initial_revisions
   initial$weekday <- TRUE
   initial$weekday_first <- analysis$weekday_first
-  largest_fall <- incidenceinflation::max_downward_revision(analysis$snapshots)
-  fit <- fit_changepoint_model(
-    analysis$snapshots, mechanisms, serial_parameters, niterations, seed = 1,
-    is_negative_binomial = TRUE,
-    initial_revision_parameters = initial,
-    priors_extra = list(
-      revisions = utils::modifyList(settings$priors$revisions,
-                                    list(eta_mu = 0.005, eta_sigma = 0.005)),
-      max_erroneous = max(3, largest_fall + 1)),
-    priors_reporting = list(mean_mu = 7, mean_sigma = 10, sd_mu = 5, sd_sigma = 5))
-  out <- list(model = mechanisms$model, analysis = analysis,
-              summary = summarise_fit(fit), changes = fit$changes,
-              largest_fall = largest_fall, serial_parameters = serial_parameters)
+  priors <- list(
+    Rt = settings$priors$Rt,
+    reporting = list(mean_mu = 7, mean_sigma = 10, sd_mu = 5, sd_sigma = 5),
+    max_cases = ceiling(4 * max(initial_cases_true$cases_true) + 50),
+    overdispersion = list(mean = 20, sd = 20),
+    revisions = utils::modifyList(settings$priors$revisions,
+                                  list(eta_mu = 0.005, eta_sigma = 0.005)),
+    max_erroneous = max(3, largest_fall + 1),
+    Rt_changepoints = list(),
+    reporting_changepoints = list())
+
+  time_start <- Sys.time()
+  fit <- tryCatch(
+    incidenceinflation::mcmc_single(
+      niterations = niterations,
+      snapshot_with_Rt_index_df = data,
+      priors = priors,
+      serial_parameters = serial_parameters,
+      initial_cases_true = initial_cases_true,
+      initial_reporting_parameters = initial_reporting,
+      initial_Rt = dplyr::tibble(Rt_index = 1, Rt = 1),
+      reporting_metropolis_parameters = settings$reporting_metropolis,
+      print_to_screen = FALSE,
+      initial_overdispersion = initial_overdispersion,
+      is_negative_binomial = TRUE,
+      overdispersion_metropolis_sd = 3,
+      initial_revision_parameters = initial,
+      revision_metropolis_parameters = settings$revision_metropolis,
+      cases_before = analysis$cases_before),
+    error = function(e) list(error = conditionMessage(e)))
+  out <- list(chain = chain, analysis = analysis, niterations = niterations,
+              seconds = as.numeric(Sys.time() - time_start, units = "secs"),
+              largest_fall = largest_fall, serial_parameters = serial_parameters,
+              error = fit$error)
   if(!is.null(fit$error))
     return(out)
 
   warmup <- floor(niterations / 2)
   kept <- unique(round(seq(warmup + 1, niterations, length.out = n_draws)))
   f_keep <- function(df) {
-    dplyr::select(dplyr::filter(df, .data$iteration %in% kept), -dplyr::any_of("chain"))
+    df %>%
+      dplyr::filter(.data$iteration %in% kept) %>%
+      dplyr::select(-dplyr::any_of("chain")) %>%
+      dplyr::mutate(chain = chain)
   }
   out$draws <- list(
     cases = f_keep(fit$cases),
-    Rt = dplyr::rename(f_keep(fit$Rt), time_onset = "Rt_index"),
+    Rt = f_keep(fit$Rt),
     reporting = f_keep(fit$reporting_days),
     overdispersion = f_keep(fit$overdispersion),
     revisions = f_keep(fit$revisions),
@@ -57,6 +118,169 @@ fit_bvd_changepoints <- function(analysis, niterations, n_draws = 400,
     Rt_changepoints = f_keep(fit$Rt_changepoints),
     reporting_changepoints = f_keep(fit$reporting_changepoints))
   out
+}
+
+#' Potential scale reduction factor (split R-hat) of a quantity
+#'
+#' @param values draws of the quantity, in order within each chain
+#' @param chain the chain of each draw
+#' Each chain is split in half, so that a drift within chains is detected as
+#' well as a difference between them. Values near 1 indicate agreement;
+#' values above about 1.1 indicate that the chains have not converged.
+split_rhat <- function(values, chain) {
+  halves <- unlist(lapply(split(values, chain), function(x) {
+    n <- floor(length(x) / 2)
+    list(x[seq_len(n)], x[n + seq_len(n)])
+  }), recursive = FALSE)
+  n <- min(lengths(halves))
+  if(n < 2)
+    return(NA_real_)
+  halves <- lapply(halves, function(x) x[seq_len(n)])
+  means <- vapply(halves, mean, numeric(1))
+  within <- mean(vapply(halves, stats::var, numeric(1)))
+  between <- n * stats::var(means)
+  if(within == 0)
+    return(ifelse(between == 0, 1, Inf))
+  sqrt(((n - 1) / n * within + between / n) / within)
+}
+
+#' The quantities whose convergence is monitored, for each kept draw
+bvd_monitored_draws <- function(draws) {
+  day_last <- max(draws$Rt$time_onset)
+  f_key <- function(df) dplyr::arrange(df, .data$chain, .data$iteration)
+  delay <- f_key(dplyr::filter(draws$reporting, .data$time_onset == day_last))
+  Rt <- f_key(dplyr::filter(draws$Rt, .data$time_onset == day_last))
+  cases <- draws$cases %>%
+    dplyr::filter(.data$time_onset > day_last - 14) %>%
+    dplyr::group_by(.data$chain, .data$iteration) %>%
+    dplyr::summarise(value = sum(.data$cases_true), .groups = "drop") %>%
+    f_key()
+  weekdays <- f_key(draws$reporting_effects)
+  out <- dplyr::bind_rows(
+    dplyr::transmute(Rt, .data$chain, .data$iteration,
+                     quantity = "Rt, latest onset day", value = .data$Rt),
+    dplyr::transmute(cases, .data$chain, .data$iteration,
+                     quantity = "Cases, latest 14 onset days", .data$value),
+    dplyr::transmute(delay, .data$chain, .data$iteration,
+                     quantity = "Mean delay, latest onset day", value = .data$mean),
+    dplyr::transmute(delay, .data$chain, .data$iteration,
+                     quantity = "Sd of delay, latest onset day", value = .data$sd),
+    dplyr::transmute(f_key(draws$reporting_changepoints), .data$chain, .data$iteration,
+                     quantity = "Number of changes in delay", value = .data$n_changes),
+    dplyr::transmute(f_key(draws$Rt_changepoints), .data$chain, .data$iteration,
+                     quantity = "Number of changes in Rt", value = .data$n_changes),
+    dplyr::transmute(f_key(draws$overdispersion), .data$chain, .data$iteration,
+                     quantity = "Overdispersion (kappa)", value = .data$overdispersion),
+    dplyr::transmute(f_key(draws$revisions), .data$chain, .data$iteration,
+                     quantity = "eta", value = .data$eta),
+    dplyr::transmute(f_key(draws$revisions), .data$chain, .data$iteration,
+                     quantity = "rho", value = .data$rho))
+  for(name in grep("^weekday_", names(weekdays), value = TRUE))
+    out <- dplyr::bind_rows(out, dplyr::transmute(
+      weekdays, .data$chain, .data$iteration,
+      quantity = paste("Day of week effect", sub("weekday_", "", name)),
+      value = .data[[name]]))
+  dplyr::mutate(out, quantity = factor(.data$quantity, levels = unique(.data$quantity)))
+}
+
+#' Combines the chains run for one analysis
+#'
+#' @param chains a list of results of fit_bvd_changepoint_chain() for the same
+#' analysis
+#' @return a result holding summaries over all chains, the pooled draws and
+#' the convergence diagnostics
+combine_bvd_chains <- function(chains) {
+  analysis <- chains[[1]]$analysis
+  failed <- purrr::keep(chains, ~!is.null(.$error))
+  chains <- purrr::keep(chains, ~is.null(.$error))
+  out <- list(model = "Rt and delay changes", analysis = analysis,
+              largest_fall = chains[[1]]$largest_fall,
+              serial_parameters = chains[[1]]$serial_parameters,
+              n_chains = length(chains),
+              errors = purrr::map_chr(failed, "error"))
+  if(length(chains) == 0) {
+    out$summary <- list(error = paste(out$errors, collapse = "; "), seconds = NA)
+    return(out)
+  }
+  names_draws <- names(chains[[1]]$draws)
+  draws <- stats::setNames(lapply(names_draws, function(name) {
+    purrr::map_dfr(chains, ~.$draws[[name]])
+  }), names_draws)
+  # iterations are numbered within chains: give each draw its own number
+  draws <- lapply(draws, function(df) {
+    dplyr::mutate(df, iteration_chain = .data$iteration,
+                  iteration = .data$chain * 1e6 + .data$iteration)
+  })
+
+  f_starts <- function(df, index) {
+    df %>%
+      dplyr::group_by(.data$iteration) %>%
+      dplyr::arrange(.data$time_onset, .by_group = TRUE) %>%
+      dplyr::mutate(is_start = c(FALSE, diff(.data[[index]]) != 0)) %>%
+      dplyr::group_by(.data$time_onset) %>%
+      dplyr::summarise(probability = mean(.data$is_start))
+  }
+  out$summary <- list(
+    model = out$model, error = NULL,
+    seconds = sum(purrr::map_dbl(chains, "seconds")),
+    niterations = chains[[1]]$niterations,
+    cases = summarise_draws_by(draws$cases, .data$cases_true, .data$time_onset),
+    Rt = summarise_draws_by(draws$Rt, .data$Rt, .data$time_onset))
+  out$changes <- list(
+    Rt_n = draws$Rt_changepoints$n_changes,
+    Rt_starts = f_starts(draws$Rt, "Rt_index"),
+    reporting_n = draws$reporting_changepoints$n_changes,
+    reporting_starts = f_starts(draws$reporting, "reporting_piece_index"),
+    reporting_days = summarise_draws_by(draws$reporting, .data$mean, .data$time_onset))
+  out$draws <- draws
+
+  monitored <- bvd_monitored_draws(draws)
+  out$monitored <- monitored
+  by_chain <- monitored %>%
+    dplyr::group_by(.data$quantity, .data$chain) %>%
+    dplyr::summarise(median = stats::median(.data$value), .groups = "drop") %>%
+    tidyr::pivot_wider(names_from = "chain", values_from = "median",
+                       names_prefix = "median_chain_")
+  out$diagnostics <- monitored %>%
+    dplyr::arrange(.data$chain, .data$iteration) %>%
+    dplyr::group_by(.data$quantity) %>%
+    dplyr::summarise(rhat = split_rhat(.data$value, .data$chain),
+                     median = stats::median(.data$value), .groups = "drop") %>%
+    dplyr::left_join(by_chain, by = "quantity")
+  # every onset day's cases, of which the worst is reported
+  rhat_cases <- draws$cases %>%
+    dplyr::arrange(.data$chain, .data$iteration) %>%
+    dplyr::group_by(.data$time_onset) %>%
+    dplyr::summarise(rhat = split_rhat(.data$cases_true, .data$chain))
+  out$rhat_cases <- rhat_cases
+  out
+}
+
+#' Traces of the monitored quantities in each chain
+plot_bvd_changepoint_convergence <- function(result) {
+  quantities <- c("Rt, latest onset day", "Cases, latest 14 onset days",
+                  "Mean delay, latest onset day", "Sd of delay, latest onset day",
+                  "Number of changes in delay", "Number of changes in Rt",
+                  "Overdispersion (kappa)", "eta", "rho")
+  labels <- result$diagnostics %>%
+    dplyr::filter(.data$quantity %in% quantities) %>%
+    dplyr::mutate(label = sprintf("%s (R-hat %.2f)", .data$quantity, .data$rhat))
+  df <- result$monitored %>%
+    dplyr::filter(.data$quantity %in% quantities) %>%
+    dplyr::left_join(dplyr::select(labels, "quantity", "label"), by = "quantity") %>%
+    dplyr::mutate(label = factor(.data$label, levels = labels$label[
+      match(quantities, labels$quantity)]),
+      iteration_chain = .data$iteration - .data$chain * 1e6)
+  ggplot2::ggplot(df, ggplot2::aes(x = .data$iteration_chain, y = .data$value,
+                                   colour = factor(.data$chain))) +
+    ggplot2::geom_line(linewidth = 0.3, alpha = 0.85) +
+    ggplot2::facet_wrap(~label, scales = "free_y", ncol = 3,
+                        labeller = ggplot2::label_wrap_gen(34)) +
+    ggplot2::scale_colour_manual(values = c("#0072B2", "#D55E00", "#009E73",
+                                            "#CC79A7", "#E69F00")) +
+    ggplot2::labs(x = "Iteration (after the first half)", y = NULL, colour = "Chain") +
+    theme_paper() +
+    ggplot2::theme(strip.text = ggplot2::element_text(size = 8, colour = "grey10"))
 }
 
 #' Weights of the serial interval over a number of days
@@ -75,7 +299,7 @@ serial_weights <- function(serial_parameters, serial_max = 40) {
 #'
 #' @return a tibble of quantiles of projected cases for each day ahead
 project_cases <- function(draws, serial_parameters, days_ahead = 14,
-                          serial_max = 40) {
+                          serial_max = 40, cases_before = NULL) {
   w <- serial_weights(serial_parameters, serial_max)
   day_last <- max(draws$cases$time_onset)
   projections <- purrr::map_dfr(unique(draws$cases$iteration), function(i) {
@@ -85,7 +309,7 @@ project_cases <- function(draws, serial_parameters, days_ahead = 14,
       dplyr::pull(.data$cases_true)
     Rt <- draws$Rt$Rt[draws$Rt$iteration == i & draws$Rt$time_onset == day_last]
     kappa <- draws$overdispersion$overdispersion[draws$overdispersion$iteration == i]
-    cases <- c(rep(0, serial_max), cases)
+    cases <- c(rep(0, serial_max), cases_before, cases)
     for(h in seq_len(days_ahead)) {
       n <- length(cases)
       infectiousness <- sum(w * rev(cases[(n - serial_max + 1):n]))
@@ -125,7 +349,7 @@ summarise_bvd_changepoint_parameters <- function(result) {
 #' delay and the other parameters of the model
 #'
 #' @return a named list of plots, without titles
-bvd_changepoint_panels <- function(result, days_ahead = 14, day_first = 8) {
+bvd_changepoint_panels <- function(result, days_ahead = 14, day_first = 1) {
   draws <- result$draws
   dates <- result$analysis$dates
   date_origin <- min(dates$date) - 1
@@ -146,7 +370,8 @@ bvd_changepoint_panels <- function(result, days_ahead = 14, day_first = 8) {
   cases <- result$summary$cases %>%
     dplyr::left_join(reported, by = "time_onset") %>%
     dplyr::mutate(date = date_origin + .data$time_onset)
-  projected <- project_cases(draws, result$serial_parameters, days_ahead) %>%
+  projected <- project_cases(draws, result$serial_parameters, days_ahead,
+                             cases_before = result$analysis$cases_before) %>%
     dplyr::mutate(date = date_origin + .data$time_onset)
   # joined to the last estimate so that the bands meet
   projected <- dplyr::bind_rows(
@@ -557,11 +782,12 @@ bvd_changepoint_checks <- function(result, seed = 1) {
     Rt <- dplyr::arrange(dplyr::filter(draws$Rt, .data$iteration == i),
                          .data$time_onset)$Rt
     kappa <- draws$overdispersion$overdispersion[draws$overdispersion$iteration == i]
-    padded <- c(rep(0, length(w)), cases)
+    before <- result$analysis$cases_before
+    padded <- c(rep(0, length(w)), before, cases)
     infectiousness <- purrr::map_dbl(seq_len(n_days), function(t) {
-      sum(w * rev(padded[t:(t + length(w) - 1)]))
+      sum(w * rev(padded[length(before) + t:(t + length(w) - 1)]))
     })
-    informative <- infectiousness > 0 & seq_len(n_days) > 14
+    informative <- infectiousness > 0
     cases_replicate <- stats::rnbinom(n_days, mu = Rt * infectiousness, size = kappa)
     f_dispersion <- function(x) {
       mean((x[informative] - Rt[informative] * infectiousness[informative])^2 /
