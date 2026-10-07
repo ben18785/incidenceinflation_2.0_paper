@@ -170,7 +170,7 @@ unreported becomes
 which is a proper survival function for any positive multipliers. The free
 $\log\psi_w$ have independent $N(0,1)$ priors.
 
-\paragraph{Changes in the delay.} $\theta$ is piecewise constant over onset
+\paragraph{Changes in the delay.} $\theta$ is assumed piecewise constant over onset
 days: a case's delay distribution depends on its onset day. The segments have
 the same form of prior as those of $R_t$, \eqref{eq:partitionprior} with
 $a=1$, $b=T$ and $\ell=7$, and are independent of them, with their own
@@ -181,11 +181,7 @@ segments are tied together by a hierarchical prior:
 \end{equation}
 with $\mu_0\sim\operatorname{gamma}$ (mean 7, standard deviation 10 days),
 $\sigma_0\sim\operatorname{gamma}$ (mean 5, standard deviation 5 days) and
-$s\sim N^{+}(0,\,0.5^2)$. There are two reasons for this. A recent segment,
-about which little is yet known, is drawn towards the delay of earlier ones.
-And the marginal likelihood of an additional segment, which is what penalises
-it, then depends on the estimated spread $s$ and not on how vague the priors
-for $\mu$ and $\sigma$ are.
+$s\sim N^{+}(0,\,0.5^2)$.
 
 \paragraph{Reported counts.} Between consecutive reports on days $t_{j-1}$
 and $t_j$, three things can happen to the count for onset day $t$:
