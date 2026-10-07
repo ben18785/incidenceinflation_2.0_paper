@@ -48,10 +48,28 @@ I(t)\sim\nb\bigl(R_t\,\Lambda_t,\;\kappa\bigr),\qquad
 \Lambda_t=\sum_{s=1}^{40}\omega_s\,I(t-s),
 \end{equation}
 a negative binomial distribution with mean $R_t\Lambda_t$ and variance
-$R_t\Lambda_t(1+R_t\Lambda_t/\kappa)$. The weights $\omega_s$ are those of a
-gamma serial interval with mean 15.3 and standard deviation 9.3 days, the
-values estimated for Zaire ebolavirus in West Africa \cite{who2014}, there
-being no published estimate for Bundibugyo virus.
+$R_t\Lambda_t(1+R_t\Lambda_t/\kappa)$.
+
+\paragraph{Serial interval.} The weights $\omega_s$ are a gamma serial
+interval made discrete. With $F$ the distribution function of a gamma
+distribution with mean 15.3 and standard deviation 9.3 days,
+\begin{equation}\label{eq:weights}
+\omega_s=\frac{F(s+\tfrac12)-F(s-\tfrac12)}
+{\sum_{u=1}^{40}\bigl[F(u+\tfrac12)-F(u-\tfrac12)\bigr]},\qquad s=1,\dots,40.
+\end{equation}
+The mean and standard deviation are those estimated for Zaire ebolavirus in
+West Africa \cite{who2014}, there being no published estimate for Bundibugyo
+virus. Cutting the distribution off at 40 days removes 1.8\% of its mass, and
+the weights are rescaled to sum to one; as used, the serial interval has mean
+14.7 and standard deviation 8.2 days. The same weights are used in every part
+of the fitting.
+
+\paragraph{The start of the series.} Onset days before the first analysed are
+taken to have no cases in \eqref{eq:renewal}, although there were cases then.
+The infectiousness $\Lambda_t$ of the first weeks is therefore understated and
+$R_t$ overstated: greatly in the first week, and by a diminishing amount for
+about a month, since most of the weight of the serial interval lies within 30
+days. Estimates of $R_t$ before mid-August should be read with this in mind.
 
 \subsection{Changes in $R_t$}\label{sec:Rt}
 
@@ -74,12 +92,57 @@ on its number of changes,
 p(\tau_1,\dots,\tau_K) \propto B(a+K,\,b+T-1-K)\;
 \mathbf{1}[\text{every segment has at least } \ell \text{ days}],
 \end{equation}
-where $B$ is the beta function. We take $a=1$, $b=T$ and $\ell=7$. Without the
-minimum length, $K$ would be beta-binomial with
-$\Pr(K=0)=T/(2T-1)\approx\tfrac12$ and mean $(T-1)/(T+1)\approx 1$; the
-minimum length moves a little more probability towards few changes. The prior
-therefore favours no change, and since $p_R$ is learned the penalty for a
-further change adapts to the number already supported. The minimum length
+where $B$ is the beta function. We take $a=1$, $b=T$ and $\ell=7$.
+
+\paragraph{Implied prior on the number of changes.} Equation
+\eqref{eq:partitionmarginal} is the weight of a \emph{single} partition, that
+is, of one particular set of days on which changes occur. It falls steeply
+with the number of changes: with $a=1$, $b=T=82$ it is $1/163$ for the one
+partition with no change and $1/(163\times 162)$ for each partition with one
+change. This does not mean that almost all prior probability is on $K=0$,
+because the number of partitions with $k$ changes grows almost as quickly. The
+prior probability of $k$ changes is the weight of one such partition
+multiplied by the number of them, $N_\ell(k)$:
+\begin{equation}\label{eq:priorK}
+\Pr(K=k)=\frac{N_\ell(k)\,B(a+k,\,b+T-1-k)}
+{\sum_{j\ge 0}N_\ell(j)\,B(a+j,\,b+T-1-j)}.
+\end{equation}
+\begin{itemize}[itemsep=2pt]
+\item \emph{Without a minimum length} ($\ell=1$), a change can occur on any of
+the $T-1$ days after the first, so $N_1(k)=\binom{T-1}{k}$, the denominator
+is $B(a,b)$ and $K$ is beta-binomial:
+\begin{equation}\label{eq:betabinomial}
+\Pr(K=k)=\binom{T-1}{k}\frac{B(a+k,\,b+T-1-k)}{B(a,b)},\qquad
+\Pr(K=0)=\frac{B(a,\,b+T-1)}{B(a,b)}=\frac{b}{b+T-1}\ \text{ for } a=1.
+\end{equation}
+With $b=T=82$ this gives $\Pr(K=0)=82/163=0.50$ and a mean of
+$(T-1)a/(a+b)=0.98$ changes.
+\item \emph{With a minimum length of $\ell$ days}, as fitted, the weight of
+each allowed partition is unchanged but fewer are allowed. The number of ways
+of dividing $T$ days into $k+1$ segments of at least $\ell$ days each is
+\begin{equation}\label{eq:countvalid}
+N_\ell(k)=\binom{T-\ell(k+1)+k}{k},
+\end{equation}
+and zero if $T<\ell(k+1)$, so that at most 10 changes are possible here. Since
+$N_\ell(k)<N_1(k)$ for $k\ge 1$, by more for larger $k$, probability moves
+towards fewer changes.
+\end{itemize}
+The two priors are
+
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+Number of changes & 0 & 1 & 2 & 3 & 4 or more \\
+\midrule
+No minimum length & 0.50 & 0.25 & 0.13 & 0.06 & 0.06 \\
+Minimum of 7 days (as fitted) & 0.61 & 0.26 & 0.09 & 0.03 & 0.01 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\noindent with a mean of 0.55 changes. The prior therefore favours no change,
+and since $p_R$ is learned the penalty for a further change adapts to the
+number already supported. The minimum length
 prevents a segment being fitted to the last few onset days, for which little
 has yet been reported. This is a product partition model for change points; it
 plays the role of the Pitman--Yor process prior of \cite{creswell2022} with a
