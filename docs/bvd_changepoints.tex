@@ -1,0 +1,259 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+
+% figures are written by the pipeline to outputs/ at the top of the repository
+\graphicspath{{../outputs/}{outputs/}}
+
+\newcommand{\given}{\,|\,}
+\newcommand{\bin}{\operatorname{binomial}}
+\newcommand{\pois}{\operatorname{Poisson}}
+\newcommand{\nb}{\operatorname{NB}}
+
+\title{Bundibugyo virus disease, 2026: estimates from a model in which $R_t$
+and the reporting delay change at unknown times}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+This note describes the model fitted to confirmed cases of Bundibugyo virus
+disease and gives its results as of the situation report of 1 October 2026.
+The notation is that of Bajaj, Thompson and Lambert \cite{bajaj2025}. Fuller
+accounts of each part of the model, of how it is fitted and of how it was
+checked are in the longer document (\texttt{downward\_revisions.tex}).
+
+\section{Data}
+
+Each situation report gives the number of confirmed cases by date of symptom
+onset. Write $C(t\given t')$ for the number with onset on day $t$ shown in the
+report of day $t'$. There are 44 reports, from 12 July to 1 October 2026.
+Onset days from 12 July, the date of the first report, are analysed (82
+days). Earlier onset days are left out: for them nothing is known of reporting
+in the weeks after onset, so the delay then cannot be estimated.
+
+\section{Model}
+
+\subsection{Transmission}
+
+$I(t)$ is the true number of cases with onset on day $t$, which is unknown.
+Given earlier cases it follows the renewal equation with overdispersion,
+\begin{equation}\label{eq:renewal}
+I(t)\sim\nb\bigl(R_t\,\Lambda_t,\;\kappa\bigr),\qquad
+\Lambda_t=\sum_{s=1}^{40}\omega_s\,I(t-s),
+\end{equation}
+a negative binomial distribution with mean $R_t\Lambda_t$ and variance
+$R_t\Lambda_t(1+R_t\Lambda_t/\kappa)$. The weights $\omega_s$ are those of a
+gamma serial interval with mean 15.3 and standard deviation 9.3 days, the
+values estimated for Zaire ebolavirus in West Africa \cite{who2014}, there
+being no published estimate for Bundibugyo virus.
+
+\subsection{Changes in $R_t$}\label{sec:Rt}
+
+$R_t$ is piecewise constant. Onset days $1,\dots,T$ (here $T=82$) are divided
+into $K_R+1$ segments which start on days $1=\tau_0<\tau_1<\dots<\tau_{K_R}$,
+and $R_t=R_j$ for onset days in segment $j$. The number of changes $K_R$ and
+the days $\tau_k$ are unknown.
+
+\paragraph{Prior for the partition.} Each onset day after the first starts a
+new segment with probability $p_R$, independently, and $p_R$ has a beta
+prior:
+\begin{equation}\label{eq:partitionprior}
+p(\tau_1,\dots,\tau_{K}\given p_R) \propto p_R^{K}(1-p_R)^{T-1-K}\;
+\mathbf{1}[\text{every segment has at least } \ell \text{ days}],
+\qquad p_R\sim\operatorname{beta}(a,b).
+\end{equation}
+With $p_R$ integrated out, the prior probability of a partition depends only
+on its number of changes,
+\begin{equation}\label{eq:partitionmarginal}
+p(\tau_1,\dots,\tau_K) \propto B(a+K,\,b+T-1-K)\;
+\mathbf{1}[\text{every segment has at least } \ell \text{ days}],
+\end{equation}
+where $B$ is the beta function. We take $a=1$, $b=T$ and $\ell=7$. Without the
+minimum length, $K$ would be beta-binomial with
+$\Pr(K=0)=T/(2T-1)\approx\tfrac12$ and mean $(T-1)/(T+1)\approx 1$; the
+minimum length moves a little more probability towards few changes. The prior
+therefore favours no change, and since $p_R$ is learned the penalty for a
+further change adapts to the number already supported. The minimum length
+prevents a segment being fitted to the last few onset days, for which little
+has yet been reported. This is a product partition model for change points; it
+plays the role of the Pitman--Yor process prior of \cite{creswell2022} with a
+simpler form.
+
+\paragraph{Prior for the values.} $R_j\sim\operatorname{gamma}(1,1)$
+independently (shape and rate).
+
+\subsection{Reporting}
+
+A case with onset on day $t$ is reported after a delay which has a gamma
+distribution with mean $\mu$ and standard deviation $\sigma$. Write
+$\theta=(\mu,\sigma)$ and $S_\theta(t\given t')$ for the probability that the
+case has not been reported by the end of day $t'$ (evaluated, as in the
+package, at a delay of $t'-t+\tfrac12$ days).
+
+\paragraph{Day of the week.} Reporting is faster or slower according to the
+day of the week on which a report is made. The hazard of reporting on each day
+is multiplied by $\psi_{w}$, where $w$ is the day of the week of the first
+report made on or after that day, with $\sum_w\log\psi_w=0$. Writing $m_k$ for
+the multiplier which applies to day $k$, the probability that a case remains
+unreported becomes
+\begin{equation}\label{eq:Seffective}
+\log S^{*}_\theta(t\given t') = \log S_\theta(t\given t)
+-\sum_{k=t+1}^{t'} m_k\,\bigl[\log S_\theta(t\given k-1)-\log S_\theta(t\given k)\bigr],
+\end{equation}
+which is a proper survival function for any positive multipliers. The free
+$\log\psi_w$ have independent $N(0,1)$ priors.
+
+\paragraph{Changes in the delay.} $\theta$ is piecewise constant over onset
+days: a case's delay distribution depends on its onset day. The segments have
+the same form of prior as those of $R_t$, \eqref{eq:partitionprior} with
+$a=1$, $b=T$ and $\ell=7$, and are independent of them, with their own
+probability of a change. The values $\theta_j=(\mu_j,\sigma_j)$ of the
+segments are tied together by a hierarchical prior:
+\begin{equation}\label{eq:delayhierarchy}
+\log\mu_j\sim N(\log\mu_0,\,s^2),\qquad \log\sigma_j\sim N(\log\sigma_0,\,s^2),
+\end{equation}
+with $\mu_0\sim\operatorname{gamma}$ (mean 7, standard deviation 10 days),
+$\sigma_0\sim\operatorname{gamma}$ (mean 5, standard deviation 5 days) and
+$s\sim N^{+}(0,\,0.5^2)$. There are two reasons for this. A recent segment,
+about which little is yet known, is drawn towards the delay of earlier ones.
+And the marginal likelihood of an additional segment, which is what penalises
+it, then depends on the estimated spread $s$ and not on how vague the priors
+for $\mu$ and $\sigma$ are.
+
+\paragraph{Reported counts.} Between consecutive reports on days $t_{j-1}$
+and $t_j$, three things can happen to the count for onset day $t$:
+\begin{align}
+d_j(t) &\sim \bin\bigl(I(t) - D(t\given t_{j-1}),\; p_j(t)\bigr)
+  && \text{genuine cases newly reported,} \label{eq:d}\\
+n_j(t) &\sim \pois\bigl(\eta\,I(t)\,[S^{*}_\theta(t\given t_{j-1}) - S^{*}_\theta(t\given t_j)]\bigr)
+  && \text{erroneous records newly entered,} \label{eq:n}\\
+e_j(t) &\sim \bin\bigl(E(t\given t_{j-1}),\; 1-(1-\rho)^{\,t_j-t_{j-1}}\bigr)
+  && \text{erroneous records withdrawn,} \label{eq:m}
+\end{align}
+where $p_j(t)=1-S^{*}_\theta(t\given t_j)/S^{*}_\theta(t\given t_{j-1})$,
+$D$ is the number of genuine cases reported so far and $E$ the number of
+erroneous records currently held, so that
+\begin{equation}\label{eq:deltaC}
+C(t\given t_j)-C(t\given t_{j-1}) = d_j(t)+n_j(t)-e_j(t).
+\end{equation}
+With $\eta=0$ this is the model of \cite{bajaj2025}, in which counts can only
+rise. The erroneous records allow the occasional small falls seen in the data
+(the largest, for these onset days, is of 2 cases). $\eta$ is the expected
+number of erroneous records per genuine case reported, with a gamma prior of
+mean and standard deviation 0.005; $\rho$ is the daily probability that an
+erroneous record is withdrawn, with a $\operatorname{beta}(1,4)$ prior.
+
+$D$ and $E$ are not observed. Given $I(t)$ and the parameters, the likelihood
+of the counts for onset day $t$, $L_t$, is obtained by a forward recursion
+over the possible values of $E$ (at most 3 here), and onset days are
+independent given the $I(t)$.
+
+\subsection{Summary of unknowns and priors}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+Unknown & Meaning & Prior \\
+\midrule
+$I(t)$ & true cases with onset on day $t$ & renewal model \eqref{eq:renewal} \\
+$\kappa$ & overdispersion of transmission & gamma, mean 20, s.d.\ 20 \\
+$K_R$, $\tau$ & changes in $R_t$ & \eqref{eq:partitionprior}, $a=1$, $b=T$, $\ell=7$ \\
+$R_j$ & $R_t$ in segment $j$ & gamma, shape 1, rate 1 \\
+$K_\theta$, $\tau^\theta$ & changes in the delay & \eqref{eq:partitionprior}, $a=1$, $b=T$, $\ell=7$ \\
+$\mu_j$, $\sigma_j$ & mean and s.d.\ of delay in segment $j$ & \eqref{eq:delayhierarchy} \\
+$\mu_0$, $\sigma_0$ & centres of the delay parameters & gamma, means 7 and 5, s.d.\ 10 and 5 \\
+$s$ & spread of the delay parameters & half-normal, s.d.\ 0.5 \\
+$\psi_w$ & effect of day of the week of a report & $\log\psi_w\sim N(0,1)$, summing to zero \\
+$\eta$ & erroneous records per genuine report & gamma, mean 0.005, s.d.\ 0.005 \\
+$\rho$ & daily probability of withdrawal & beta$(1,4)$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{Fitting}
+
+The posterior is sampled by Markov chain Monte Carlo. Each iteration updates,
+in turn:
+\begin{enumerate}[itemsep=2pt]
+\item \emph{Each $I(t)$}, drawn from its conditional distribution over
+integers, which combines the renewal terms for day $t$ and for the 40 days
+after it with the reporting likelihood $L_t$.
+\item \emph{The segments of $R_t$ and their values}, drawn jointly and exactly
+given the $I(t)$, $\kappa$ and $p_R$. With $R_j$ integrated out, each
+possible segment of onset days $u$ to $v$ has a marginal likelihood $M(u,v)$;
+under a Poisson model this has a closed form, and under the negative binomial
+model used here it is calculated numerically over a grid of 400 values of
+$R$ between 0.02 and 20. Given $p_R$ the weight of a partition is a product
+over its segments, so the summed weight $F(v)$ of all partitions of days
+$1,\dots,v$ satisfies
+\begin{equation}\label{eq:partitionforward}
+F(v)=\sum_{u}F(u-1)\,M(u,v)\,p_R^{\,[u>1]}(1-p_R)^{\,v-u},\qquad F(0)=1,
+\end{equation}
+the sum being over starts $u$ which leave the segment long enough. The
+partition is drawn by sampling the start of the last segment with
+probabilities proportional to the terms of $F(T)$, then the start of the
+segment before it, and so on. Each $R_j$ is then drawn from its conditional
+distribution on the grid, and $p_R$ from
+$\operatorname{beta}(a+K_R,\,b+T-1-K_R)$. No moves which change the dimension
+are needed.
+\item \emph{The segments of the delay}, by Metropolis--Hastings moves, with
+their probability of a change integrated out as in
+\eqref{eq:partitionmarginal}: a random-walk update of $(\mu_j,\sigma_j)$ in
+each segment; a move which either splits a segment in two (one part keeping
+its parameters and the other taking new ones proposed log-normally about
+them) or merges two neighbouring segments; a move which shifts a change by up
+to three days; and a random-walk update of $(\mu_0,\sigma_0,s)$. A split of a
+segment which can be split in $n$ ways, taking $K$ changes to $K+1$, is
+accepted with probability $\min(1,A)$,
+\begin{equation}\label{eq:splitratio}
+A=\frac{\prod_t L_t(\theta^*)}{\prod_t L_t(\theta_j)}\times
+\frac{B(a+K+1,\,b+T-2-K)}{B(a+K,\,b+T-1-K)}\times
+\frac{p(\theta^*\given\mu_0,\sigma_0,s)}{q(\theta^*\given\theta_j)}\times n,
+\end{equation}
+the products being over the onset days which take the new parameters
+$\theta^*$ and $q$ being the density from which these were proposed; a merge
+is accepted with the reciprocal for the split which would reverse it.
+\item \emph{$\kappa$, the $\psi_w$, and $(\eta,\rho)$}, each by random-walk
+Metropolis.
+\end{enumerate}
+Results are from a single chain of 1500 iterations, of which the first half
+is discarded.
+
+\paragraph{Checks of the software.} With no data, both samplers of segments
+reproduce the prior \eqref{eq:partitionmarginal}; the exact draw of
+partitions agrees with enumeration of all partitions of short series; and on
+simulated data with two changes in each of $R_t$ and the delay, all four were
+placed within three days of the truth with posterior probability one when
+transmission was not overdispersed (see the longer document).
+
+%%RESULTS%%
+
+\begin{thebibliography}{3}
+
+\bibitem{bajaj2025}
+Bajaj S, Thompson R, Lambert B. 2025
+A renewal-equation approach to estimating $R_t$ and infectious disease case
+counts in the presence of reporting delays.
+\emph{Phil. Trans. R. Soc. A} \textbf{383}, 20240357.
+\href{https://doi.org/10.1098/rsta.2024.0357}{doi:10.1098/rsta.2024.0357}
+
+\bibitem{creswell2022}
+Creswell R, Robinson M, Gavaghan D, Parag KV, Lei CL, Lambert B. A Bayesian
+nonparametric method for detecting rapid changes in disease transmission.
+\emph{medRxiv} 2022.
+\href{https://doi.org/10.1101/2022.07.04.22277234}{doi:10.1101/2022.07.04.22277234}.
+
+\bibitem{who2014}
+WHO Ebola Response Team. 2014
+Ebola virus disease in West Africa---the first 9 months of the epidemic and
+forward projections.
+\emph{N. Engl. J. Med.} \textbf{371}, 1481--1495.
+\end{thebibliography}
+
+\end{document}

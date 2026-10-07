@@ -509,6 +509,43 @@ list(
                 "outputs/changepoint_comparison_trajectories.png", 13, 6.5))
   }, format = "file", deployment = "main"),
 
+  # Bundibugyo virus disease at each analysis date with the model in which both
+  # Rt and the delay change, from the date of the first situation report
+  tar_target(bvd_cp_analysis,
+             prepare_bvd_changepoint_analysis(bvd_snapshots, bvd_dates_now),
+             pattern = map(bvd_dates_now), iteration = "list"),
+  tar_target(bvd_cp_result,
+             fit_bvd_changepoints(bvd_cp_analysis, n_iterations_demo),
+             pattern = map(bvd_cp_analysis), iteration = "list"),
+  tar_target(bvd_cp_scores, score_bvd_changepoints(bvd_cp_result),
+             deployment = "main"),
+  tar_target(files_bvd_cp, {
+    latest <- bvd_cp_result[[which.max(purrr::map_dbl(
+      bvd_cp_result, ~as.numeric(.$analysis$date_now)))]]
+    utils::write.csv(bvd_cp_scores, "outputs/bvd_changepoint_scores.csv",
+                     row.names = FALSE)
+    utils::write.csv(summarise_bvd_changepoint_parameters(latest),
+                     "outputs/bvd_changepoint_parameters.csv", row.names = FALSE)
+    c("outputs/bvd_changepoint_scores.csv", "outputs/bvd_changepoint_parameters.csv",
+      save_plot(plot_bvd_changepoint_main(latest),
+                "outputs/bvd_changepoint_main.png", 12, 8.5),
+      save_plot(plot_bvd_changepoint_parameters(latest),
+                "outputs/bvd_changepoint_parameters.png", 12, 10),
+      save_plot(plot_bvd_changepoint_cases(bvd_cp_result),
+                "outputs/bvd_changepoint_cases.png", 12, 7))
+  }, format = "file", deployment = "main"),
+  tar_target(bvd_cp_checks,
+             bvd_changepoint_checks(bvd_cp_result[[which.max(purrr::map_dbl(
+               bvd_cp_result, ~as.numeric(.$analysis$date_now)))]]),
+             deployment = "main"),
+  tar_target(files_bvd_cp_checks, {
+    utils::write.csv(bvd_cp_checks$summary, "outputs/bvd_changepoint_checks.csv",
+                     row.names = FALSE)
+    c("outputs/bvd_changepoint_checks.csv",
+      save_plot(plot_bvd_changepoint_checks(bvd_cp_checks),
+                "outputs/bvd_changepoint_checks.png", 12, 13))
+  }, format = "file", deployment = "main"),
+
   # demonstrations that changes are recovered from simulated data
   tar_target(changepoint_demo_scenario, changepoint_demonstration_scenarios()),
   tar_target(changepoint_demo_dataset,
