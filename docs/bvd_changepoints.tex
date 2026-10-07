@@ -80,17 +80,17 @@ the days $\tau_k$ are unknown.
 new segment with probability $p_R$, independently, and $p_R$ has a beta
 prior:
 \begin{equation}\label{eq:partitionprior}
-p(\tau_1,\dots,\tau_{K}\given p_R) \propto p_R^{K}(1-p_R)^{T-1-K}\;
-\mathbf{1}[\text{every segment has at least } \ell \text{ days}],
-\qquad p_R\sim\operatorname{beta}(a,b).
+p(\tau_1,\dots,\tau_{K}\given p_R) \propto p_R^{K}(1-p_R)^{T-1-K},
+\qquad p_R\sim\operatorname{beta}(a,b),
 \end{equation}
+for partitions in which every segment has at least $\ell$ days, and zero
+otherwise.
 With $p_R$ integrated out, the prior probability of a partition depends only
 on its number of changes,
 \begin{equation}\label{eq:partitionmarginal}
-p(\tau_1,\dots,\tau_K) \propto B(a+K,\,b+T-1-K)\;
-\mathbf{1}[\text{every segment has at least } \ell \text{ days}],
+p(\tau_1,\dots,\tau_K) \propto B(a+K,\,b+T-1-K)
 \end{equation}
-where $B$ is the beta function. We take $a=1$, $b=T$ and $\ell=7$.
+for the same partitions, where $B$ is the beta function. We take $a=1$, $b=T$ and $\ell=7$.
 
 \paragraph{Implied prior on the number of changes.} Equation
 \eqref{eq:partitionmarginal} is the weight of a \emph{single} partition, that
@@ -109,10 +109,10 @@ multiplied by the number of them, $N_\ell(k)$:
 \item \emph{Without a minimum length} ($\ell=1$), a change can occur on any of
 the $T-1$ days after the first, so $N_1(k)=\binom{T-1}{k}$, the denominator
 is $B(a,b)$ and $K$ is beta-binomial:
-\begin{equation}\label{eq:betabinomial}
-\Pr(K=k)=\binom{T-1}{k}\frac{B(a+k,\,b+T-1-k)}{B(a,b)},\qquad
-\Pr(K=0)=\frac{B(a,\,b+T-1)}{B(a,b)}=\frac{b}{b+T-1}\ \text{ for } a=1.
-\end{equation}
+\begin{align}
+\Pr(K=k)&=\binom{T-1}{k}\frac{B(a+k,\,b+T-1-k)}{B(a,b)}, \label{eq:betabinomial}\\
+\Pr(K=0)&=\frac{B(a,\,b+T-1)}{B(a,b)}=\frac{b}{b+T-1}\quad\text{when } a=1.
+\end{align}
 With $b=T=82$ this gives $\Pr(K=0)=82/163=0.50$ and a mean of
 $(T-1)a/(a+b)=0.98$ changes.
 \item \emph{With a minimum length of $\ell$ days}, as fitted, the weight of
@@ -191,11 +191,11 @@ for $\mu$ and $\sigma$ are.
 and $t_j$, three things can happen to the count for onset day $t$:
 \begin{align}
 d_j(t) &\sim \bin\bigl(I(t) - D(t\given t_{j-1}),\; p_j(t)\bigr)
-  && \text{genuine cases newly reported,} \label{eq:d}\\
+  && \text{genuine, newly reported,} \label{eq:d}\\
 n_j(t) &\sim \pois\bigl(\eta\,I(t)\,[S^{*}_\theta(t\given t_{j-1}) - S^{*}_\theta(t\given t_j)]\bigr)
-  && \text{erroneous records newly entered,} \label{eq:n}\\
+  && \text{erroneous, entered,} \label{eq:n}\\
 e_j(t) &\sim \bin\bigl(E(t\given t_{j-1}),\; 1-(1-\rho)^{\,t_j-t_{j-1}}\bigr)
-  && \text{erroneous records withdrawn,} \label{eq:m}
+  && \text{erroneous, withdrawn,} \label{eq:m}
 \end{align}
 where $p_j(t)=1-S^{*}_\theta(t\given t_j)/S^{*}_\theta(t\given t_{j-1})$,
 $D$ is the number of genuine cases reported so far and $E$ the number of
