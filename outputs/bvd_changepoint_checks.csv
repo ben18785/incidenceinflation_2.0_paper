@@ -1,10 +1,10 @@
 "part","statistic","observed","replicate_q05","replicate_q50","replicate_q95","p_value"
-"Reporting","Largest number of cases added to one onset day in one report",46,36,42,48,0.14
-"Reporting","Number of updates in which a count falls",37,17.95,26,39,0.11
-"Reporting","Proportion of updates in which a count does not change",0.60153452685422,0.579028132992327,0.591304347826087,0.602583120204604,0.0875
-"Reporting","Proportion reported within 14 days of onset",0.826224328593997,0.792207397145321,0.806848632413096,0.823778404076818,0.035
-"Reporting","Proportion reported within 3 days of onset",0.187002096436059,0.189757017176372,0.207041072925398,0.226744066101877,0.965
-"Reporting","Proportion reported within 7 days of onset",0.48448275862069,0.460328964566648,0.481985925414013,0.502786234917209,0.425
-"Reporting","Variation between reports in cases added (sd / mean)",0.71200018675796,0.639733276613424,0.674640919062673,0.704847447980064,0.03
-"Transmission","Dispersion of cases about the renewal mean (variance / mean)",4.66691341122126,9.97182977734158,15.1773738325638,23.9824852309737,1
-"Transmission","Variation in cases between days of the week of onset",0.0923906398110225,0.0850177564731651,0.154751103653782,0.261091414513219,0.935
+"Reporting","Largest number of cases added to one onset day in one report",46,36,42,48,0.152222222222222
+"Reporting","Number of updates in which a count falls",37,17,26,38,0.0788888888888889
+"Reporting","Proportion of updates in which a count does not change",0.60153452685422,0.578005115089514,0.59079283887468,0.60306905370844,0.0844444444444444
+"Reporting","Proportion reported within 14 days of onset",0.826224328593997,0.792285479040962,0.808567838781596,0.822323389555196,0.0222222222222222
+"Reporting","Proportion reported within 3 days of onset",0.187002096436059,0.189018126175616,0.207033710866714,0.225770580373926,0.966666666666667
+"Reporting","Proportion reported within 7 days of onset",0.48448275862069,0.463185366454032,0.481366459627329,0.502087730059595,0.397777777777778
+"Reporting","Variation between reports in cases added (sd / mean)",0.71200018675796,0.636958513172605,0.674377651072165,0.709463111409413,0.0388888888888889
+"Transmission","Dispersion of cases about the renewal mean (variance / mean)",3.04280812192053,1.98737551745442,2.91102057289351,4.31039029337749,0.413333333333333
+"Transmission","Variation in cases between days of the week of onset",0.0678559009513597,0.0363639698950005,0.0649732108617428,0.10428996995005,0.443333333333333
