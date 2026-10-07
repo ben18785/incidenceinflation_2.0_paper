@@ -31,6 +31,16 @@ prepare_bvd_changepoint_analysis <- function(snapshots, date_now, serial_max = 4
   analysis
 }
 
+#' Settings for the segments of the reporting delay
+#'
+#' Segments of the delay have at least 14 onset days (those of Rt have at
+#' least 7), and splits, merges and shifts are proposed 50 times in each
+#' iteration, to help the chains move between numbers of changes. These moves
+#' are cheap: 50 of them add about a tenth to the time of an iteration.
+bvd_delay_settings <- function() {
+  list(min_length = 14, n_partition_moves = 50)
+}
+
 #' Runs one chain of the model with changes in Rt and in the delay
 #'
 #' The model has sporadic revisions, an effect of the day of the week of each
@@ -39,7 +49,8 @@ prepare_bvd_changepoint_analysis <- function(snapshots, date_now, serial_max = 4
 #' values from which they start. Draws of all quantities after the first half
 #' are kept, thinned to at most n_draws.
 fit_bvd_changepoint_chain <- function(analysis, chain, niterations, n_draws = 300,
-                                      serial_parameters = list(mean = 15.3, sd = 9.3)) {
+                                      serial_parameters = list(mean = 15.3, sd = 9.3),
+                                      delay_settings = bvd_delay_settings()) {
   set.seed(1000 * chain + as.integer(analysis$date_now) %% 1000)
   settings <- fit_settings()
   snapshots <- analysis$snapshots
@@ -72,7 +83,7 @@ fit_bvd_changepoint_chain <- function(analysis, chain, niterations, n_draws = 30
                                   list(eta_mu = 0.005, eta_sigma = 0.005)),
     max_erroneous = max(3, largest_fall + 1),
     Rt_changepoints = list(),
-    reporting_changepoints = list())
+    reporting_changepoints = delay_settings)
 
   time_start <- Sys.time()
   fit <- tryCatch(
@@ -411,9 +422,8 @@ bvd_changepoint_panels <- function(result, days_ahead = 14, day_first = 1) {
     f_band() +
     ggplot2::geom_rug(data = Rt_changes, ggplot2::aes(alpha = .data$probability),
                       sides = "b", linewidth = 1.2, length = grid::unit(0.08, "npc")) +
-    ggplot2::scale_y_log10() +
     ggplot2::scale_alpha(range = c(0.15, 1), limits = c(0, 1), guide = "none") +
-    ggplot2::labs(x = "Onset date", y = "Rt (log scale)",
+    ggplot2::labs(x = "Onset date", y = "Rt",
                   subtitle = "Marks below: probability of a change on the day (darker is higher).") +
     theme_paper()
 
@@ -902,4 +912,187 @@ plot_bvd_changepoint_checks <- function(checks) {
     c("Counts in the latest report", "Cases added in each report",
       "Summary statistics"))
   patchwork::wrap_plots(panels, ncol = 1, heights = c(1, 1, 2))
+}
+
+# ---- tables and numbers for the write-up -----------------------------------------
+# The note (docs/bvd_changepoints.tex) reads its tables and the numbers quoted
+# in its text from files written here, so that they change with the results.
+
+#' Formats a median and 90% interval as "m (lo to hi)"
+format_interval <- function(values, digits = 2, sep = " to ") {
+  q <- stats::quantile(values, c(0.5, 0.05, 0.95))
+  f <- function(x) formatC(x, format = "f", digits = digits)
+  paste0(f(q[1]), " (", f(q[2]), sep, f(q[3]), ")")
+}
+
+#' A LaTeX command holding a value
+tex_command <- function(name, value) {
+  paste0("\\newcommand{\\", name, "}{", value, "}")
+}
+
+#' Writes the tables and numbers used by the note
+#'
+#' @param results the combined results for each analysis date
+#' @param scores as returned by score_bvd_changepoints()
+#' @param diagnostics convergence diagnostics for every date
+#' @param checks as returned by bvd_changepoint_checks() for the latest date
+#' @return the paths of the files written
+write_bvd_tables <- function(results, scores, diagnostics, checks,
+                             dir = "outputs/tables") {
+  dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+  f_number <- function(x, digits) formatC(x, format = "f", digits = digits)
+  f_date <- function(date) trimws(format(as.Date(date), "%e %B"))
+  latest <- results[[which.max(purrr::map_dbl(results, ~as.numeric(.$analysis$date_now)))]]
+  date_latest <- latest$analysis$date_now
+
+  # estimates made on each analysis date
+  scores <- dplyr::arrange(scores, .data$date_now)
+  f_tex_interval <- function(x) gsub("%", "\\\\%", x)
+  rows <- purrr::map_chr(seq_len(nrow(scores)), function(i) {
+    row <- scores[i, ]
+    scored <- row$date_now < date_latest
+    paste(
+      f_date(row$date_now),
+      ifelse(scored, f_number(row$wis, 3), ""),
+      ifelse(scored, paste0(round(100 * row$coverage_90), "\\%"), ""),
+      ifelse(scored, sprintf("$%+d\\%%$", as.integer(round(100 * row$bias))), ""),
+      row$Rt_latest, row$delay_latest, sep = " & ")
+  })
+  path_dates <- file.path(dir, "bvd_dates.tex")
+  writeLines(c(
+    "\\begin{tabular}{lccccc}", "\\toprule",
+    "Analysis date & Score & Coverage of & Bias & $R_t$, latest onset day & Mean delay, latest \\\\",
+    " & & 90\\% intervals & & & onset day (days) \\\\", "\\midrule",
+    paste0(rows, " \\\\"), "\\bottomrule", "\\end{tabular}"), path_dates)
+
+  # posterior predictive checks
+  order_checks <- c(
+    "Proportion reported within 3 days of onset",
+    "Proportion reported within 7 days of onset",
+    "Proportion reported within 14 days of onset",
+    "Variation between reports in cases added (sd / mean)",
+    "Largest number of cases added to one onset day in one report",
+    "Proportion of updates in which a count does not change",
+    "Number of updates in which a count falls",
+    "Dispersion of cases about the renewal mean (variance / mean)",
+    "Variation in cases between days of the week of onset")
+  digits_checks <- c(3, 3, 3, 3, 0, 3, 0, 1, 3)
+  summary <- checks$summary[match(order_checks, checks$summary$statistic), ]
+  rows <- purrr::map_chr(seq_len(nrow(summary)), function(i) {
+    d <- digits_checks[i]
+    paste0(summary$statistic[i], " & ", f_number(summary$observed[i], d), " & ",
+           f_number(summary$replicate_q50[i], d), " (",
+           f_number(summary$replicate_q05[i], d), ", ",
+           f_number(summary$replicate_q95[i], d), ") & ",
+           f_number(summary$p_value[i], 2), " \\\\")
+  })
+  path_checks <- file.path(dir, "bvd_checks.tex")
+  writeLines(c(
+    "\\begin{tabular}{lccc}", "\\toprule",
+    "Statistic & Observed & Replicates (median, 90\\% interval) & $p$ \\\\",
+    "\\midrule", "\\emph{Reporting} \\\\", rows[1:7], "\\addlinespace",
+    "\\emph{Transmission} \\\\", rows[8:9], "\\bottomrule", "\\end{tabular}"),
+    path_checks)
+
+  # convergence
+  dates <- sort(unique(as.Date(diagnostics$date_now)))
+  f_rhat <- function(quantity) {
+    values <- purrr::map_dbl(dates, function(date) {
+      rows <- diagnostics[as.Date(diagnostics$date_now) == date &
+                            grepl(quantity, diagnostics$quantity), ]
+      max(rows$rhat)
+    })
+    stats::setNames(values, dates)
+  }
+  rhat <- list(
+    "$R_t$, latest onset day" = f_rhat("^Rt, latest"),
+    "Cases, latest 14 onset days in total" = f_rhat("^Cases, latest"),
+    "Cases, worst single onset day" = purrr::map_dbl(dates, function(date) {
+      diagnostics$rhat_cases_max[as.Date(diagnostics$date_now) == date][1]
+    }),
+    "Number of changes in $R_t$" = f_rhat("^Number of changes in Rt"),
+    "$\\kappa$" = f_rhat("^Overdispersion"),
+    "$\\eta$" = f_rhat("^eta$"),
+    "$\\rho$" = f_rhat("^rho$"),
+    "Mean delay, latest onset day" = f_rhat("^Mean delay"),
+    "Standard deviation of delay, latest onset day" = f_rhat("^Sd of delay"),
+    "Number of changes in delay" = f_rhat("^Number of changes in delay"),
+    "Effects of day of week (worst)" = f_rhat("^Day of week"))
+  rows <- purrr::imap_chr(rhat, ~paste0(.y, " & ", paste(f_number(.x, 2), collapse = " & "),
+                                        " \\\\"))
+  path_rhat <- file.path(dir, "bvd_rhat.tex")
+  writeLines(c(
+    paste0("\\begin{tabular}{l", strrep("c", length(dates)), "}"), "\\toprule",
+    paste0(" & \\multicolumn{", length(dates), "}{c}{Analysis date} \\\\"),
+    paste0("Quantity & ", paste(trimws(format(dates, "%e %b")), collapse = " & "), " \\\\"),
+    "\\midrule", rows[1:7], "\\addlinespace", rows[8:11], "\\bottomrule",
+    "\\end{tabular}"), path_rhat)
+
+  # numbers quoted in the text
+  draws <- latest$draws
+  day_last <- max(draws$Rt$time_onset)
+  delay <- dplyr::filter(draws$reporting, .data$time_onset == day_last)
+  weekdays <- draws$reporting_effects
+  weekday_names <- c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+  projected <- project_cases(draws, latest$serial_parameters,
+                             cases_before = latest$analysis$cases_before)
+  recent <- dplyr::slice_max(latest$summary$cases, .data$time_onset, n = 5)
+  f_p <- function(statistic) {
+    f_number(checks$summary$p_value[checks$summary$statistic == statistic], 2)
+  }
+  scored <- dplyr::filter(scores, .data$date_now < date_latest)
+  core <- c(rhat[[1]], rhat[[3]], rhat[[4]], rhat[[6]], rhat[[7]])
+  kappa <- stats::median(draws$overdispersion$overdispersion)
+  numbers <- c(
+    tex_command("bvdChains", latest$n_chains),
+    tex_command("bvdIterations", latest$summary$niterations),
+    tex_command("bvdDraws", length(unique(draws$cases$iteration))),
+    tex_command("bvdRt", format_interval(draws$Rt$Rt[draws$Rt$time_onset == day_last])),
+    tex_command("bvdRtFirst", f_number(stats::median(
+      draws$Rt$Rt[draws$Rt$time_onset == 1]), 2)),
+    tex_command("bvdRtChanges", f_number(mean(draws$Rt_changepoints$n_changes), 1)),
+    tex_command("bvdRtNoChange", f_number(mean(draws$Rt_changepoints$n_changes == 0), 2)),
+    tex_command("bvdDelayMean", format_interval(delay$mean, 1)),
+    tex_command("bvdDelaySd", format_interval(delay$sd, 1)),
+    tex_command("bvdDelayChanges", f_number(mean(draws$reporting_changepoints$n_changes), 1)),
+    tex_command("bvdDelayNoChange", f_number(
+      mean(draws$reporting_changepoints$n_changes == 0), 2)),
+    tex_command("bvdKappa", format_interval(draws$overdispersion$overdispersion, 0)),
+    tex_command("bvdVarianceRatio", f_number(1 + 50 / kappa, 1)),
+    tex_command("bvdEta", format_interval(draws$revisions$eta, 3)),
+    tex_command("bvdErroneousPerHundred", f_number(
+      100 * stats::median(draws$revisions$eta), 0)),
+    tex_command("bvdRho", format_interval(draws$revisions$rho, 3)),
+    tex_command("bvdErroneousDays", f_number(stats::median(1 / draws$revisions$rho), 0)),
+    tex_command("bvdRecentMedians", paste(round(min(recent$q50)), "and",
+                                          round(max(recent$q50)))),
+    tex_command("bvdRecentInterval", paste(round(min(recent$q05)), "to",
+                                           round(max(recent$q95)))),
+    tex_command("bvdProjection", round(stats::median(projected$q50))),
+    tex_command("bvdProjectionInterval", paste(round(stats::median(projected$q05)), "to",
+                                               round(stats::median(projected$q95)))),
+    tex_command("bvdCoverageMin", paste0(round(100 * min(scored$coverage_90)), "\\%")),
+    tex_command("bvdCoverageMax", paste0(round(100 * max(scored$coverage_90)), "\\%")),
+    tex_command("bvdBiasMax", paste0(round(100 * max(abs(scored$bias))), "\\%")),
+    tex_command("bvdPthree", f_p(order_checks[1])),
+    tex_command("bvdPseven", f_p(order_checks[2])),
+    tex_command("bvdPfourteen", f_p(order_checks[3])),
+    tex_command("bvdPvariation", f_p(order_checks[4])),
+    tex_command("bvdPdispersion", f_p(order_checks[8])),
+    tex_command("bvdPweekdayOnset", f_p(order_checks[9])),
+    tex_command("bvdRhatCoreMax", f_number(max(core), 2)),
+    tex_command("bvdRhatDelayChangesMax", f_number(max(rhat[[10]]), 2)),
+    tex_command("bvdRhatDelayMeanMax", f_number(max(rhat[[8]], rhat[[9]]), 2)),
+    tex_command("bvdRhatWeekdayMax", f_number(max(rhat[[11]]), 2)),
+    tex_command("bvdRhatKappaMax", f_number(max(rhat[[5]]), 2)))
+  for(k in seq_along(weekday_names)) {
+    column <- paste0("weekday_", k)
+    if(column %in% names(weekdays))
+      numbers <- c(numbers, tex_command(paste0("bvdPsi", weekday_names[k]),
+                                        format_interval(weekdays[[column]])))
+  }
+  path_numbers <- file.path(dir, "bvd_numbers.tex")
+  writeLines(c("% written by the pipeline (write_bvd_tables): do not edit by hand",
+               numbers), path_numbers)
+  c(path_dates, path_checks, path_rhat, path_numbers)
 }

@@ -559,6 +559,11 @@ list(
              bvd_changepoint_checks(bvd_cp_result[[which.max(purrr::map_dbl(
                bvd_cp_result, ~as.numeric(.$analysis$date_now)))]]),
              deployment = "main"),
+  # tables and numbers read by docs/bvd_changepoints.tex
+  tar_target(files_bvd_tables,
+             write_bvd_tables(bvd_cp_result, bvd_cp_scores, bvd_cp_diagnostics,
+                              bvd_cp_checks),
+             format = "file", deployment = "main"),
   tar_target(files_bvd_cp_checks, {
     utils::write.csv(bvd_cp_checks$summary, "outputs/bvd_changepoint_checks.csv",
                      row.names = FALSE)
