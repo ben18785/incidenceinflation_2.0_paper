@@ -157,18 +157,42 @@ $\theta=(\mu,\sigma)$ and $S_\theta(t\given t')$ for the probability that the
 case has not been reported by the end of day $t'$ (evaluated, as in the
 package, at a delay of $t'-t+\tfrac12$ days).
 
-\paragraph{Day of the week.} Reporting is allowed to be faster or slower according to the
-day of the week on which a report is made. The hazard of reporting on each day
-is multiplied by $\psi_{w}$, where $w$ is the day of the week of the first
-report made on or after that day, with $\sum_w\log\psi_w=0$. Writing $m_k$ for
-the multiplier which applies to day $k$, the probability that a case remains
-unreported becomes
-\begin{equation}\label{eq:Seffective}
-\log S^{*}_\theta(t\given t') = \log S_\theta(t\given t)
--\sum_{k=t+1}^{t'} m_k\,\bigl[\log S_\theta(t\given k-1)-\log S_\theta(t\given k)\bigr],
+\paragraph{Day of the week.} Reporting is faster or slower according to the
+day of the week on which a report is made. This is expressed through the
+daily hazard of reporting. For a case with onset on day $t$ which is still
+unreported at the end of day $k-1$, the hazard on day $k$ under the gamma
+delay alone is
+\begin{equation}\label{eq:hazard}
+h_\theta(t,k)=\log S_\theta(t\given k-1)-\log S_\theta(t\given k),
 \end{equation}
-which is a proper survival function for any positive multipliers. The free
-$\log\psi_w$ have independent $N(0,1)$ priors.
+so that $S_\theta(t\given t')=S_\theta(t\given t)\exp\{-\sum_{k=t+1}^{t'}h_\theta(t,k)\}$.
+Each day's hazard is multiplied by a factor $m_k$, giving
+\begin{equation}\label{eq:Seffective}
+S^{*}_\theta(t\given t') = S_\theta(t\given t)\,
+\exp\Bigl\{-\sum_{k=t+1}^{t'} m_k\,h_\theta(t,k)\Bigr\},
+\end{equation}
+which is a proper survival function for any positive $m_k$, and is $S_\theta$
+when every $m_k=1$.
+
+The factor $m_k$ is determined by the report in which cases reported on day
+$k$ first appear. There are seven parameters $\psi_1,\dots,\psi_7$, one for
+each day of the week. Let $r(k)$ be the day of the first report made on or
+after day $k$, and $w(\cdot)$ the day of the week of a day. Then
+\begin{equation}\label{eq:multiplier}
+m_k=\psi_{w(r(k))}.
+\end{equation}
+So every day in the interval between two consecutive reports, up to and
+including the day of the later one, has the same factor: the $\psi$ of the
+day of the week of the later report. For example, if reports are made on a
+Friday and then on the following Monday, the Saturday, Sunday and Monday all
+have $m_k=\psi_{\text{Monday}}$. The effect is attached to the report, and
+not to each calendar day, because only the total reported between two reports
+is observed. A value $\psi_w>1$ means that reports made on that day of the
+week contain more newly reported cases than the gamma delay alone would give,
+and $\psi_w<1$ fewer. The $\psi_w$ are constrained by $\sum_w\log\psi_w=0$,
+and the six free $\log\psi_w$ have independent $N(0,1)$ priors. They do not
+depend on the onset day, and are shared by all segments of the delay
+described next.
 
 \paragraph{Changes in the delay.} $\theta$ is assumed piecewise constant over onset
 days: a case's delay distribution depends on its onset day. The segments have
