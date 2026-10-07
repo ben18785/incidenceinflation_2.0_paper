@@ -407,6 +407,22 @@ and latest onset days differ only a little: about half of cases are reported
 within a week of onset in both, and reporting of the latest onset days is
 slower in the first few days and more complete by three weeks.
 
+The posterior for the standard deviation of the delay of the latest onset
+days has two modes (figure~\ref{fig:parameters}e), which correspond to two
+ways of dividing the onset days:
+\begin{itemize}[itemsep=2pt]
+\item \emph{one change}, in early August, after which the delay has mean 8.3
+and standard deviation 6.4 days (41\% of draws);
+\item \emph{two changes}, the second in mid-September, after which the delay
+has mean 8.0 and standard deviation 5.3 days (59\% of draws).
+\end{itemize}
+The second change, if real, is about two and a half weeks before the
+analysis date, where the data cannot yet settle the matter. The sampler moved
+between these two configurations only five times in the 750 iterations kept,
+so the proportions of 41\% and 59\% are not reliable; what can be said is
+that both are supported. The difference between them for the estimates of
+recent cases is small.
+
 \begin{figure}[h]
 \centering
 \includegraphics[width=\textwidth]{bvd_changepoint_parameters.png}
@@ -574,7 +590,10 @@ the delay or in $R_t$ in the week before the analysis date is not reliably
 told from a change in incidence. The estimates for the latest onset days
 assume, in effect, that reporting has continued as in recent weeks.
 \item \emph{A single chain} of 1500 iterations was run for each analysis;
-convergence has not been assessed across chains.
+convergence has not been assessed across chains. The sampler moves slowly
+between different numbers of changes in the delay (see the two modes above),
+so the posterior probabilities of particular numbers of changes are
+approximate.
 \end{itemize}
 
 
