@@ -416,6 +416,72 @@ list(
                 "outputs/comparison_scores.png", 10, 7))
   }, format = "file", deployment = "main"),
 
+  # ---- changes at unknown times in Rt and in the reporting delay ---------------
+  tar_target(changepoint_grid,
+             tidyr::expand_grid(changepoint_regimes(),
+                                replicate = seq_len(n_replicates))),
+  tar_target(changepoint_dataset,
+             simulate_changepoint_dataset(changepoint_grid, changepoint_grid$replicate),
+             pattern = map(changepoint_grid), iteration = "list"),
+  tar_target(changepoint_model, changepoint_models()),
+  tar_target(changepoint_result,
+             fit_changepoint_simulation(changepoint_dataset, changepoint_model,
+                                        n_iterations),
+             pattern = cross(changepoint_dataset, changepoint_model),
+             iteration = "list", priority = 1),
+  tar_target(changepoint_scores, {
+    datasets <- stats::setNames(
+      changepoint_dataset,
+      purrr::map_chr(changepoint_dataset, ~paste(.$regime, .$replicate)))
+    purrr::map_dfr(changepoint_result, function(result) {
+      score_changepoint_simulation(
+        result, datasets[[paste(result$regime, result$replicate)]])
+    })
+  }, deployment = "main"),
+  tar_target(changepoint_summary, summarise_changepoint_simulation(changepoint_scores),
+             deployment = "main"),
+  tar_target(changepoint_comparison_result,
+             fit_changepoint_comparison(comparison_analysis, changepoint_model,
+                                        comparison_analysis$serial_parameters,
+                                        n_iterations_bvd),
+             pattern = cross(comparison_analysis, changepoint_model),
+             iteration = "list"),
+  tar_target(changepoint_comparison_scores,
+             purrr::map_dfr(changepoint_comparison_result,
+                            score_changepoint_comparison),
+             deployment = "main"),
+  tar_target(changepoint_comparison_summary,
+             summarise_changepoint_comparison(changepoint_comparison_scores),
+             deployment = "main"),
+  tar_target(files_changepoints, {
+    utils::write.csv(changepoint_scores, "outputs/changepoint_simulation_scores.csv",
+                     row.names = FALSE)
+    utils::write.csv(changepoint_summary, "outputs/changepoint_simulation_summary.csv",
+                     row.names = FALSE)
+    c("outputs/changepoint_simulation_scores.csv",
+      "outputs/changepoint_simulation_summary.csv",
+      save_plot(plot_changepoint_simulation_scores(changepoint_scores),
+                "outputs/changepoint_simulation_scores.png", 11, 9),
+      save_plot(plot_changepoint_simulation_examples(changepoint_dataset,
+                                                     changepoint_result),
+                "outputs/changepoint_simulation_examples.png", 13, 6))
+  }, format = "file", deployment = "main"),
+  tar_target(files_changepoint_comparison, {
+    utils::write.csv(changepoint_comparison_scores,
+                     "outputs/changepoint_comparison_scores.csv", row.names = FALSE)
+    utils::write.csv(changepoint_comparison_summary$by_dataset,
+                     "outputs/changepoint_comparison_by_dataset.csv", row.names = FALSE)
+    utils::write.csv(changepoint_comparison_summary$overall,
+                     "outputs/changepoint_comparison_overall.csv", row.names = FALSE)
+    c("outputs/changepoint_comparison_scores.csv",
+      "outputs/changepoint_comparison_by_dataset.csv",
+      "outputs/changepoint_comparison_overall.csv",
+      save_plot(plot_changepoint_comparison_scores(changepoint_comparison_scores),
+                "outputs/changepoint_comparison_scores.png", 10, 7),
+      save_plot(plot_changepoint_comparison_trajectories(changepoint_comparison_result),
+                "outputs/changepoint_comparison_trajectories.png", 13, 6.5))
+  }, format = "file", deployment = "main"),
+
   # ---- outputs ---------------------------------------------------------------
   tar_target(file_scores, {
     dir.create("outputs", showWarnings = FALSE)

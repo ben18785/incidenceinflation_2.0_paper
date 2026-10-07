@@ -1980,13 +1980,191 @@ comparison there is among poor estimates. The Netherlands COVID-19 data were
 left out, since their delay distribution is not described by any of these
 models.
 
-\begin{thebibliography}{2}
+\section{Changes at unknown times in $R_t$ and in the reporting delay}\label{sec:changepoints}
+
+\subsection{Motivation}
+
+In everything above, $R_t$ is constant within periods fixed in advance (weeks,
+in most analyses) and the parameters $\theta=(\mu,\sigma)$ of the reporting
+delay are the same for every onset day. The package also allows $\theta$ to
+differ between periods of onset days fixed in advance. Here both are allowed to
+change at times which are not known: onset days are divided into segments,
+within each of which the quantity is constant, and the number of segments and
+the days on which they start are inferred. This follows the approach to $R_t$
+of \cite{creswell2022}, with a simpler prior for the partition. Each of the two
+is switched on separately; when off, the periods given in advance are used as
+before.
+
+\subsection{Prior for the partition}
+
+Let there be $T$ onset days. A partition is described by the days
+$1=\tau_0<\tau_1<\dots<\tau_K\le T$ on which its $K+1$ segments start. Each
+onset day after the first starts a new segment with probability $p$, and $p$
+has a beta prior, so that
+\begin{equation}\label{eq:partitionprior}
+p(\tau_1,\dots,\tau_K\given p) \propto p^{K}(1-p)^{T-1-K}, \qquad
+p\sim\operatorname{beta}(a,b),
+\end{equation}
+restricted to partitions in which every segment has at least $\ell$ days (a
+single segment covering all days is always allowed). With $p$ integrated out,
+the prior probability of a partition depends only on its number of changes:
+\begin{equation}\label{eq:partitionmarginal}
+p(\tau_1,\dots,\tau_K) \propto \frac{B(a+K,\,b+T-1-K)}{B(a,b)},
+\end{equation}
+where $B$ is the beta function. The defaults are $a=1$, $b=T$ and $\ell=7$.
+Without the restriction on length these give a prior probability of about one
+half that there are no changes and a prior mean of about one change; the
+restriction moves a little more probability to few changes. Because $p$ is
+learned, the penalty for a further change adapts to the number which the data
+support. The minimum length prevents a segment from being fitted to the last
+few onset days, for which little has yet been reported.
+
+The partitions for $R_t$ and for the delay are independent, each with its own
+$p$.
+
+\subsection{Changes in $R_t$}
+
+Each segment $j$ has its own value $R_j$, with the gamma prior already used
+for each $R_t$, of shape $\alpha_R$ and rate $\beta_R$. Given the true counts,
+onset day $t$ enters the renewal likelihood through $I(t)$ and the total
+infectiousness $\Lambda_t=\sum_{s}\omega_s I(t-s)$.
+
+\paragraph{Poisson renewal model.} $R_j$ can be integrated out. Up to a factor
+which is the same for every partition, the marginal likelihood of a segment
+consisting of onset days $u$ to $v$ is
+\begin{equation}\label{eq:segmentmarginal}
+M(u,v) = \frac{\beta_R^{\alpha_R}}{\Gamma(\alpha_R)}\,
+\frac{\Gamma(\alpha_R+Y_{uv})}{(\beta_R+L_{uv})^{\alpha_R+Y_{uv}}},
+\qquad Y_{uv}=\sum_{t=u}^{v}I(t),\quad L_{uv}=\sum_{t=u}^{v}\Lambda_t,
+\end{equation}
+with onset days for which $\Lambda_t=0$ (such as the first) left out of both
+sums, since the renewal model says nothing about them.
+
+\paragraph{Sampling.} Given $p$, the weight of a partition is a product over
+its segments, so the partition can be drawn exactly rather than by proposing
+changes to it. Let $F(v)$ be the summed weight of all partitions of onset days
+$1$ to $v$, with $F(0)=1$. Then
+\begin{equation}\label{eq:partitionforward}
+F(v)=\sum_{u}F(u-1)\,M(u,v)\,p^{\,[u>1]}(1-p)^{\,v-u},
+\end{equation}
+the sum being over starts $u\le v$ which leave the segment long enough. Having
+calculated $F(1),\dots,F(T)$, the start of the last segment is drawn with
+probabilities proportional to the terms of $F(T)$; the start of the segment
+before it is drawn in the same way from the terms of $F$ at the day before;
+and so on back to day 1. Each iteration then
+\begin{enumerate}[itemsep=2pt]
+\item draws the partition in this way, given $p$ and the true counts;
+\item draws each $R_j$ from its gamma conditional distribution, of shape
+$\alpha_R+Y$ and rate $\beta_R+L$ for its segment;
+\item draws $p$ from $\operatorname{beta}(a+K,\,b+T-1-K)$.
+\end{enumerate}
+Steps 1 and 2 are together an exact draw of the partition and the $R_j$ given
+$p$ and the true counts, and replace the existing draw of the $R_t$. The cost
+is of order $T^2$ and is negligible beside the update of the true counts.
+
+\paragraph{Negative binomial renewal model.} The integral over $R_j$ no longer
+has a closed form. It is instead calculated numerically over a grid of 400
+values of $R$ equally spaced on the log scale between 0.02 and 20: the
+log-likelihood of each onset day is calculated at each value, cumulative sums
+over onset days then give that of any segment, and the marginal likelihood of
+a segment is the sum over the grid weighted by the prior probability of the
+interval which each value represents. $R_j$ is drawn by choosing a value of the
+grid with the corresponding probabilities and then drawing uniformly from its
+interval. The spacing of the grid is under 2\%, which limits the accuracy
+attainable where a segment contains many thousands of cases.
+
+\subsection{Changes in the reporting delay}
+
+Each segment $j$ of onset days has its own $\theta_j=(\mu_j,\sigma_j)$. These
+are given a prior which ties them together:
+\begin{equation}\label{eq:delayhierarchy}
+\log\mu_j\sim N(\log\mu_0,\,s^2),\qquad \log\sigma_j\sim N(\log\sigma_0,\,s^2),
+\end{equation}
+where the centres $\mu_0$ and $\sigma_0$ have the gamma priors otherwise used
+for $\mu$ and $\sigma$, and the spread $s$ has a half-normal prior with
+standard deviation 0.5. A segment about which the data say little, such as a
+recent one, is thereby drawn towards the delay typical of the others; and the
+penalty for a further segment does not depend on how vague the prior for
+$\mu$ and $\sigma$ is.
+
+The likelihood is unchanged: given the true counts it is a product over onset
+days, each evaluated at the $\theta_j$ of its segment, so that a change to one
+segment involves only the onset days of that segment. This holds with sporadic
+revisions, misdating (in the form of \S\ref{sec:misdating}), batches and the
+extensions of \S\ref{sec:reporting}.
+
+\paragraph{Sampling.} $\theta_j$ cannot be integrated out, and a grid fine
+enough to do so numerically in two dimensions would be costly. The partition
+is therefore updated by Metropolis--Hastings moves, with $p$ integrated out
+using \eqref{eq:partitionmarginal}. In each iteration:
+\begin{itemize}[itemsep=2pt]
+\item \emph{Within segments.} For each segment in turn, $\theta_j$ is updated
+by random-walk Metropolis using only the onset days of that segment.
+\item \emph{Split or merge}, each with probability one half. To split, a
+segment and a day within it are chosen uniformly (from those leaving both
+parts long enough); the onset days on one side, chosen with probability one
+half, keep $\theta_j$ and those on the other take $\theta^*$, with
+$\log\mu^*\sim N(\log\mu_j,\,0.3^2)$ and likewise $\sigma^*$. To merge, a
+change is chosen uniformly and the two segments either side take the
+parameters of one of them, chosen with probability one half. A split of a
+segment which can be split in $n$ ways, into $K+1$ changes from $K$, is
+accepted with probability $\min(1,A)$, where
+\begin{equation}\label{eq:splitratio}
+A=\frac{L(\theta^*)}{L(\theta_j)}\times
+\frac{B(a+K+1,\,b+T-2-K)}{B(a+K,\,b+T-1-K)}\times
+\frac{p(\theta^*\given\mu_0,\sigma_0,s)}{q(\theta^*\given\theta_j)}\times n,
+\end{equation}
+$L$ being the likelihood of the onset days which take $\theta^*$ and $q$ the
+density from which $\theta^*$ was proposed. A merge is accepted with the
+reciprocal of the ratio for the split which would reverse it.
+\item \emph{Shift.} A change is chosen uniformly and moved by up to three
+days in either direction, the onset days passed over being evaluated at the
+parameters of the segment which they would join.
+\item \emph{Centre and spread.} $(\mu_0,\sigma_0,s)$ are updated by random-walk
+Metropolis on their logs, which does not involve the likelihood.
+\end{itemize}
+
+\subsection{Implementation and checks}
+
+Both are in the package and are switched on through the priors; with both off
+results are unchanged. Data can be simulated with $R_t$ and the delay
+piecewise constant. Reported for each iteration are $R_t$ and
+$(\mu,\sigma)$ for each onset day, and the number of changes in each.
+
+\paragraph{Checks.} The marginal likelihood \eqref{eq:segmentmarginal} agrees
+with numerical integration, and the grid with the closed form for a Poisson
+model and with numerical integration for a negative binomial model. The
+recursion \eqref{eq:partitionforward} agrees with summation over every
+partition of a short series, and partitions are drawn with the frequencies
+which enumeration gives, with and without a minimum length. With no data the
+number of changes follows \eqref{eq:partitionmarginal}; this was checked for
+both samplers, and is a check of \eqref{eq:splitratio} in particular. For the
+delay, the likelihood by segment sums to that over all onset days, with
+revisions and with misdating. Each sampler finds a single simulated change,
+places it within three days of the truth, and usually finds none where there
+is none. There are about 440 checks of this part of the package.
+
+\paragraph{A correction.} In adding this, a slip inherited from the earlier
+package was found: under the negative binomial renewal model, the update of
+each $R_t$ was given a fixed value of 40 in place of the current overdispersion
+parameter $\kappa$. Since estimates of $\kappa$ were often smaller than this,
+the uncertainty in $R_t$ will have been somewhat understated in the negative
+binomial fits of \S\ref{sec:netherlands}--\ref{sec:reporting}, which have not
+been rerun. It is corrected in the fits of this section.
+
+\begin{thebibliography}{3}
 \bibitem{bajaj2025}
 Bajaj S, Thompson R, Lambert B. 2025
 A renewal-equation approach to estimating $R_t$ and infectious disease case
 counts in the presence of reporting delays.
 \emph{Phil. Trans. R. Soc. A} \textbf{383}, 20240357.
 \href{https://doi.org/10.1098/rsta.2024.0357}{doi:10.1098/rsta.2024.0357}
+
+\bibitem{creswell2022}
+Creswell R, Robinson M, Gavaghan D, Parag KV, Lei CL, Lambert B. A Bayesian
+nonparametric method for detecting rapid changes in disease transmission.
+\emph{medRxiv} 2022.
+\href{https://doi.org/10.1101/2022.07.04.22277234}{doi:10.1101/2022.07.04.22277234}.
 
 \bibitem{who2014}
 WHO Ebola Response Team. 2014
