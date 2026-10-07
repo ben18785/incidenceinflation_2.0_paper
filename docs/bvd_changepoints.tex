@@ -35,7 +35,7 @@ Onset days from 12 July, the date of the first report, are analysed (82
 days). Earlier onset days are left out: for them nothing is known of reporting
 in the weeks after onset, so the delay then cannot be estimated.
 
-\section{Model}
+\section{Model}\label{sec:model}
 
 \subsection{Transmission}
 
@@ -366,7 +366,217 @@ simulated data with two changes in each of $R_t$ and the delay, all four were
 placed within three days of the truth with posterior probability one when
 transmission was not overdispersed.
 
-%%RESULTS%%
+\section{Results as of 1 October 2026}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{bvd_changepoint_main.png}
+\caption{Estimates from the situation report of 1 October 2026. (a) Confirmed
+cases by onset date: those reported (grey), the estimated true number (blue,
+posterior median and 90\% interval) and a projection for 14 days if $R_t$
+stays at its latest value (red). (b) $R_t$ on a log scale, with marks showing
+the posterior probability of a change on each day; the first week is not
+shown. (c) The reporting delay distribution for the earliest and latest onset
+days.}
+\label{fig:main}
+\end{figure}
+
+\paragraph{Cases.} For onset days more than about three weeks before the
+report, the estimated number of cases is the number reported. For the latest
+two weeks the report is far from complete (figure~\ref{fig:parameters}b) and
+the estimates are well above the reported counts, with wide intervals: for
+the last few onset days, of which under 15 cases a day have been reported,
+the 90\% intervals run from about 15 to about 100 cases a day. The estimates
+give no clear indication that cases are falling, although the reported counts
+fall steeply. The projection, which assumes that $R_t$ stays as it is, has a
+median of about 45 cases a day and a 90\% interval of roughly 13 to 100.
+
+\paragraph{Reproduction number.} For the latest onset day $R_t$ is estimated
+at 0.98 (90\% interval 0.82 to 1.11): close to one, with neither growth nor
+decline excluded. About two changes in $R_t$ are found (90\% interval 2 to 3),
+all placed between mid-July and mid-August, and none since. These early
+changes should not be read as changes in transmission: they are where the
+overstatement of $R_t$ at the start of the series, described in
+\S\ref{sec:model}, wears off. From mid-August the estimate is a single
+segment.
+
+\paragraph{Reporting delay.} For the latest onset days the delay has mean 8.2
+days (7.5 to 8.6) and standard deviation 5.5 days (5.0 to 6.6). One or two
+changes in the delay are found (mean 1.6). The distributions for the earliest
+and latest onset days differ only a little: about half of cases are reported
+within a week of onset in both, and reporting of the latest onset days is
+slower in the first few days and more complete by three weeks.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{bvd_changepoint_parameters.png}
+\caption{Further estimates from the situation report of 1 October 2026. (a)
+Mean reporting delay by onset date. (b) Cases reported as a proportion of
+those estimated, for the last six weeks. (c) Effect of the day of the week of
+a report on the rate of reporting (median, 50\% and 90\% intervals). (d)
+Posterior distribution of the number of changes in $R_t$ and in the delay. (e)
+Posterior densities of the other parameters.}
+\label{fig:parameters}
+\end{figure}
+
+\paragraph{Other parameters.}
+\begin{itemize}[itemsep=2pt]
+\item \emph{Day of the week.} Reports published on Mondays and Fridays contain
+more newly reported cases than the delay alone would give
+($\psi=1.13$, 90\% intervals 1.04 to 1.22 and 1.06 to 1.20), and those
+published on Tuesdays and Saturdays fewer (0.84, 0.78 to 0.90; and 0.90, 0.85
+to 0.95). Wednesday, Thursday and Sunday are close to one.
+\item \emph{Overdispersion.} $\kappa=4.1$ (2.8 to 5.4), which is strong
+overdispersion; see the checks below.
+\item \emph{Erroneous records.} About 3 are added per 100 genuine cases
+reported ($\eta=0.029$, 0.022 to 0.038), and each is removed with probability
+0.083 a day (0.066 to 0.107), so remains for about 12 days on average.
+\end{itemize}
+
+\section{Estimates made on earlier dates}
+
+The same model was fitted to the reports available on five earlier dates, in
+each case to onset days from 12 July, and its estimates compared with the
+counts in the report of 1 October (figure~\ref{fig:cases},
+table~\ref{tab:dates}). Onset days in the two weeks before 1 October are
+themselves incomplete in that report, so for the analysis of 20 September the
+comparison is less secure than for the others.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{bvd_changepoint_cases.png}
+\caption{Estimated cases by onset date as of each analysis date (green,
+posterior median and 90\% interval), with the counts reported on that date
+(orange) and in the report of 1 October (black).}
+\label{fig:cases}
+\end{figure}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccccc}
+\toprule
+Analysis date & Score & Coverage of & Bias & $R_t$, latest onset day & Mean delay, latest \\
+ & & 90\% intervals & & & onset day (days) \\
+\midrule
+16 August & 0.102 & 93\% & $+5\%$ & 1.52 (1.07, 2.10) & 10.2 (9.2, 11.5) \\
+30 August & 0.105 & 93\% & $+14\%$ & 1.26 (0.95, 1.58) & 8.9 (8.4, 9.5) \\
+5 September & 0.077 & 86\% & $+5\%$ & 1.14 (0.91, 1.43) & 8.6 (8.0, 9.0) \\
+6 September & 0.069 & 93\% & $-5\%$ & 1.06 (0.83, 1.36) & 8.1 (7.7, 8.6) \\
+20 September & 0.070 & 100\% & $0\%$ & 0.98 (0.76, 1.17) & 7.4 (6.9, 8.0) \\
+1 October & & & & 0.98 (0.82, 1.11) & 8.1 (7.5, 8.6) \\
+\bottomrule
+\end{tabular}
+\caption{Estimates for the latest 14 onset days on each analysis date,
+compared with the counts in the report of 1 October. The score is the
+weighted interval score relative to the mean count (smaller is better); the
+bias is that of the posterior median relative to the mean count. Intervals
+are 90\%.}
+\label{tab:dates}
+\end{table}
+
+Estimates of recent counts made on each earlier date were close to what was
+later reported: the 90\% intervals contained between 86\% and 100\% of the
+later counts and the bias was at most 14\%. The estimate of $R_t$ for the
+latest onset day fell steadily from 1.5 in mid-August to about 1 by late
+September; part of the early fall reflects the start of the series, as above.
+
+\section{Posterior predictive checks}
+
+The model fitted on 1 October was checked by simulating from it. For each of
+400 posterior draws:
+\begin{itemize}[itemsep=2pt]
+\item \emph{Reporting.} Given the draw's true cases, delay parameters, effects
+of the day of the week, $\eta$ and $\rho$, reported counts were simulated for
+every onset day and every report, and compared with the counts in the
+situation reports.
+\item \emph{Transmission.} Given the draw's $R_t$ and $\kappa$, the cases of
+each onset day were simulated from \eqref{eq:renewal} given the cases before
+it, and compared with the draw's own true cases. The first two weeks were left
+out.
+\end{itemize}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.95\textwidth]{bvd_changepoint_checks.png}
+\caption{Posterior predictive checks. (a) Counts in the report of 1 October
+(points) against replicated counts (blue, median and 90\% interval). (b) Cases
+added in each report against the replicates. (c) Summary statistics: the
+distribution over replicates, the observed value (line) and the proportion of
+replicates at least as large ($p$).}
+\label{fig:checks}
+\end{figure}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lccc}
+\toprule
+Statistic & Observed & Replicates (median, 90\% interval) & $p$ \\
+\midrule
+\emph{Reporting} \\
+Proportion reported within 3 days of onset & 0.187 & 0.207 (0.190, 0.227) & 0.97 \\
+Proportion reported within 7 days of onset & 0.485 & 0.482 (0.460, 0.503) & 0.43 \\
+Proportion reported within 14 days of onset & 0.826 & 0.807 (0.792, 0.824) & 0.04 \\
+Variation between reports in cases added (sd/mean) & 0.712 & 0.675 (0.640, 0.705) & 0.03 \\
+Largest addition to one onset day in one report & 46 & 42 (36, 48) & 0.14 \\
+Proportion of updates in which a count does not change & 0.602 & 0.591 (0.579, 0.603) & 0.09 \\
+Number of updates in which a count falls & 37 & 26 (18, 39) & 0.11 \\
+\addlinespace
+\emph{Transmission} \\
+Dispersion of cases about the renewal mean (variance/mean) & 4.7 & 15.2 (10.0, 24.0) & 1.00 \\
+Variation in cases between days of the week of onset & 0.092 & 0.155 (0.085, 0.261) & 0.94 \\
+\bottomrule
+\end{tabular}
+\caption{Posterior predictive checks. $p$ is the proportion of replicates at
+least as large as the observed value; values near 0 or 1 indicate a feature
+which the model does not reproduce. For transmission the observed value is
+that of the true cases of each draw (the median is shown).}
+\label{tab:checks}
+\end{table}
+
+\begin{itemize}[itemsep=2pt]
+\item \emph{Reporting is described adequately.} The cases added in each
+report are reproduced (figure~\ref{fig:checks}b), including the large
+differences between reports which follow from their spacing and day of the
+week. Of the seven statistics, two are in the tails: the variation between
+reports is a little greater than the model gives ($p=0.03$), and slightly
+more is reported within 14 days ($p=0.04$) and slightly less within 3 days
+($p=0.97$) than the model gives, which suggests that the gamma shape is not
+quite right. None of these discrepancies is large.
+\item \emph{Transmission is not: the model has too much overdispersion.} Cases
+vary about the renewal mean with a variance about 5 times the mean, whereas
+data simulated from the fitted model vary with a variance about 15 times the
+mean. The estimate of $\kappa$ is therefore too small. The likely cause is
+the start of the series. The check leaves out the first two weeks, but
+$\kappa$ is estimated from all onset days, and in the first weeks the renewal
+mean is wrong because earlier cases are missing (\S\ref{sec:model}); the
+misfit there is absorbed as overdispersion. The consequences are intervals
+for recent cases and for the projection which are wider than they should be,
+and less ability to detect changes in $R_t$.
+\item \emph{No weekly pattern in onset dates beyond what the model gives.}
+Counts by onset date have conspicuous peaks about a week apart
+(figure~\ref{fig:main}a), but the variation between days of the week of
+onset is within what the fitted model produces. This check is weakened by the
+excess overdispersion just described.
+\end{itemize}
+
+\section{Limitations}
+
+\begin{itemize}[itemsep=2pt]
+\item \emph{The start of the series.} Cases before 12 July are not used. This
+overstates $R_t$ for the first month and, as the checks show, inflates the
+estimated overdispersion throughout. Supplying the counts for earlier onset
+days as known history would remove both effects and is the most useful
+improvement to make.
+\item \emph{The serial interval} is that of Zaire ebolavirus, cut off at 40
+days.
+\item \emph{Changes close to the analysis date.} In simulation, a change in
+the delay or in $R_t$ in the week before the analysis date is not reliably
+told from a change in incidence. The estimates for the latest onset days
+assume, in effect, that reporting has continued as in recent weeks.
+\item \emph{A single chain} of 1500 iterations was run for each analysis;
+convergence has not been assessed across chains.
+\end{itemize}
+
 
 \begin{thebibliography}{3}
 
