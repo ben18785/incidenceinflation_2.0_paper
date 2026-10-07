@@ -32,12 +32,25 @@ Each situation report gives the number of confirmed cases by date of symptom
 onset. Write $C(t\given t')$ for the number with onset on day $t$ shown in the
 report of day $t'$. There are 44 reports, from 12 July to 1 October 2026.
 Onset days from 12 July, the date of the first report, are analysed (82
-days). Earlier onset days are left out: for them nothing is known of reporting
-in the weeks after onset, so the delay then cannot be estimated.
+days). For earlier onset days nothing is known of reporting in the weeks after
+onset, so they tell us nothing about the reporting delay and their reporting
+is not modelled. Their counts are still used: the counts for the 40 days
+before 12 July, as given in the report of the analysis date, enter the
+transmission model as known earlier cases (\S\ref{sec:transmission}).
+
+\paragraph{The correction of 6 September.} The report of 6 September removed
+119 cases from 18 onset days between 14 May and 22 June. All of these onset
+days are before 12 July, so this removal is not among the reported counts
+which are modelled, and no special provision is made for it. It affects the
+analysis only through the known earlier cases: analyses dated before 6
+September use the counts as they stood before the removal (1750 cases in the
+40 days before 12 July, against 1674 afterwards). Among the onset days which
+are modelled, the largest fall in a count between two reports is of 2
+cases.
 
 \section{Model}\label{sec:model}
 
-\subsection{Transmission}
+\subsection{Transmission}\label{sec:transmission}
 
 $I(t)$ is the true number of cases with onset on day $t$, which is unknown.
 Given earlier cases it follows the renewal equation with overdispersion,
@@ -48,26 +61,29 @@ I(t)\sim\nb\bigl(R_t\,\Lambda_t,\;\kappa\bigr),\qquad
 a negative binomial distribution with mean $R_t\Lambda_t$ and variance
 $R_t\Lambda_t(1+R_t\Lambda_t/\kappa)$.
 
-\paragraph{Serial interval.} The weights $\omega_s$ are a gamma serial
-interval made discrete. With $F$ the distribution function of a gamma
-distribution with mean 15.3 and standard deviation 9.3 days,
-\begin{equation}\label{eq:weights}
-\omega_s=\frac{F(s+\tfrac12)-F(s-\tfrac12)}
-{\sum_{u=1}^{40}\bigl[F(u+\tfrac12)-F(u-\tfrac12)\bigr]},\qquad s=1,\dots,40.
-\end{equation}
-The mean and standard deviation are those estimated for Zaire ebolavirus in
-West Africa \cite{who2014}, there being no published estimate for Bundibugyo
-virus. Cutting the distribution off at 40 days removes 1.8\% of its mass, and
-the weights are rescaled to sum to one; as used, the serial interval has mean
-14.7 and standard deviation 8.2 days. The same weights are used in every part
-of the fitting.
+\paragraph{Serial interval.} The weights $\omega_s$ are a discrete version of
+a gamma serial interval with mean 15.3 and standard deviation 9.3 days, the
+values estimated for Zaire ebolavirus in West Africa \cite{who2014}, there
+being no published estimate for Bundibugyo virus. The weight for an interval
+of $s$ days is the probability which the gamma distribution gives to
+$(s-\tfrac12,\,s+\tfrac12)$, for $s=1,\dots,40$, rescaled to sum to one.
+Cutting the distribution off at 40 days removes 1.8\% of its mass; as used,
+the serial interval has mean 14.7 and standard deviation 8.2 days. There is
+more than one way to make a continuous serial interval discrete, and the
+choice matters most when the serial interval is short relative to a day,
+which is not the case here: an alternative in common use \cite{cori2013}
+allows for onset at any time within the day for both the infector and the
+person infected, which spreads each weight over neighbouring days. The same
+weights are used in every part of the fitting.
 
-\paragraph{The start of the series.} Onset days before the first analysed are
-taken to have no cases in \eqref{eq:renewal}, although there were cases then.
-The infectiousness $\Lambda_t$ of the first weeks is therefore understated and
-$R_t$ overstated: greatly in the first week, and by a diminishing amount for
-about a month, since most of the weight of the serial interval lies within 30
-days. Estimates of $R_t$ before mid-August should be read with this in mind.
+\paragraph{Cases before the first onset day analysed.} For the first 40 onset
+days analysed, $\Lambda_t$ involves cases with onset before 12 July. These
+are supplied as known: $I(t)$ for $t\le 0$ is set to the count in the report
+of the analysis date, and is not estimated. By the analysis date these onset
+days are at least five weeks old, so their counts are close to complete. No
+model of how they came to be reported is needed for this, since they enter
+only through $\Lambda_t$. Without them, $\Lambda_t$ would be understated for
+the first weeks and $R_t$ overstated.
 
 \subsection{Changes in $R_t$}\label{sec:Rt}
 
@@ -142,9 +158,15 @@ Minimum of 7 days (as fitted) & 0.61 & 0.26 & 0.09 & 0.03 & 0.01 \\
 and since $p_R$ is learned the penalty for a further change adapts to the
 number already supported. The minimum length
 prevents a segment being fitted to the last few onset days, for which little
-has yet been reported. This is a product partition model for change points; it
-plays the role of the Pitman--Yor process prior of \cite{creswell2022} with a
-simpler form.
+has yet been reported.
+
+Given $p_R$, \eqref{eq:partitionprior} is a product partition model for
+change points in the sense of Barry and Hartigan \cite{barry1992}: the
+probability of a partition is a product of a term for each segment, here
+$p_R(1-p_R)^{n-1}$ for a segment of $n\ge\ell$ days (without the leading
+$p_R$ for the first). Placing a prior on the probability of a change follows
+\cite{barry1993}. It plays the role of the Pitman--Yor process prior used for
+$R_t$ by \cite{creswell2022}, with a simpler form.
 
 \paragraph{Prior for the values.} $R_j\sim\operatorname{gamma}(1,1)$
 independently (shape and rate).
@@ -251,7 +273,14 @@ segments are tied together by a hierarchical prior:
 \end{equation}
 with $\mu_0\sim\operatorname{gamma}$ (mean 7, standard deviation 10 days),
 $\sigma_0\sim\operatorname{gamma}$ (mean 5, standard deviation 5 days) and
-$s\sim N^{+}(0,\,0.5^2)$.
+$s\sim N^{+}(0,\,0.5^2)$, a normal distribution restricted to positive values.
+Here $\mu_0$ and $\sigma_0$ are the mean and standard deviation of the delay
+in a typical segment, and $s$ is a single unknown number which says how much
+the segments differ from one another: it is the standard deviation, across
+segments, of $\log\mu_j$ and of $\log\sigma_j$. A value of $s=0.2$, for
+example, means that the mean delay of a segment is typically within about
+20\% of $\mu_0$; $s$ near zero means that the segments have almost the same
+delay.
 
 \paragraph{Reported counts.} The count shown for an onset day is made up of
 genuine cases and, occasionally, of records entered in error (for example a
@@ -276,6 +305,19 @@ erroneous records currently in the count, so that
 \begin{equation}\label{eq:deltaC}
 C(t\given t_j)-C(t\given t_{j-1}) = d_j(t)+n_j(t)-e_j(t).
 \end{equation}
+The form of \eqref{eq:n} reflects the assumption that erroneous records are a
+by-product of reporting: whenever cases of an onset day are being reported,
+each has a small chance of being accompanied by a record made in error. The
+expected number of genuine cases reported in the interval is
+$I(t)\,[S^{*}_\theta(t\given t_{j-1})-S^{*}_\theta(t\given t_j)]$, and
+$\eta$ times this is the expected number of erroneous records added. A
+Poisson distribution is the natural one for a count of rare events arising
+independently in this way, and it has the practical advantage that the number
+of erroneous records in the count at any time is also Poisson, which keeps
+the likelihood simple. The rate depends on the expected and not the realised
+number of genuine reports, so that $n_j(t)$ and $d_j(t)$ are independent
+given $I(t)$.
+
 With $\eta=0$ this is the model of \cite{bajaj2025}, in which counts can only
 rise. The erroneous records allow the occasional small falls seen in the data
 (the largest, for these onset days, is of 2 cases). $\eta$ is the expected
@@ -334,8 +376,14 @@ partition is drawn by sampling the start of the last segment with
 probabilities proportional to the terms of $F(T)$, then the start of the
 segment before it, and so on. Each $R_j$ is then drawn from its conditional
 distribution on the grid, and $p_R$ from
-$\operatorname{beta}(a+K_R,\,b+T-1-K_R)$. No moves which change the dimension
-are needed.
+$\operatorname{beta}(a+K_R,\,b+T-1-K_R)$. The number of segments, and so
+the number of values $R_j$, does change from one iteration to the next. But
+because the $R_j$ are integrated out before the partition is drawn, the
+partition is drawn directly from its conditional distribution over all
+partitions, of whatever number of segments, and the $R_j$ are then drawn given
+it. Nothing is proposed and then accepted or rejected, so the reversible-jump
+moves usually needed when the number of parameters changes are not required
+for $R_t$.
 \item \emph{The segments of the delay}, by Metropolis--Hastings moves, with
 their probability of a change integrated out as in
 \eqref{eq:partitionmarginal}: a random-walk update of $(\mu_j,\sigma_j)$ in
@@ -356,8 +404,15 @@ is accepted with the reciprocal for the split which would reverse it.
 \item \emph{$\kappa$, the $\psi_w$, and $(\eta,\rho)$}, each by random-walk
 Metropolis.
 \end{enumerate}
-Results are from a single chain of 1500 iterations, of which the first half
-is discarded.
+The split-or-merge and shift moves of step 3 are each attempted five times in
+every iteration, since they are cheap beside step 1.
+
+For each analysis date three chains of 1500 iterations were run from
+different starting values (of the true cases, the delay and $\kappa$), and
+the first half of each discarded. Agreement between chains is measured by the
+split-$\widehat R$ statistic, which compares the variation between the halves
+of the chains with that within them; values close to 1 indicate agreement and
+values above about 1.1 that the chains have not converged.
 
 \paragraph{Checks of the software.} With no data, both samplers of segments
 reproduce the prior \eqref{eq:partitionmarginal}; the exact draw of
@@ -597,7 +652,7 @@ approximate.
 \end{itemize}
 
 
-\begin{thebibliography}{3}
+\begin{thebibliography}{6}
 
 \bibitem{bajaj2025}
 Bajaj S, Thompson R, Lambert B. 2025
@@ -611,6 +666,22 @@ Creswell R, Robinson M, Gavaghan D, Parag KV, Lei CL, Lambert B. A Bayesian
 nonparametric method for detecting rapid changes in disease transmission.
 \emph{medRxiv} 2022.
 \href{https://doi.org/10.1101/2022.07.04.22277234}{doi:10.1101/2022.07.04.22277234}.
+
+\bibitem{barry1992}
+Barry D, Hartigan JA. 1992
+Product partition models for change point problems.
+\emph{Ann. Stat.} \textbf{20}, 260--279.
+
+\bibitem{barry1993}
+Barry D, Hartigan JA. 1993
+A Bayesian analysis for change point problems.
+\emph{J. Am. Stat. Assoc.} \textbf{88}, 309--319.
+
+\bibitem{cori2013}
+Cori A, Ferguson NM, Fraser C, Cauchemez S. 2013
+A new framework and software to estimate time-varying reproduction numbers
+during epidemics.
+\emph{Am. J. Epidemiol.} \textbf{178}, 1505--1512.
 
 \bibitem{who2014}
 WHO Ebola Response Team. 2014
