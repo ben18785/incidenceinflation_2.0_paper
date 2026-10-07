@@ -245,6 +245,14 @@ score_changepoint_simulation <- function(result, dataset, days_recent = 14) {
   out$n_Rt_changes <- f_n(result$changes$Rt_n)
   out$p_delay_change <- f_changes(result$changes$reporting_n)
   out$n_delay_changes <- f_n(result$changes$reporting_n)
+  # expected number of changes after the first three weeks: the earliest onset
+  # days follow cases which are not in the data, so that Rt appears to change
+  # shortly after the start of every series
+  f_late <- function(starts) {
+    if(is.null(starts)) NA_real_ else sum(starts$probability[starts$time_onset > 21])
+  }
+  out$n_Rt_changes_late <- f_late(result$changes$Rt_starts)
+  out$n_delay_changes_late <- f_late(result$changes$reporting_starts)
   # probability of a change within three days of the true one
   f_near <- function(starts) {
     if(is.null(starts) || is.na(truth$day_change))
@@ -266,7 +274,8 @@ summarise_changepoint_simulation <- function(scores) {
       dplyr::across(c("wis", "coverage_90", "bias", "Rt_abs_error", "Rt_coverage_90",
                       "Rt_width_90", "delay_abs_error", "p_Rt_change",
                       "n_Rt_changes", "p_delay_change", "n_delay_changes",
-                      "p_Rt_change_near", "p_delay_change_near"), mean),
+                      "p_Rt_change_near", "p_delay_change_near",
+                      "n_Rt_changes_late", "n_delay_changes_late"), mean),
       minutes = mean(.data$seconds) / 60,
       .groups = "drop") %>%
     dplyr::arrange(match(.data$regime, changepoint_regimes()$regime),
@@ -467,15 +476,207 @@ plot_changepoint_comparison_trajectories <- function(results) {
     dplyr::mutate(
       model = factor(.data$model, levels = changepoint_models()$model),
       quantity = factor(.data$quantity, levels = c("Rt", "Mean reporting delay, days")))
-  ggplot2::ggplot(df, ggplot2::aes(x = .data$date)) +
-    ggplot2::geom_ribbon(ggplot2::aes(ymin = .data$q05, ymax = .data$q95,
-                                      fill = .data$model), alpha = 0.18) +
-    ggplot2::geom_line(ggplot2::aes(y = .data$q50, colour = .data$model)) +
-    ggplot2::facet_wrap(quantity ~ dataset, scales = "free", nrow = 2,
-                        labeller = ggplot2::label_wrap_gen(24)) +
-    ggplot2::scale_colour_manual(values = changepoint_model_colours()) +
-    ggplot2::scale_fill_manual(values = changepoint_model_colours()) +
-    ggplot2::labs(x = "Onset date", y = NULL, colour = "Model fitted",
-                  fill = "Model fitted") +
-    theme_paper()
+  f_panel <- function(quantity) {
+    ggplot2::ggplot(dplyr::filter(df, .data$quantity == !!quantity),
+                    ggplot2::aes(x = .data$date)) +
+      ggplot2::geom_ribbon(ggplot2::aes(ymin = .data$q05, ymax = .data$q95,
+                                        fill = .data$model), alpha = 0.18) +
+      ggplot2::geom_line(ggplot2::aes(y = .data$q50, colour = .data$model)) +
+      ggplot2::facet_wrap(~dataset, scales = "free", nrow = 1,
+                          labeller = ggplot2::label_wrap_gen(24)) +
+      ggplot2::scale_colour_manual(values = changepoint_model_colours()) +
+      ggplot2::scale_fill_manual(values = changepoint_model_colours()) +
+      ggplot2::labs(x = NULL, y = quantity, colour = "Model fitted",
+                    fill = "Model fitted") +
+      theme_paper()
+  }
+  # Rt on a log scale, since it is very large and uncertain at the start
+  panel_Rt <- f_panel("Rt") +
+    ggplot2::geom_hline(yintercept = 1, linetype = 3, colour = "grey40") +
+    ggplot2::scale_y_log10() +
+    ggplot2::labs(y = "Rt (log scale)")
+  panel_delay <- f_panel("Mean reporting delay, days") +
+    ggplot2::labs(x = "Onset date")
+  patchwork::wrap_plots(panel_Rt, panel_delay, ncol = 1, guides = "collect") &
+    ggplot2::theme(legend.position = "bottom")
+}
+
+# ---- demonstrations on simulated data ------------------------------------------
+
+#' Scenarios which demonstrate that changes are recovered
+#'
+#' Each is a single dataset of 90 onset days, analysed on day 90. Rt and the
+#' reporting delay each change twice (on different days), or not at all; the
+#' renewal process is close to Poisson or overdispersed (strongly, with
+#' kappa = 5, or mildly, with kappa = 20).
+changepoint_demonstration_scenarios <- function() {
+  dplyr::tribble(
+    ~scenario,                              ~has_changes, ~kappa,
+    "Two changes in each",                  TRUE,         1000,
+    "No changes",                           FALSE,        1000,
+    "Two changes in each, overdispersed",   TRUE,         5,
+    "Two changes in each, mildly overdispersed", TRUE,    20)
+}
+
+#' Simulates the dataset of a demonstration scenario
+simulate_changepoint_demonstration <- function(scenario_row) {
+  set.seed(90000 + match(scenario_row$scenario,
+                         changepoint_demonstration_scenarios()$scenario))
+  n_days <- 90
+  serial_parameters <- list(mean = 5, sd = 3)
+  if(scenario_row$has_changes) {
+    Rt_starts <- c(1, 36, 66)
+    Rt_values <- c(1.4, 0.8, 1.2)
+    delay_starts <- c(1, 26, 56)
+    delay_means <- c(4, 9, 5)
+  } else {
+    Rt_starts <- 1
+    Rt_values <- 1.1
+    delay_starts <- 1
+    delay_means <- 5
+  }
+  Rt <- incidenceinflation::piecewise_values(Rt_starts, Rt_values, n_days)
+  reporting <- incidenceinflation::piecewise_reporting_parameters(
+    delay_starts, delay_means, 0.6 * delay_means, n_days)
+  cases_true <- incidenceinflation::true_cases(
+    n_days, function(t) Rt[pmin(pmax(round(t), 1), n_days)], scenario_row$kappa,
+    serial_parameters, initial_parameters = list(mean = 30, length = 20))
+  df <- incidenceinflation::observed_cases(cases_true, reporting, n_days)
+  list(
+    scenario = scenario_row$scenario,
+    kappa = scenario_row$kappa,
+    snapshots = dplyr::select(df, -"cases_true"),
+    serial_parameters = serial_parameters,
+    truth = list(
+      cases = unique(dplyr::select(df, "time_onset", "cases_true")),
+      Rt = dplyr::tibble(time_onset = seq_len(n_days), Rt = Rt),
+      reporting = reporting,
+      Rt_changes = Rt_starts[-1],
+      delay_changes = delay_starts[-1]))
+}
+
+#' Fits the model with changes in both Rt and the delay to a demonstration
+#' dataset
+#'
+#' The renewal model is negative binomial where the data are overdispersed.
+fit_changepoint_demonstration <- function(dataset, niterations) {
+  mechanisms <- dplyr::filter(changepoint_models(),
+                              .data$model == "Rt and delay changes")
+  fit <- fit_changepoint_model(
+    dataset$snapshots, mechanisms, dataset$serial_parameters, niterations,
+    seed = 1, is_negative_binomial = dataset$kappa < 100)
+  list(scenario = dataset$scenario, truth = dataset$truth,
+       summary = summarise_fit(fit), changes = fit$changes)
+}
+
+#' How well the changes of each demonstration were recovered
+summarise_changepoint_demonstrations <- function(results) {
+  purrr::map_dfr(results, function(result) {
+    if(!is.null(result$summary$error))
+      return(dplyr::tibble(scenario = result$scenario, error = result$summary$error))
+    f_rows <- function(quantity, n, starts, changes_true) {
+      out <- dplyr::tibble(
+        scenario = result$scenario, quantity = quantity,
+        n_true = length(changes_true),
+        n_mean = mean(n), n_mode = as.integer(names(which.max(table(n)))),
+        # expected number of changes from the third week on
+        n_late = sum(starts$probability[starts$time_onset >= 15]))
+      # probability of a change within three days of each true change
+      near <- purrr::map_dbl(changes_true, function(day) {
+        sum(starts$probability[abs(starts$time_onset - day) <= 3])
+      })
+      out$p_near_first <- if(length(near) >= 1) near[1] else NA_real_
+      out$p_near_second <- if(length(near) >= 2) near[2] else NA_real_
+      out
+    }
+    truth <- result$truth
+    # coverage and error leave out the first two weeks, in which Rt appears
+    # large in every series (the earliest cases follow cases not in the data)
+    Rt <- dplyr::left_join(result$summary$Rt, truth$Rt, by = "time_onset",
+                           suffix = c("_estimated", "")) %>%
+      dplyr::filter(.data$time_onset >= 15)
+    delay <- dplyr::left_join(result$changes$reporting_days, truth$reporting,
+                              by = "time_onset", suffix = c("_estimated", "")) %>%
+      dplyr::filter(.data$time_onset >= 15)
+    cases <- dplyr::left_join(result$summary$cases, truth$cases, by = "time_onset")
+    dplyr::bind_rows(
+      dplyr::mutate(
+        f_rows("Rt", result$changes$Rt_n, result$changes$Rt_starts, truth$Rt_changes),
+        coverage_90 = mean(Rt$Rt >= Rt$q05 & Rt$Rt <= Rt$q95),
+        abs_error = mean(abs(Rt$q50 - Rt$Rt))),
+      dplyr::mutate(
+        f_rows("Mean delay", result$changes$reporting_n,
+               result$changes$reporting_starts, truth$delay_changes),
+        coverage_90 = mean(delay$mean >= delay$q05 & delay$mean <= delay$q95),
+        abs_error = mean(abs(delay$q50 - delay$mean)))) %>%
+      dplyr::mutate(
+        cases_coverage_90 = mean(cases$cases_true >= cases$q05 &
+                                   cases$cases_true <= cases$q95),
+        minutes = result$summary$seconds / 60)
+  })
+}
+
+#' Estimates against the truth for each demonstration: Rt, the mean delay, and
+#' the probability that each changes on each onset day
+plot_changepoint_demonstrations <- function(results) {
+  scenarios <- changepoint_demonstration_scenarios()$scenario
+  quantities <- c("Rt", "Mean reporting delay, days",
+                  "Probability that Rt\nchanges on the day",
+                  "Probability that the delay\nchanges on the day")
+  results <- purrr::keep(results, ~is.null(.$summary$error))
+  f_levels <- function(df) {
+    dplyr::mutate(df, scenario = factor(.data$scenario, levels = scenarios),
+                  quantity = factor(.data$quantity, levels = quantities))
+  }
+  estimates <- f_levels(purrr::map_dfr(results, function(result) {
+    dplyr::bind_rows(
+      dplyr::mutate(dplyr::select(result$summary$Rt, "time_onset", "q05", "q50", "q95"),
+                    quantity = quantities[1]),
+      dplyr::mutate(dplyr::select(result$changes$reporting_days,
+                                  "time_onset", "q05", "q50", "q95"),
+                    quantity = quantities[2])) %>%
+      dplyr::mutate(scenario = result$scenario)
+  }))
+  truth <- f_levels(purrr::map_dfr(results, function(result) {
+    dplyr::bind_rows(
+      dplyr::transmute(result$truth$Rt, .data$time_onset, value = .data$Rt,
+                       quantity = quantities[1]),
+      dplyr::transmute(result$truth$reporting, .data$time_onset, value = .data$mean,
+                       quantity = quantities[2])) %>%
+      dplyr::mutate(scenario = result$scenario)
+  }))
+  probabilities <- f_levels(purrr::map_dfr(results, function(result) {
+    dplyr::bind_rows(
+      dplyr::mutate(result$changes$Rt_starts, quantity = quantities[3]),
+      dplyr::mutate(result$changes$reporting_starts, quantity = quantities[4])) %>%
+      dplyr::mutate(scenario = result$scenario)
+  }))
+  changes <- f_levels(purrr::map_dfr(results, function(result) {
+    dplyr::bind_rows(
+      dplyr::tibble(time_onset = result$truth$Rt_changes, quantity = quantities[3]),
+      dplyr::tibble(time_onset = result$truth$delay_changes, quantity = quantities[4])) %>%
+      dplyr::mutate(scenario = result$scenario)
+  }))
+  # the earliest onset days are left out: they follow cases which are not in
+  # the data, so that Rt appears very large there in every series
+  day_first <- 15
+  estimates <- dplyr::filter(estimates, .data$time_onset >= day_first)
+  truth <- dplyr::filter(truth, .data$time_onset >= day_first)
+  probabilities <- dplyr::filter(probabilities, .data$time_onset >= day_first)
+  ggplot2::ggplot(estimates, ggplot2::aes(x = .data$time_onset)) +
+    ggplot2::geom_ribbon(ggplot2::aes(ymin = .data$q05, ymax = .data$q95),
+                         fill = "#0072B2", alpha = 0.25) +
+    ggplot2::geom_line(ggplot2::aes(y = .data$q50), colour = "#0072B2") +
+    ggplot2::geom_step(data = truth, ggplot2::aes(y = .data$value), linetype = 2) +
+    ggplot2::geom_vline(data = changes, ggplot2::aes(xintercept = .data$time_onset),
+                        linetype = 2) +
+    ggplot2::geom_col(data = probabilities, ggplot2::aes(y = .data$probability),
+                      fill = "#0072B2", width = 1) +
+    ggplot2::facet_grid(quantity ~ scenario, scales = "free_y", switch = "y",
+                        labeller = ggplot2::labeller(
+                          scenario = ggplot2::label_wrap_gen(28))) +
+    ggplot2::labs(x = "Onset day", y = NULL) +
+    theme_paper() +
+    ggplot2::theme(strip.placement = "outside",
+                   strip.background.y = ggplot2::element_blank())
 }

@@ -20,6 +20,7 @@ n_replicates <- as.integer(Sys.getenv("PIPELINE_REPLICATES", "5"))
 n_iterations <- as.integer(Sys.getenv("PIPELINE_ITERATIONS", "700"))
 n_iterations_real <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_REAL", "800"))
 n_iterations_bvd <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_BVD", "600"))
+n_iterations_demo <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_DEMO", "1500"))
 
 list(
   # ---- simulated data -------------------------------------------------------
@@ -446,8 +447,34 @@ list(
                                         n_iterations_bvd),
              pattern = cross(comparison_analysis, changepoint_model),
              iteration = "list"),
+  # Bundibugyo virus disease from the date of the first situation report only:
+  # for earlier onset dates nothing is known of reporting soon after onset, so
+  # the delay then cannot be estimated
+  tar_target(changepoint_bvd_analysis, {
+    name <- "Bundibugyo virus disease, 2026"
+    dataset <- comparison_datasets()[[name]]
+    date_first_report <- min(comparison_snapshots$bvd$date_reported)
+    purrr::map(dataset$dates_now, function(date_now) {
+      analysis <- prepare_comparison_analysis(
+        comparison_snapshots$bvd, date_first_report, date_now)
+      analysis$dataset <- name
+      analysis$serial_parameters <- dataset$serial_parameters
+      analysis
+    })
+  }, iteration = "list"),
+  tar_target(changepoint_bvd_result,
+             fit_changepoint_comparison(changepoint_bvd_analysis, changepoint_model,
+                                        changepoint_bvd_analysis$serial_parameters,
+                                        n_iterations_bvd),
+             pattern = cross(changepoint_bvd_analysis, changepoint_model),
+             iteration = "list"),
+  tar_target(changepoint_comparison_combined,
+             c(purrr::discard(changepoint_comparison_result,
+                              ~grepl("Bundibugyo", .$analysis$dataset)),
+               changepoint_bvd_result),
+             deployment = "main"),
   tar_target(changepoint_comparison_scores,
-             purrr::map_dfr(changepoint_comparison_result,
+             purrr::map_dfr(changepoint_comparison_combined,
                             score_changepoint_comparison),
              deployment = "main"),
   tar_target(changepoint_comparison_summary,
@@ -478,8 +505,28 @@ list(
       "outputs/changepoint_comparison_overall.csv",
       save_plot(plot_changepoint_comparison_scores(changepoint_comparison_scores),
                 "outputs/changepoint_comparison_scores.png", 10, 7),
-      save_plot(plot_changepoint_comparison_trajectories(changepoint_comparison_result),
+      save_plot(plot_changepoint_comparison_trajectories(changepoint_comparison_combined),
                 "outputs/changepoint_comparison_trajectories.png", 13, 6.5))
+  }, format = "file", deployment = "main"),
+
+  # demonstrations that changes are recovered from simulated data
+  tar_target(changepoint_demo_scenario, changepoint_demonstration_scenarios()),
+  tar_target(changepoint_demo_dataset,
+             simulate_changepoint_demonstration(changepoint_demo_scenario),
+             pattern = map(changepoint_demo_scenario), iteration = "list"),
+  tar_target(changepoint_demo_result,
+             fit_changepoint_demonstration(changepoint_demo_dataset,
+                                           n_iterations_demo),
+             pattern = map(changepoint_demo_dataset), iteration = "list"),
+  tar_target(changepoint_demo_summary,
+             summarise_changepoint_demonstrations(changepoint_demo_result),
+             deployment = "main"),
+  tar_target(files_changepoint_demo, {
+    utils::write.csv(changepoint_demo_summary,
+                     "outputs/changepoint_demonstrations.csv", row.names = FALSE)
+    c("outputs/changepoint_demonstrations.csv",
+      save_plot(plot_changepoint_demonstrations(changepoint_demo_result),
+                "outputs/changepoint_demonstrations.png", 14, 9))
   }, format = "file", deployment = "main"),
 
   # ---- outputs ---------------------------------------------------------------

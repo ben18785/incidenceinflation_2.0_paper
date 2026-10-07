@@ -2144,13 +2144,247 @@ revisions and with misdating. Each sampler finds a single simulated change,
 places it within three days of the truth, and usually finds none where there
 is none. There are about 440 checks of this part of the package.
 
-\paragraph{A correction.} In adding this, a slip inherited from the earlier
-package was found: under the negative binomial renewal model, the update of
-each $R_t$ was given a fixed value of 40 in place of the current overdispersion
-parameter $\kappa$. Since estimates of $\kappa$ were often smaller than this,
-the uncertainty in $R_t$ will have been somewhat understated in the negative
-binomial fits of \S\ref{sec:netherlands}--\ref{sec:reporting}, which have not
-been rerun. It is corrected in the fits of this section.
+\paragraph{Two corrections to the update of $R_t$ in periods fixed in
+advance.} Under the negative binomial renewal model, each $R_t$ was updated by
+drawing 100 values from an approximation to its conditional distribution and
+resampling one of them by its importance weight. Two things were wrong with
+this. First, a slip inherited from the earlier package gave the update a
+fixed value of 40 in place of the current overdispersion parameter $\kappa$.
+Since estimates of $\kappa$ were often smaller than this, the uncertainty in
+$R_t$ will have been somewhat understated in the negative binomial fits of
+\S\ref{sec:netherlands}--\ref{sec:reporting}, which have not been rerun.
+Second, resampling by importance weights does not leave the conditional
+distribution exactly unchanged, and failed outright when $\kappa$ was very
+small. The update is now by Metropolis--Hastings steps started from the
+current value: ten steps, each proposing either from a gamma distribution
+centred on the conditional distribution under the Poisson model and widened
+to allow for overdispersion, or by a random walk on $\log R_t$. Draws agree
+with the conditional distribution calculated numerically. The fits of this
+section use the corrected update.
+
+\subsection{Demonstrations on simulated data}\label{sec:changepointdemo}
+
+Four datasets of 90 onset days were simulated and analysed on day 90, with
+changes in both $R_t$ and the delay inferred (1500 iterations). In three of
+them $R_t$ is 1.4, then 0.8 from day 36, then 1.2 from day 66, and the mean
+delay is 4 days, then 9 from day 26, then 5 from day 56 (the standard
+deviation being 0.6 of the mean); in the other neither changes. The renewal
+process is close to Poisson ($\kappa=1000$), mildly overdispersed
+($\kappa=20$) or strongly overdispersed ($\kappa=5$); the negative binomial
+model is fitted to the last two.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{changepoint_demonstrations.png}
+\caption{Demonstrations on simulated data. Top two rows: posterior median and
+90\% interval (blue) and truth (dashed) of $R_t$ and of the mean reporting
+delay. Bottom two rows: posterior probability that each changes on each onset
+day, with the true changes marked by dashed lines. The first two weeks are not
+shown (see text).}
+\label{fig:changepointdemo}
+\end{figure}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llcccc}
+\toprule
+ & & Expected number & \multicolumn{2}{c}{Probability of a change within} & Absolute \\
+ & & of changes & \multicolumn{2}{c}{3 days of the true one} & error \\
+Dataset & Quantity & (truth) & first & second & \\
+\midrule
+Two changes in each & $R_t$ & 2.19 (2) & 1.00 & 1.00 & 0.014 \\
+ & Mean delay & 2.00 (2) & 1.00 & 1.00 & 0.020 \\
+No changes & $R_t$ & 0.20 (0) & & & 0.012 \\
+ & Mean delay & 0.00 (0) & & & 0.078 \\
+Two changes, $\kappa=20$ & $R_t$ & 2.09 (2) & 0.97 & 0.62 & 0.055 \\
+ & Mean delay & 2.00 (2) & 1.00 & 1.00 & 0.059 \\
+Two changes, $\kappa=5$ & $R_t$ & 0.29 (2) & 0.09 & 0.02 & 0.235 \\
+ & Mean delay & 2.00 (2) & 1.00 & 1.00 & 0.071 \\
+\bottomrule
+\end{tabular}
+\caption{Recovery of changes in the demonstrations, from onset day 15 on. The
+absolute error is that of the posterior median, averaged over onset days (for
+the delay, in days).}
+\label{tab:changepointdemo}
+\end{table}
+
+\begin{itemize}[itemsep=2pt]
+\item \emph{Changes in the delay are recovered in every dataset}: two changes
+in every draw, each within three days of the truth, and none where there is
+none.
+\item \emph{Changes in $R_t$ are recovered when overdispersion is absent or
+mild.} With $\kappa=20$ the second change is placed less precisely (a
+probability of 0.62 within three days), and $R_t$ is estimated with wider
+intervals.
+\item \emph{With strong overdispersion the changes in $R_t$ are not found}, and
+$R_t$ is estimated as constant at about 1.05. This is not a failure of the
+sampler. Given the true counts and the true $\kappa=5$, the exact draw of the
+partition puts a probability of only 0.43 on a change near the first true
+change and 0.07 near the second; with $\kappa=20$ these are 1.00 and 0.56. At
+this incidence (50 to 100 cases a day), a constant $R_t$ with a little more
+overdispersion explains the counts almost as well as the truth: the difference
+in log-likelihood is 8.6 at $\kappa=5$, against a prior penalty of similar
+size for two further changes. Changes in $R_t$ and overdispersion compete to
+explain the same variation, and the prior favours no change.
+\item \emph{$R_t$ appears to change near the start of every series.} The
+earliest onset days follow cases which are not in the data, so their
+infectiousness is understated and $R_t$ appears large for the first week or
+so. This is a property of the renewal model at the start of a series and not
+of the changes; it is left out of the figure and table.
+\end{itemize}
+
+\subsection{Simulation study}\label{sec:changepointsimulation}
+
+To measure the effect on estimates made in real time, datasets of 63 onset
+days were simulated with a single change, or none, in five regimes: no change
+($R_t=1.1$, mean delay 5 days); $R_t$ falling from 1.4 to 0.8, either 21 or 7
+days before the analysis date; and the mean delay doubling from 5 to 10 days,
+either 21 or 7 days before. Four models were fitted to each of five replicates
+(700 iterations, Poisson renewal model): $R_t$ constant within weeks fixed in
+advance and a single delay; changes in $R_t$ inferred; changes in the delay
+inferred; and both.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{changepoint_simulation_examples.png}
+\caption{Estimates of $R_t$ and of the mean delay for the first replicate of
+each regime, with the truth dashed.}
+\label{fig:changepointexamples}
+\end{figure}
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llcccc}
+\toprule
+ & & Weeks fixed & $R_t$ & Delay & Both \\
+Regime & Measure & in advance & changes & changes & \\
+\midrule
+No change & Score for cases & 0.029 & 0.027 & 0.028 & 0.026 \\
+ & Error in $R_t$ & 0.050 & 0.013 & 0.045 & 0.011 \\
+$R_t$ falls, 21 days before & Score for cases & 0.024 & 0.020 & 0.025 & 0.020 \\
+ & Error in $R_t$ & 0.021 & 0.011 & 0.021 & 0.011 \\
+$R_t$ falls, 7 days before & Score for cases & 0.009 & 0.009 & 0.009 & 0.023 \\
+ & Error in $R_t$ & 0.019 & 0.018 & 0.019 & 0.026 \\
+Delay doubles, 21 days before & Score for cases & 0.453 & 0.436 & 0.069 & 0.056 \\
+ & Error in $R_t$ & 0.321 & 0.272 & 0.054 & 0.013 \\
+Delay doubles, 7 days before & Score for cases & 0.358 & 0.358 & 0.330 & 0.226 \\
+ & Error in $R_t$ & 0.350 & 0.340 & 0.325 & 0.209 \\
+\bottomrule
+\end{tabular}
+\caption{Simulation study of changes: means over five replicates for the
+latest 14 onset days. The score for cases is the weighted interval score
+relative to the mean count; the error in $R_t$ is the absolute error of the
+posterior median.}
+\label{tab:changepointsimulation}
+\end{table}
+
+\begin{itemize}[itemsep=2pt]
+\item \emph{Inferring changes in $R_t$ costs nothing and improves estimates of
+$R_t$.} With no change the error in $R_t$ falls from 0.050 to 0.013, since
+$R_t$ is estimated from the whole series and not week by week; with a change
+three weeks old it halves. The true change is placed within three days with
+probability one in both regimes, and about 0.1 further changes are found
+after the third week. A change one week old is found and placed but gives no
+gain over weekly periods, which happen here to start on the day of the change.
+\item \emph{A change in the delay three weeks old is recovered, and ignoring it
+is very costly.} With a single delay, recent counts are underestimated by
+about half and 90\% intervals never contain the truth; with changes in the
+delay inferred the change is found in every draw and coverage is 90\%.
+\item \emph{A change in the delay one week old is only partly recovered.} It
+is found in about half of draws, and recent counts remain underestimated: by
+22\% with both inferred and by 35\% with changes in the delay only, against
+37\% with a single delay. In the replicate shown, every model attributes
+the shortfall in recent reports to a fall in $R_t$ to about 0.45. A week of
+reports cannot distinguish cases which are fewer from cases which are slower
+to be reported.
+\item \emph{Inferring both can introduce a spurious change in the delay.} When
+$R_t$ falls a week before the analysis date and both are inferred, a change in
+the delay is found in 22\% of draws and the score for cases is worse (0.023
+against 0.009). With no change at all such changes are rare (under 3\% of
+draws).
+\end{itemize}
+
+\subsection{Real data}\label{sec:changepointreal}
+
+The four models were fitted to the datasets and 17 analysis dates of
+\S\ref{sec:comparison}, each with sporadic revisions, the effect of the day of
+the week and a negative binomial renewal model (600 iterations). For
+Bundibugyo virus disease the onset days analysed start on 12 July 2026, the
+date of the first situation report, and not on 11 May as in
+\S\ref{sec:comparison}. For earlier onset days nothing is known of reporting
+in the weeks after onset, only that counts continued to be added months later;
+when these days were included, the model with changes in the delay gave them
+a mean delay of 20 to 40 days, which was an extrapolation of the gamma
+distribution from its far tail and not an estimate.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lcccc}
+\toprule
+ & Weeks fixed & $R_t$ & Delay & Both \\
+ & in advance & changes & changes & \\
+\midrule
+Bundibugyo virus disease & 0.120 & 0.124 & 0.120 & 0.131 \\
+Measles, Netherlands & 0.273 & 0.230 & 0.314 & 0.260 \\
+COVID-19 deaths, Sweden & 0.126 & 0.104 & 0.120 & 0.127 \\
+COVID-19 cases, Hong Kong & 0.087 & 0.092 & 0.099 & 0.159 \\
+\addlinespace
+Relative to weeks fixed in advance & 1.00 & 0.94 & 1.04 & 1.12 \\
+Better than weeks fixed in advance & & 12 of 17 & 9 of 17 & 7 of 17 \\
+\bottomrule
+\end{tabular}
+\caption{Weighted interval score for the latest 14 onset days, averaged over
+analysis dates, as in table~\ref{tab:comparison}.}
+\label{tab:changepointreal}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\textwidth]{changepoint_comparison_trajectories.png}
+\caption{$R_t$ (on a log scale) and the mean reporting delay by onset date at
+the latest analysis date of each dataset: posterior medians and 90\%
+intervals.}
+\label{fig:changepointreal}
+\end{figure}
+
+\begin{itemize}[itemsep=2pt]
+\item \emph{Inferring changes in $R_t$ helps a little}: a score lower by 6\%
+on average and better in 12 of 17 analyses, with the gains for Sweden and for
+measles. Far fewer changes are found than there are weeks (about two for Hong
+Kong and measles, about one for Bundibugyo virus disease and fewer than one
+for Sweden, counting any near the start of the series), and $R_t$ for the
+latest onset
+days is then that of a long final segment and not of a single week.
+\item \emph{Inferring changes in the delay does not improve estimates of
+recent counts}, and inferring both is worse on average, markedly so for Hong
+Kong.
+\item \emph{Changes found in the delay.} For Hong Kong the mean delay falls
+from 6.6 to 5.8 days for onsets from late July; for measles it falls from
+about 14 to between 9 and 11 days for onsets from early August. For Sweden,
+with both inferred, it rises from 7 to 9 days in the last two weeks, which is
+the kind of change which the simulation study shows cannot be told from a
+change in incidence. For Bundibugyo virus disease from 12 July little change
+is found (about half a change on average).
+\end{itemize}
+
+\subsection{Summary}
+
+\begin{itemize}[itemsep=2pt]
+\item Changes in the delay are recovered reliably once they are about three
+weeks old, and a delay which has changed and is taken to be constant gives
+badly wrong estimates of recent counts. They are not recovered reliably
+within a week, and on the real data here they did not improve estimates of
+recent counts. Their use is in describing how reporting changed, and as a
+check on the assumption of a single delay.
+\item Changes in $R_t$ are recovered when overdispersion is mild, improve
+estimates of $R_t$ in simulation, and improved estimates of recent counts a
+little on real data. With strong overdispersion, changes in $R_t$ of the size
+simulated are not identified at moderate incidence.
+\item Inferring both together is the least safe near the analysis date, where
+a recent shortfall in reports can be attributed to either.
+\item The comparisons rest on five replicates per regime and on single short
+chains for the real data, as before.
+\end{itemize}
 
 \begin{thebibliography}{3}
 \bibitem{bajaj2025}
