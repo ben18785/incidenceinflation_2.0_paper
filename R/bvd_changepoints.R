@@ -95,14 +95,17 @@ fit_bvd_changepoint_chain <- function(analysis, chain, niterations, n_draws = 30
       initial_cases_true = initial_cases_true,
       initial_reporting_parameters = initial_reporting,
       initial_Rt = dplyr::tibble(Rt_index = 1, Rt = 1),
-      reporting_metropolis_parameters = settings$reporting_metropolis,
+      # step sizes chosen from earlier runs, in which smaller steps were
+      # nearly always accepted and the parameters moved slowly
+      reporting_metropolis_parameters = list(mean_step = 0.3, sd_step = 0.25),
       print_to_screen = FALSE,
       initial_overdispersion = initial_overdispersion,
       is_negative_binomial = TRUE,
-      overdispersion_metropolis_sd = 3,
+      overdispersion_metropolis_sd = 8,
       initial_revision_parameters = initial,
       revision_metropolis_parameters = settings$revision_metropolis,
-      cases_before = analysis$cases_before),
+      cases_before = analysis$cases_before,
+      n_parameter_steps = 5),
     error = function(e) list(error = conditionMessage(e)))
   out <- list(chain = chain, analysis = analysis, niterations = niterations,
               seconds = as.numeric(Sys.time() - time_start, units = "secs"),
