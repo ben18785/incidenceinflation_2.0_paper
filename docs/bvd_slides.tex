@@ -55,6 +55,48 @@ p(R)\,p(\theta)
 \end{frame}
 
 % ---------------------------------------------------------------------------
+\begin{frame}{Starting point: Bajaj, Thompson \& Lambert (2025)}
+\textbf{Transmission.} True cases follow a renewal process, with $R_t$
+constant within fixed windows:
+\[
+I(t)\sim\operatorname{Poisson}\Bigl(R_t\sum_{s\ge 1}\omega_s\,I(t-s)\Bigr)
+\]
+
+\textbf{Reporting.} Each case is reported after a random delay with survival
+function $S_\theta$. Cases not yet reported at $t'$ are reported by $t''$
+independently:
+\[
+C(t\given t'')-C(t\given t')\sim
+\operatorname{binomial}\Bigl(I(t)-C(t\given t'),\
+\frac{S_\theta(t'-t)-S_\theta(t''-t)}{S_\theta(t'-t)}\Bigr)
+\]
+
+\textbf{Inference.} Gibbs sampling over $I(t)$, $R_t$ and $\theta$:
+\begin{itemize}
+\item $I(t)$ from its discrete full conditional;
+\item $R_t$ from a conjugate gamma;
+\item $\theta$ by Metropolis.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{What the original model assumes, and what we change}
+\centering
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{p{0.44\textwidth}p{0.46\textwidth}}
+\toprule
+\textbf{Original model} & \textbf{Here} \\
+\midrule
+Counts can only rise, and never exceed $I(t)$ & Records can be added in error and later removed \\
+Reporting depends only on the delay & Reports differ by day of the week \\
+One delay distribution, or periods fixed in advance & The delay can change at unknown times \\
+$R_t$ constant within fixed windows & $R_t$ can change at unknown times \\
+Series starts with the outbreak & Earlier cases enter as known \\
+\bottomrule
+\end{tabular}
+\end{frame}
+
+% ---------------------------------------------------------------------------
 \begin{frame}{Transmission}
 \[
 I(t)\sim\operatorname{NB}\bigl(R_t\,\Lambda_t,\ \kappa\bigr),\qquad
@@ -162,11 +204,6 @@ reversible jump.
 \item Delay segments: split, merge and shift moves.
 \item $\kappa$, $\psi_w$, $\eta$, $\rho$: random-walk Metropolis.
 \end{itemize}
-
-\bigskip
-Largest split-$\widehat R$ over six analysis dates: \bvdRhatCoreMax{} for
-cases and $R_t$, \bvdRhatDelayMeanMax{} for the delay, \bvdRhatWeekdayMax{} for
-$\psi_w$.
 \end{frame}
 
 % ---------------------------------------------------------------------------
