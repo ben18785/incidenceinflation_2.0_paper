@@ -31,7 +31,17 @@ read_bvd_sitrep <- function(path) {
 
 #' Builds snapshots of confirmed cases by onset date from the situation reports
 build_bvd_snapshots <- function(paths) {
-  purrr::map_dfr(sort(paths), read_bvd_sitrep) %>%
+  snapshots <- purrr::map_dfr(sort(paths), read_bvd_sitrep)
+  # the same situation report can be present in more than one file: keep one
+  # copy, having checked that they agree
+  conflicting <- snapshots %>%
+    dplyr::group_by(.data$date_onset, .data$date_reported) %>%
+    dplyr::summarise(n = dplyr::n_distinct(.data$cases_reported), .groups = "drop") %>%
+    dplyr::filter(.data$n > 1)
+  if(nrow(conflicting) > 0)
+    stop("Files for the same situation report give different case counts.")
+  snapshots %>%
+    dplyr::distinct(.data$date_onset, .data$date_reported, .keep_all = TRUE) %>%
     dplyr::arrange(.data$date_onset, .data$date_reported)
 }
 

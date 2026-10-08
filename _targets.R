@@ -22,6 +22,7 @@ n_iterations_real <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_REAL", "800"))
 n_iterations_bvd <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_BVD", "600"))
 n_iterations_demo <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_DEMO", "1500"))
 n_chains_bvd <- as.integer(Sys.getenv("PIPELINE_CHAINS_BVD", "3"))
+n_iterations_bvd_cp <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_BVD_CP", "3000"))
 
 list(
   # ---- simulated data -------------------------------------------------------
@@ -519,7 +520,7 @@ list(
   tar_target(bvd_cp_chain_index, seq_len(n_chains_bvd)),
   tar_target(bvd_cp_chain,
              fit_bvd_changepoint_chain(bvd_cp_analysis, bvd_cp_chain_index,
-                                       n_iterations_demo),
+                                       n_iterations_bvd_cp),
              pattern = cross(bvd_cp_analysis, bvd_cp_chain_index),
              iteration = "list"),
   tar_target(bvd_cp_result, {
