@@ -150,24 +150,25 @@ Probability & 0.61 & 0.26 & 0.09 & 0.04 \\
 
 % ---------------------------------------------------------------------------
 \begin{frame}{Reporting delays}
-A case with onset on day $t$ is reported after a gamma$(\mu,\sigma)$ delay,
-with survival function $S_\theta$.
+A case with onset on day $t$ is reported after a gamma$(\mu,\sigma)$ delay.
+$S_\theta(t\given k)$: probability it is still unreported at the end of day
+$k$. Its hazard of being reported on day $k$:
+\[
+h_\theta(t,k)=\log S_\theta(t\given k-1)-\log S_\theta(t\given k)
+\]
 
-\bigskip
-Reports published on different days of the week differ. Each day's hazard of
-reporting, $h_\theta$, is multiplied by $m_k=\psi_w$, where $w$ is the weekday
-of the next report:
+\smallskip
+Reports differ by day of the week, so each day's hazard is multiplied by
+$m_k=\psi_w$, where $w$ is the weekday of the next report:
 \[
 S^{*}_\theta(t\given t')=S_\theta(t\given t)\,
 \exp\Bigl\{-\sum_{k=t+1}^{t'}m_k\,h_\theta(t,k)\Bigr\}
 \]
 
-\medskip
-A case still unreported at report $t_{j-1}$ appears in report $t_j$ with
+\smallskip
+A case unreported at report $t_{j-1}$ appears in report $t_j$ with
 probability
-\[
-p_j=1-\frac{S^{*}_\theta(t\given t_j)}{S^{*}_\theta(t\given t_{j-1})}.
-\]
+$\displaystyle p_j=1-\frac{S^{*}_\theta(t\given t_j)}{S^{*}_\theta(t\given t_{j-1})}$.
 \end{frame}
 
 % ---------------------------------------------------------------------------
