@@ -572,6 +572,11 @@ list(
                 "outputs/bvd_changepoint_checks.png", 12, 13))
   }, format = "file", deployment = "main"),
 
+  tar_target(figure_bvd_check_added,
+             save_plot(plot_bvd_check_added(bvd_cp_checks),
+                       "outputs/bvd_changepoint_check_added.png", 11, 4.6),
+             format = "file", deployment = "main"),
+
   # demonstrations that changes are recovered from simulated data
   tar_target(changepoint_demo_scenario, changepoint_demonstration_scenarios()),
   tar_target(changepoint_demo_dataset,

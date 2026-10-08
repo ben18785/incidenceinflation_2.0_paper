@@ -1099,3 +1099,24 @@ write_bvd_tables <- function(results, scores, diagnostics, checks,
                numbers), path_numbers)
   c(path_dates, path_checks, path_rhat, path_numbers)
 }
+
+#' Cases added in each situation report against those replicated from the
+#' fitted model, as a figure on its own (for slides)
+plot_bvd_check_added <- function(checks) {
+  date_origin <- min(checks$dates$date) - 1
+  blue <- "#0072B2"
+  by_report <- dplyr::mutate(checks$by_report, date = date_origin + .data$time_reported)
+  ggplot2::ggplot(by_report, ggplot2::aes(x = .data$date)) +
+    ggplot2::geom_linerange(ggplot2::aes(ymin = .data$q05, ymax = .data$q95,
+                                         colour = "Replicated from the model (90% interval)"),
+                            alpha = 0.45, linewidth = 3) +
+    ggplot2::geom_point(ggplot2::aes(y = .data$observed, colour = "Observed"), size = 1.8) +
+    ggplot2::scale_colour_manual(
+      values = c("Observed" = "black",
+                 "Replicated from the model (90% interval)" = blue)) +
+    ggplot2::labs(x = "Date of situation report",
+                  y = "Cases added since the report before", colour = NULL) +
+    theme_paper() +
+    ggplot2::theme(text = ggplot2::element_text(size = 15),
+                   legend.position = "top")
+}
