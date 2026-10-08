@@ -1097,7 +1097,71 @@ write_bvd_tables <- function(results, scores, diagnostics, checks,
   path_numbers <- file.path(dir, "bvd_numbers.tex")
   writeLines(c("% written by the pipeline (write_bvd_tables): do not edit by hand",
                numbers), path_numbers)
-  c(path_dates, path_checks, path_rhat, path_numbers)
+
+  # description of the data to which the latest model was fitted
+  path_data <- file.path(dir, "bvd_data.tex")
+  writeLines(bvd_data_table(latest$analysis), path_data)
+  c(path_dates, path_checks, path_rhat, path_numbers, path_data)
+}
+
+#' A LaTeX table describing the data of an analysis
+#'
+#' @param analysis as returned by prepare_bvd_changepoint_analysis()
+#' @return the lines of a tabular environment
+bvd_data_table <- function(analysis) {
+  snapshots <- dplyr::arrange(analysis$snapshots, .data$time_onset, .data$time_reported)
+  date_origin <- min(analysis$dates$date) - 1
+  f_date <- function(time) trimws(format(date_origin + time, "%e %B"))
+  report_days <- sort(unique(snapshots$time_reported))
+  n_days <- max(snapshots$time_onset)
+  by_onset <- snapshots %>%
+    dplyr::group_by(.data$time_onset) %>%
+    dplyr::summarise(latest = dplyr::last(.data$cases_reported))
+  # onset days old enough to be almost completely reported
+  old <- dplyr::filter(by_onset, .data$time_onset <= n_days - 28)
+  updates <- snapshots %>%
+    dplyr::group_by(.data$time_onset) %>%
+    dplyr::mutate(change = .data$cases_reported - dplyr::lag(.data$cases_reported)) %>%
+    dplyr::ungroup() %>%
+    dplyr::filter(!is.na(.data$change))
+  f_within <- function(days) {
+    within <- snapshots %>%
+      dplyr::filter(.data$time_onset %in% old$time_onset,
+                    .data$time_reported - .data$time_onset <= days) %>%
+      dplyr::group_by(.data$time_onset) %>%
+      dplyr::summarise(cases = dplyr::last(.data$cases_reported)) %>%
+      dplyr::left_join(old, by = "time_onset")
+    # as in the posterior predictive checks: among onset days with a report
+    # within that many days
+    round(100 * sum(within$cases) / sum(within$latest))
+  }
+  f_percent <- function(x) paste0(round(100 * x), "\\%")
+  gaps <- diff(report_days)
+  rows <- c(
+    "Situation reports" = sprintf("%d (%s to %s)", length(report_days),
+                                  f_date(min(report_days)), f_date(max(report_days))),
+    "Days between consecutive reports" = sprintf("median %g, at most %g",
+                                                 stats::median(gaps), max(gaps)),
+    "Onset days analysed" = sprintf("%d (%s to %s)", n_days, f_date(1), f_date(n_days)),
+    "Confirmed cases with onset on these days" = format(sum(by_onset$latest),
+                                                        big.mark = ","),
+    "Cases per onset day (days over four weeks old)" = sprintf(
+      "median %g, range %g to %g", stats::median(old$latest), min(old$latest),
+      max(old$latest)),
+    "Of these, reported within 7 and 14 days of onset" = sprintf(
+      "%d\\%% and %d\\%%", f_within(7), f_within(14)),
+    "Updates to a count between consecutive reports" = format(nrow(updates),
+                                                              big.mark = ","),
+    "\\quad of which the count rises, is unchanged, falls" = paste(
+      f_percent(mean(updates$change > 0)), f_percent(mean(updates$change == 0)),
+      f_percent(mean(updates$change < 0)), sep = ", "),
+    "Largest fall in a count; cases removed in all" = sprintf(
+      "%g; %g", max(-updates$change), sum(pmax(-updates$change, 0))),
+    "Cases in the 40 days before, taken as known" = format(
+      sum(analysis$cases_before), big.mark = ","))
+  c("\\begin{tabular}{ll}", "\\toprule",
+    paste0(names(rows), " & ", rows, " \\\\"),
+    "\\bottomrule", "\\end{tabular}")
 }
 
 #' Cases added in each situation report against those replicated from the
