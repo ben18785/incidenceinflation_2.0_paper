@@ -171,24 +171,47 @@ p_j=1-\frac{S^{*}_\theta(t\given t_j)}{S^{*}_\theta(t\given t_{j-1})}.
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Misreporting}
-Counts sometimes fall, so some records must be wrong. Between reports
-$t_{j-1}$ and $t_j$, for onset day $t$:
+\begin{frame}{Misreporting: the idea}
+Counts sometimes fall, so some records in them must be wrong: duplicates,
+cases later reclassified, wrong onset dates.
 
-\medskip
-\begin{align*}
-\text{genuine cases, newly reported}\quad & d_j\sim\operatorname{binomial}\bigl(I(t)-D_{j-1},\ p_j\bigr)\\[2pt]
-\text{records added in error}\quad & n_j\sim\operatorname{Poisson}\bigl(\eta\,I(t)\,[S^{*}_{j-1}-S^{*}_{j}]\bigr)\\[2pt]
-\text{errors removed}\quad & e_j\sim\operatorname{binomial}\bigl(E_{j-1},\ 1-(1-\rho)^{t_j-t_{j-1}}\bigr)
-\end{align*}
+\bigskip
+Split the count for onset day $t$ in report $j$ into two parts, neither
+observed:
 \[
-C(t\given t_j)-C(t\given t_{j-1})=d_j+n_j-e_j
+C(t\given t_j)=\underbrace{D_j}_{\substack{\text{genuine cases}\\\text{reported so far}}}
++\underbrace{E_j}_{\substack{\text{wrong records}\\\text{currently in the count}}}
 \]
 
 \medskip
 \begin{itemize}
-\item $D$: genuine cases in the count. $E$: errors in the count. Both latent.
-\item $E$ is small and is summed out exactly.
+\item \textbf{Errors are made when cases are being reported.} Each genuine
+report brings, on average, $\eta$ wrong records with it.
+\item \textbf{Errors are found later.} Each wrong record is removed with
+probability $\rho$ each day.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Misreporting: the model}
+Between reports $t_{j-1}$ and $t_j$, for onset day $t$:
+
+\medskip
+\begin{align*}
+\text{genuine cases, newly reported}\quad & d_j\sim\operatorname{binomial}\bigl(I(t)-D_{j-1},\ p_j\bigr)\\[3pt]
+\text{wrong records added}\quad & n_j\sim\operatorname{Poisson}\bigl(\eta\times
+\underbrace{I(t)\,[S^{*}_{j-1}-S^{*}_{j}]}_{\text{expected genuine reports}}\bigr)\\[3pt]
+\text{wrong records removed}\quad & e_j\sim\operatorname{binomial}\bigl(E_{j-1},\ 1-(1-\rho)^{t_j-t_{j-1}}\bigr)
+\end{align*}
+\[
+D_j=D_{j-1}+d_j,\qquad E_j=E_{j-1}+n_j-e_j
+\]
+
+\medskip
+\begin{itemize}
+\item Wrong records are added in proportion to reporting activity: many when
+an onset day is being reported, almost none once it is complete.
+\item $E_j$ is small and is summed out exactly.
 \end{itemize}
 \end{frame}
 
