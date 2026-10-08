@@ -418,7 +418,9 @@ is accepted with the reciprocal for the split which would reverse it.
 Metropolis.
 \end{enumerate}
 The split-or-merge and shift moves of step 3 are each attempted 50 times in
-every iteration, since they are cheap beside step 1.
+every iteration, and the Metropolis updates of the continuous parameters (the
+delay parameters of each segment, the $\psi_w$, $\eta$ and $\rho$, and
+$\kappa$) five times, since all of these are cheap beside step 1.
 
 For each analysis date \bvdChains{} chains of \bvdIterations{} iterations were run from
 different starting values (of the true cases, the delay and $\kappa$), and
@@ -436,9 +438,8 @@ transmission was not overdispersed.
 
 \section{Results as of 1 October 2026}
 
-Results are from \bvdChains{} chains pooled. Their agreement is examined in
-\S\ref{sec:convergence}; in brief, the chains agree on the estimates of cases
-and of $R_t$ but not on the number of changes in the delay.
+Results are from \bvdChains{} chains pooled, which agree with one another
+(\S\ref{sec:convergence}).
 
 \begin{figure}[h]
 \centering
@@ -473,11 +474,13 @@ some evidence of a small decline, and neither slow growth nor slow decline is
 excluded at present.
 
 \paragraph{Reporting delay.} For the latest onset days the delay has mean
-\bvdDelayMean{} days and standard deviation \bvdDelaySd{} days. The
-distributions for the earliest and latest onset days differ only a little
-(figure~\ref{fig:main}c). The posterior mean number of changes in the delay is
-\bvdDelayChanges{}; how far this can be relied on is discussed in
-\S\ref{sec:convergence}.
+\bvdDelayMean{} days and standard deviation \bvdDelaySd{} days. Every draw
+has at least one change in the delay (the posterior mean number is
+\bvdDelayChanges), the first placed at the beginning of August
+(figure~\ref{fig:parameters}a). The change is small: the mean delay moves by
+less than half a day, and the distributions for the earliest and latest
+onset days differ mainly in that a little less is reported in the first few
+days after onset for later onset days (figure~\ref{fig:main}c).
 
 \begin{figure}[h]
 \centering
@@ -621,14 +624,33 @@ deviation of the delay of the latest onset day it is \bvdRhatDelayMeanMax;
 and for the effects of the day of the week it is \bvdRhatWeekdayMax.
 \end{itemize}
 
+No quantity monitored exceeds 1.1 on any date, and the chains, which were
+started from different values, give the same answers. This was not so in
+earlier versions of the analysis, and three changes were needed to achieve
+it.
+\begin{itemize}[itemsep=2pt]
+\item With segments of the delay as short as 7 days and one split or merge
+attempted per iteration, chains disagreed on the number of changes in the
+delay ($\widehat R$ up to 1.57). A minimum of 14 days and 50 attempts per
+iteration brought this to 1.12.
+\item The mean and standard deviation of the delay, the effects of the day of
+the week and $\kappa$ then still disagreed ($\widehat R$ up to 1.8), because
+their random-walk steps were too small and were taken once per iteration.
+Larger steps, taken five times per iteration, brought all of them to 1.1 or
+below.
+\item Throughout, the estimates of cases and of $R_t$ agreed between chains
+and changed little from one version to the next.
+\end{itemize}
+Agreement between three chains of this length is good evidence of
+convergence but not proof; effective sample sizes for the delay parameters
+remain modest.
+
 \section{Limitations}
 
 \begin{itemize}[itemsep=2pt]
-\item \emph{Convergence for the reporting delay}, as just described. Longer
-chains, or better moves between configurations of the delay, are needed
-before the changes in the delay can be reported. A simpler alternative is a
-single delay throughout, which the estimates of recent cases here suggest
-would give much the same answers.
+\item \emph{The shape of the delay.} The checks show a small misfit of the
+gamma distribution: less is reported in the first three days, and more by
+fourteen days, than it gives.
 \item \emph{The serial interval} is that of Zaire ebolavirus, cut off at 40
 days.
 \item \emph{Cases before 12 July} are taken to be known exactly from the
