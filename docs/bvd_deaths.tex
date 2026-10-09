@@ -31,12 +31,13 @@ built so far.
 
 \section{What the reports show}
 
-Each situation report gives an epidemic curve by date of symptom onset in
-which the confirmed cases of each onset day are split into those alive and
-those who have died, as known at the date of the report. For onset day $t$
-and a report made on day $t_j$ we therefore have two counts:
+Each situation report gives an epidemic curve, described as being by date
+of symptom onset, in which the confirmed cases of each day are split into
+those alive and those who have died, as known at the date of the report. For
+day $t$ of the curve and a report made on day $t_j$ we therefore have two
+counts:
 \begin{align*}
-C(t\given t_j) &: \text{confirmed cases with onset on day $t$, as now};\\
+C(t\given t_j) &: \text{confirmed cases counted for day $t$, as now};\\
 M(t\given t_j) &: \text{the number of those cases shown as dead in that report}
 \ (M \text{ for mortality}).
 \end{align*}
@@ -49,9 +50,13 @@ counts. Lower-case letters introduced below ($r$, $s$, $m$, $a$, $b$, $x$,
 $y$) are unobserved.
 Three features of these data shape the model.
 \begin{itemize}
-\item Deaths are indexed by the date of \emph{onset}, not the date of death.
-We never see when a person died, only that the count of dead for their onset
-day rose between two reports.
+\item A death is counted on the day its case is counted for, and the reports
+do not say when the person died: we see only that the count of dead for a
+day rose between two reports. For most cases that day is the day of onset.
+For some of those who died it may instead be the day of death, where the
+onset date was not known (\S\ref{sec:dated}); the reports do not say which
+cases these are. So the day a death is counted for is neither reliably the
+day of onset nor the day of death.
 \item The dead are among the cases already counted. A death cannot be shown
 before the case is itself in the report.
 \item Deaths lag cases. Among onset days more than five weeks old, the case
