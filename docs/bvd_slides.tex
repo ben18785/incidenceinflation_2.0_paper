@@ -46,7 +46,8 @@ p(R)\,p(\theta)
 
 \bigskip
 \begin{itemize}
-\item Reporting: delays, days of the week, misreporting.
+\item $R$: reproduction numbers $R_t$. $\theta$: parameters of reporting
+(the delay distribution, effects of the day of the week, rates of misreporting).
 \item $R_t$ and the delay can change at unknown times.
 \end{itemize}
 
@@ -114,7 +115,9 @@ I(t)\sim\operatorname{NB}\bigl(R_t\,\Lambda_t,\ \kappa\bigr),\qquad
 \begin{itemize}
 \item $\omega_s$: discretised gamma serial interval (mean 15.3, sd 9.3 days;
 Zaire ebolavirus).
-\item Cases before the first report enter $\Lambda_t$ as known.
+\item Cases with onset \bvdDateBeforeFirst{} to \bvdDateBeforeLast{} (the 40
+days before the first report) are not modelled: their counts in the report of
+\bvdDateLatest{} enter $\Lambda_t$ as fixed values.
 \item $R_t$ is piecewise constant (next slide).
 \end{itemize}
 \end{frame}
@@ -133,6 +136,8 @@ p\sim\operatorname{beta}(1,T)
 \begin{columns}[c]
 \begin{column}{0.5\textwidth}
 \begin{itemize}
+\item $\tau_1<\dots<\tau_K$: the days on which a new segment starts (the
+change points).
 \item Each day starts a new segment with probability $p$ (Barry \& Hartigan
 1992).
 \item Minimum segment: 7 days ($R_t$), 14 days (delay).
@@ -172,10 +177,13 @@ S^{*}_\theta(t\given t')=S_\theta(t\given t)\,
 \exp\Bigl\{-\sum_{k=t+1}^{t'}m_k\,h_\theta(t,k)\Bigr\}
 \]
 
+{\small $S_\theta(t\given t)$: probability a case is not reported on its day
+of onset (about 0.99 here).}
+
 \smallskip
 A case unreported at report $t_{j-1}$ appears in report $t_j$ with
 probability
-$\displaystyle p_j=1-\frac{S^{*}_\theta(t\given t_j)}{S^{*}_\theta(t\given t_{j-1})}$.
+$\displaystyle p(t_j)=1-\frac{S^{*}_\theta(t\given t_j)}{S^{*}_\theta(t\given t_{j-1})}$.
 \end{frame}
 
 % ---------------------------------------------------------------------------
@@ -184,11 +192,11 @@ Counts sometimes fall, so some records in them must be wrong: duplicates,
 cases later reclassified, wrong onset dates.
 
 \bigskip
-Split the count for onset day $t$ in report $j$ into two parts, neither
-observed:
+Split the count for onset day $t$ in the report of day $t_j$ into two parts,
+neither observed:
 \[
-C(t\given t_j)=\underbrace{D_j}_{\substack{\text{genuine cases}\\\text{reported so far}}}
-+\underbrace{E_j}_{\substack{\text{wrong records}\\\text{currently in the count}}}
+C(t\given t_j)=\underbrace{D(t_j)}_{\substack{\text{genuine cases}\\\text{reported so far}}}
++\underbrace{E(t_j)}_{\substack{\text{wrong records}\\\text{currently in the count}}}
 \]
 
 \medskip
@@ -206,32 +214,37 @@ Between reports $t_{j-1}$ and $t_j$, for onset day $t$:
 
 \medskip
 \begin{align*}
-\text{genuine cases, newly reported}\quad & d_j\sim\operatorname{binomial}\bigl(I(t)-D_{j-1},\ p_j\bigr)\\[3pt]
-\text{wrong records added}\quad & n_j\sim\operatorname{Poisson}\bigl(\eta\times
-\underbrace{I(t)\,[S^{*}_{j-1}-S^{*}_{j}]}_{\text{expected genuine reports}}\bigr)\\[3pt]
-\text{wrong records removed}\quad & e_j\sim\operatorname{binomial}\bigl(E_{j-1},\ 1-(1-\rho)^{t_j-t_{j-1}}\bigr)
+\text{genuine cases, newly reported}\quad & d(t_j)\sim\operatorname{binomial}\bigl(I(t)-D(t_{j-1}),\ p(t_j)\bigr)\\[3pt]
+\text{wrong records added}\quad & n(t_j)\sim\operatorname{Poisson}\bigl(\eta\times
+\underbrace{I(t)\,[S^{*}_\theta(t\given t_{j-1})-S^{*}_\theta(t\given t_j)]}_{\text{expected genuine reports}}\bigr)\\[3pt]
+\text{wrong records removed}\quad & e(t_j)\sim\operatorname{binomial}\bigl(E(t_{j-1}),\ 1-(1-\rho)^{t_j-t_{j-1}}\bigr)
 \end{align*}
 \[
-D_j=D_{j-1}+d_j,\qquad E_j=E_{j-1}+n_j-e_j
+D(t_j)=D(t_{j-1})+d(t_j),\qquad E(t_j)=E(t_{j-1})+n(t_j)-e(t_j)
 \]
 
-\medskip
+\smallskip
+\small
 \begin{itemize}
 \item Wrong records are added in proportion to reporting activity: many when
 an onset day is being reported, almost none once it is complete.
-\item $E_j$ is small and is summed out exactly.
+\item A wrong record survives each day with probability $1-\rho$, so
+$1-(1-\rho)^{t_j-t_{j-1}}$ is the probability it is removed at some point in
+the $t_j-t_{j-1}$ days between the two reports.
+\item Only $C=D+E$ is observed. We marginalise over $E$ exactly by a forward
+recursion over reports, truncated at $E\le\bvdErroneousMax$ (one more than
+the largest fall seen in a count).
 \end{itemize}
 \end{frame}
 
 % ---------------------------------------------------------------------------
 \begin{frame}{Fitting}
-Metropolis within Gibbs; \bvdChains{} chains from different starting values.
+Metropolis within Gibbs.
 
 \bigskip
 \begin{itemize}
 \item $I(t)$: drawn from its discrete full conditional.
-\item $R_t$ segments: drawn exactly, with segment values integrated out. No
-reversible jump.
+\item $R_t$ segments: drawn exactly, with segment values integrated out.
 \item Delay segments: split, merge and shift moves.
 \item $\kappa$, $\psi_w$, $\eta$, $\rho$: random-walk Metropolis.
 \end{itemize}
@@ -240,7 +253,10 @@ reversible jump.
 % ---------------------------------------------------------------------------
 \begin{frame}{Past performance on cases}
 \centering
-\includegraphics[height=0.8\textheight]{bvd_changepoint_cases.png}
+\includegraphics[height=0.78\textheight]{bvd_changepoint_cases.png}
+
+{\small Orange: reported at the analysis date. Black: reported on
+\bvdDateLatest. Green: posterior median and 90\% interval.}
 \end{frame}
 
 % ---------------------------------------------------------------------------
@@ -251,16 +267,17 @@ reversible jump.
 \includegraphics[width=\textwidth]{bvd_changepoint_main.png}
 \end{column}
 \begin{column}{0.3\textwidth}
-Reported counts fall steeply; estimated cases do not.
+{\small Grey: reported. Blue: estimated. Orange: projected at the latest $R_t$.}
 
 \bigskip
 $R_t$ now: \bvdRt.
 
 \bigskip
-Probability $R_t$ has not changed: \bvdRtNoChange.
+Probability $R_t$ has not changed since \bvdDateFirst: \bvdRtNoChange{}
+(the share of posterior draws with $K=0$; prior 0.61).
 
 \bigskip
-Mean delay: \bvdDelayMean{} days.
+Delay now: mean \bvdDelayMean{} days, sd \bvdDelaySd{} days.
 \end{column}
 \end{columns}
 \end{frame}
@@ -283,6 +300,17 @@ Mean delay: \bvdDelayMean{} days.
 \begin{frame}{Appendix: further estimates as of 1 October 2026}
 \centering
 \includegraphics[height=0.82\textheight]{bvd_changepoint_parameters.png}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Appendix: parameter estimates as of 1 October 2026}
+\centering
+\renewcommand{\arraystretch}{1.1}
+\resultsinput{bvd_parameters.tex}
+
+\smallskip
+{\small $\hat{R}$: split R-hat across \bvdChains{} chains of \bvdIterations{}
+iterations.}
 \end{frame}
 
 \end{document}

@@ -31,6 +31,12 @@ prepare_bvd_changepoint_analysis <- function(snapshots, date_now, serial_max = 4
   analysis
 }
 
+#' The largest number of erroneous records allowed at once for an onset day:
+#' one more than the largest fall seen in a count, and at least 3
+bvd_max_erroneous <- function(analysis) {
+  max(3, incidenceinflation::max_downward_revision(analysis$snapshots) + 1)
+}
+
 #' Settings for the segments of the reporting delay
 #'
 #' Segments of the delay have at least 14 onset days (those of Rt have at
@@ -70,7 +76,6 @@ fit_bvd_changepoint_chain <- function(analysis, chain, niterations, n_draws = 30
                             list(mean = 11, sd = 7))[[(chain - 1) %% 3 + 1]]
   initial_overdispersion <- c(10, 3, 30)[(chain - 1) %% 3 + 1]
 
-  largest_fall <- incidenceinflation::max_downward_revision(snapshots)
   initial <- settings$initial_revisions
   initial$weekday <- TRUE
   initial$weekday_first <- analysis$weekday_first
@@ -81,7 +86,7 @@ fit_bvd_changepoint_chain <- function(analysis, chain, niterations, n_draws = 30
     overdispersion = list(mean = 20, sd = 20),
     revisions = utils::modifyList(settings$priors$revisions,
                                   list(eta_mu = 0.005, eta_sigma = 0.005)),
-    max_erroneous = max(3, largest_fall + 1),
+    max_erroneous = bvd_max_erroneous(analysis),
     Rt_changepoints = list(),
     reporting_changepoints = delay_settings)
 
@@ -402,12 +407,7 @@ bvd_changepoint_panels <- function(result, days_ahead = 14, day_first = 1) {
     ggplot2::geom_line(data = projected, ggplot2::aes(y = .data$q50),
                        colour = red, linetype = 2) +
     ggplot2::geom_vline(xintercept = date_now + 0.5, linetype = 3) +
-    ggplot2::labs(
-      x = "Onset date", y = "Confirmed cases",
-      subtitle = paste0(
-        "Grey: reported in the situation report of ", format(date_now, "%d %B %Y"),
-        ". Blue: estimated cases. Red: projected for ", days_ahead,
-        " days if Rt stays at its latest value.")) +
+    ggplot2::labs(x = "Onset date", y = "Confirmed cases") +
     theme_paper()
 
   # (b) Rt, and (c) the mean delay, with the probability of a change on each day
@@ -426,8 +426,7 @@ bvd_changepoint_panels <- function(result, days_ahead = 14, day_first = 1) {
     ggplot2::geom_rug(data = Rt_changes, ggplot2::aes(alpha = .data$probability),
                       sides = "b", linewidth = 1.2, length = grid::unit(0.08, "npc")) +
     ggplot2::scale_alpha(range = c(0.15, 1), limits = c(0, 1), guide = "none") +
-    ggplot2::labs(x = "Onset date", y = "Rt",
-                  subtitle = "Marks below: probability of a change on the day (darker is higher).") +
+    ggplot2::labs(x = "Onset date", y = "Rt") +
     theme_paper()
 
   delay <- result$changes$reporting_days %>%
@@ -440,8 +439,7 @@ bvd_changepoint_panels <- function(result, days_ahead = 14, day_first = 1) {
     ggplot2::geom_rug(data = delay_changes, ggplot2::aes(alpha = .data$probability),
                       sides = "b", linewidth = 1.2, length = grid::unit(0.08, "npc")) +
     ggplot2::scale_alpha(range = c(0.15, 1), limits = c(0, 1), guide = "none") +
-    ggplot2::labs(x = "Onset date", y = "Mean delay, days",
-                  subtitle = "Marks below: probability of a change on the day.") +
+    ggplot2::labs(x = "Onset date", y = "Mean delay, days") +
     theme_paper()
 
   # (d) the delay distribution for the earliest and latest onset days
@@ -468,9 +466,7 @@ bvd_changepoint_panels <- function(result, days_ahead = 14, day_first = 1) {
     ggplot2::scale_fill_manual(values = c("#CC79A7", blue)) +
     ggplot2::scale_y_continuous(labels = function(x) paste0(100 * x, "%"),
                                 limits = c(0, 1)) +
-    ggplot2::labs(x = "Days since onset", y = "Reported",
-                  subtitle = "Proportion of cases reported within a number of days of onset.",
-                  colour = NULL, fill = NULL) +
+    ggplot2::labs(x = "Days since onset", y = "Reported", colour = NULL, fill = NULL) +
     theme_paper() +
     ggplot2::theme(legend.position = "inside",
                    legend.position.inside = c(0.75, 0.2))
@@ -488,8 +484,7 @@ bvd_changepoint_panels <- function(result, days_ahead = 14, day_first = 1) {
     f_band() +
     ggplot2::scale_y_continuous(labels = function(x) paste0(100 * x, "%"),
                                 limits = c(0, 1)) +
-    ggplot2::labs(x = "Onset date", y = "Already reported",
-                  subtitle = "Cases reported as a proportion of those estimated, last six weeks.") +
+    ggplot2::labs(x = "Onset date", y = "Already reported") +
     theme_paper()
 
   # (f) effect of the day of the week of a report
@@ -556,8 +551,7 @@ bvd_changepoint_panels <- function(result, days_ahead = 14, day_first = 1) {
 title_panels <- function(panels, titles) {
   purrr::map2(panels, seq_along(panels), function(panel, k) {
     panel + ggplot2::labs(title = paste0("(", letters[k], ") ", titles[k])) +
-      ggplot2::theme(plot.title = ggplot2::element_text(face = "bold", size = 11),
-                     plot.subtitle = ggplot2::element_text(size = 8.5))
+      ggplot2::theme(plot.title = ggplot2::element_text(face = "bold", size = 11))
   })
 }
 
@@ -616,11 +610,7 @@ plot_bvd_changepoint_cases <- function(results) {
     ggplot2::geom_line(ggplot2::aes(y = .data$q50), colour = "#009E73",
                        linewidth = 0.4) +
     ggplot2::facet_wrap(~panel, scales = "free_x", nrow = 2) +
-    ggplot2::labs(
-      x = "Onset date", y = "Confirmed cases",
-      caption = paste("Orange: reported in the situation report of the analysis date.",
-                      "Black: reported in the latest situation report.",
-                      "Green line and band: posterior median and 90% interval.")) +
+    ggplot2::labs(x = "Onset date", y = "Confirmed cases") +
     theme_paper() +
     ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
 }
@@ -877,8 +867,7 @@ plot_bvd_changepoint_checks <- function(checks) {
                          fill = blue, alpha = 0.25) +
     ggplot2::geom_line(ggplot2::aes(y = .data$q50), colour = blue) +
     ggplot2::geom_point(ggplot2::aes(y = .data$observed), size = 0.8) +
-    ggplot2::labs(x = "Onset date", y = "Confirmed cases",
-                  subtitle = "Points: counts in the latest report. Blue: median and 90% interval of replicated counts.") +
+    ggplot2::labs(x = "Onset date", y = "Confirmed cases") +
     theme_paper()
   by_report <- dplyr::mutate(checks$by_report, date = date_origin + .data$time_reported)
   panel_report <- ggplot2::ggplot(by_report, ggplot2::aes(x = .data$date)) +
@@ -886,8 +875,7 @@ plot_bvd_changepoint_checks <- function(checks) {
                             colour = blue, alpha = 0.4, linewidth = 2) +
     ggplot2::geom_point(ggplot2::aes(y = .data$q50), colour = blue, shape = 95, size = 5) +
     ggplot2::geom_point(ggplot2::aes(y = .data$observed), size = 1) +
-    ggplot2::labs(x = "Date of situation report", y = "Cases added since the report before",
-                  subtitle = "Points: cases added in each report. Blue: median and 90% interval of replicates.") +
+    ggplot2::labs(x = "Date of situation report", y = "Cases added since the report before") +
     theme_paper()
   scalars <- checks$scalars %>%
     dplyr::mutate(statistic = factor(.data$statistic, levels = unique(.data$statistic)))
@@ -904,8 +892,7 @@ plot_bvd_changepoint_checks <- function(checks) {
                        hjust = 1.1, vjust = 1.5, size = 3) +
     ggplot2::facet_wrap(~statistic, scales = "free", ncol = 3,
                         labeller = ggplot2::label_wrap_gen(34)) +
-    ggplot2::labs(x = NULL, y = "Replicates",
-                  subtitle = "Histogram: replicates. Line: observed value. p: proportion of replicates at least as large.") +
+    ggplot2::labs(x = NULL, y = "Replicates") +
     theme_paper() +
     ggplot2::theme(axis.text.y = ggplot2::element_blank(),
                    axis.ticks.y = ggplot2::element_blank(),
@@ -1087,7 +1074,12 @@ write_bvd_tables <- function(results, scores, diagnostics, checks,
     tex_command("bvdRhatDelayChangesMax", f_number(max(rhat[[10]]), 2)),
     tex_command("bvdRhatDelayMeanMax", f_number(max(rhat[[8]], rhat[[9]]), 2)),
     tex_command("bvdRhatWeekdayMax", f_number(max(rhat[[11]]), 2)),
-    tex_command("bvdRhatKappaMax", f_number(max(rhat[[5]]), 2)))
+    tex_command("bvdRhatKappaMax", f_number(max(rhat[[5]]), 2)),
+    tex_command("bvdErroneousMax", bvd_max_erroneous(latest$analysis)),
+    tex_command("bvdDateFirst", f_date(min(latest$analysis$dates$date))),
+    tex_command("bvdDateBeforeFirst", f_date(min(latest$analysis$dates_before))),
+    tex_command("bvdDateBeforeLast", f_date(max(latest$analysis$dates_before))),
+    tex_command("bvdDateLatest", f_date(date_latest)))
   for(k in seq_along(weekday_names)) {
     column <- paste0("weekday_", k)
     if(column %in% names(weekdays))
@@ -1098,10 +1090,50 @@ write_bvd_tables <- function(results, scores, diagnostics, checks,
   writeLines(c("% written by the pipeline (write_bvd_tables): do not edit by hand",
                numbers), path_numbers)
 
+  # estimates of the parameters at the latest date, with split R-hat
+  latest_diagnostics <- diagnostics[as.Date(diagnostics$date_now) == date_latest, ]
+  f_rhat_latest <- function(quantity) {
+    value <- latest_diagnostics$rhat[latest_diagnostics$quantity == quantity]
+    if(length(value) == 0) "" else f_number(value[1], 2)
+  }
+  f_parameter <- function(label, values, digits, quantity) {
+    q <- stats::quantile(values, c(0.5, 0.05, 0.95))
+    paste0(label, " & ", f_number(q[1], digits), " & ", f_number(q[2], digits),
+           " to ", f_number(q[3], digits), " & ", f_rhat_latest(quantity), " \\\\")
+  }
+  rows_parameters <- c(
+    f_parameter("$R_t$, latest onset day", draws$Rt$Rt[draws$Rt$time_onset == day_last],
+                2, "Rt, latest onset day"),
+    f_parameter("Number of changes in $R_t$", draws$Rt_changepoints$n_changes, 0,
+                "Number of changes in Rt"),
+    f_parameter("Overdispersion $\\kappa$", draws$overdispersion$overdispersion, 0,
+                "Overdispersion (kappa)"),
+    f_parameter("Mean delay, latest onset day (days)", delay$mean, 1,
+                "Mean delay, latest onset day"),
+    f_parameter("Sd of delay, latest onset day (days)", delay$sd, 1,
+                "Sd of delay, latest onset day"),
+    f_parameter("Number of changes in delay", draws$reporting_changepoints$n_changes, 0,
+                "Number of changes in delay"),
+    f_parameter("Wrong records per genuine report $\\eta$", draws$revisions$eta, 3, "eta"),
+    f_parameter("Daily probability a wrong record is removed $\\rho$",
+                draws$revisions$rho, 3, "rho"))
+  for(k in seq_along(weekday_names)) {
+    column <- paste0("weekday_", k)
+    if(column %in% names(weekdays))
+      rows_parameters <- c(rows_parameters, f_parameter(
+        paste0("Reporting rate, ", weekday_names[k], " $\\psi$"), weekdays[[column]], 2,
+        paste("Day of week effect", k)))
+  }
+  path_parameters <- file.path(dir, "bvd_parameters.tex")
+  writeLines(c(
+    "\\begin{tabular}{lccc}", "\\toprule",
+    "Parameter & Median & 90\\% interval & $\\hat{R}$ \\\\", "\\midrule",
+    rows_parameters, "\\bottomrule", "\\end{tabular}"), path_parameters)
+
   # description of the data to which the latest model was fitted
   path_data <- file.path(dir, "bvd_data.tex")
   writeLines(bvd_data_table(latest$analysis), path_data)
-  c(path_dates, path_checks, path_rhat, path_numbers, path_data)
+  c(path_dates, path_checks, path_rhat, path_numbers, path_data, path_parameters)
 }
 
 #' A LaTeX table describing the data of an analysis
@@ -1150,15 +1182,18 @@ bvd_data_table <- function(analysis) {
       max(old$latest)),
     "Of these, reported within 7 and 14 days of onset" = sprintf(
       "%d\\%% and %d\\%%", f_within(7), f_within(14)),
-    "Updates to a count between consecutive reports" = format(nrow(updates),
-                                                              big.mark = ","),
-    "\\quad of which the count rises, is unchanged, falls" = paste(
+    "Times an onset day's count appears in two consecutive reports" = format(
+      nrow(updates), big.mark = ","),
+    "\\quad of which the later count is higher, the same, lower" = paste(
       f_percent(mean(updates$change > 0)), f_percent(mean(updates$change == 0)),
       f_percent(mean(updates$change < 0)), sep = ", "),
     "Largest fall in a count; cases removed in all" = sprintf(
-      "%g; %g", max(-updates$change), sum(pmax(-updates$change, 0))),
-    "Cases in the 40 days before, taken as known" = format(
-      sum(analysis$cases_before), big.mark = ","))
+      "%g; %g", max(-updates$change), sum(pmax(-updates$change, 0))))
+  rows[[sprintf("Cases with onset %s to %s (report of %s), taken as known",
+                trimws(format(min(analysis$dates_before), "%e %B")),
+                trimws(format(max(analysis$dates_before), "%e %B")),
+                trimws(format(analysis$date_now, "%e %B")))]] <- format(
+                  sum(analysis$cases_before), big.mark = ",")
   c("\\begin{tabular}{ll}", "\\toprule",
     paste0(names(rows), " & ", rows, " \\\\"),
     "\\bottomrule", "\\end{tabular}")
