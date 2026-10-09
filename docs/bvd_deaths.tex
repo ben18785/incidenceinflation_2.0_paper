@@ -220,9 +220,18 @@ f_t:\ \text{the fraction of the fatal cases appearing under day $t$ which
 are placed there by their date of death.}
 \]
 It can be a single value or differ by day, and $f_t=0$ gives the model
-above. Two things are assumed about these cases: they are shown as dead as
-soon as they are reported, and the delay from the day they appear under to
-being reported is that of other fatal cases.
+above. Two things are assumed about these cases.
+\begin{itemize}
+\item They are shown as dead from the first report they appear in.
+\item They take as long to first appear in a report, counted from their date
+of death, as other fatal cases take counted from their date of onset. For
+example, if fatal cases dated by onset typically first appear in a report
+about a week after their onset date, a case dated by its death is taken to
+first appear about a week after its date of death.
+\end{itemize}
+The second assumption is a convenience and may well be wrong: a person
+identified at death could enter the reports sooner. It could be replaced by
+a separate, shorter delay for these cases, estimated or supplied.
 
 Under these assumptions only \eqref{eq:x} changes. A fatal case newly
 reported is of this kind with probability $f_t$, in which case it is shown
@@ -308,8 +317,9 @@ all, by a rescaling of time} (the parameter $\nu$), the same throughout the
 outbreak.
 \item \emph{A wrong record is as likely to be shown as dead whenever it is
 added.}
-\item \emph{Cases placed under their date of death are shown as dead once
-reported, and are reported with the delay of other fatal cases}
+\item \emph{Cases placed under their date of death are shown as dead from
+the first report they appear in, and take as long to first appear, counted
+from their date of death, as other fatal cases take counted from onset}
 (\S\ref{sec:dated}).
 \end{enumerate}
 
