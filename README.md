@@ -80,3 +80,21 @@ the counts for the same onset dates as known on 15 October.
 Further snapshot data in `data/processed/`, not yet analysed: Hong Kong COVID-19
 cases by onset date with every change to an individual case's onset date
 (`scripts/download_hk.R`), and Swedish COVID-19 deaths by date of death.
+
+## Cases and deaths (docs/bvd_deaths.tex)
+
+The joint model of cases and deaths is tested on simulated data by scripts
+which are separate from the pipeline. Open `incidenceinflation_2.0_paper.Rproj`
+(or run from the root of this repository), with the package in
+`../incidenceinflation_2.0` on its `deaths` branch:
+
+```
+Rscript scripts/deaths_simulation_run.R       # fits; set DEATHS_ITERATIONS, DEATHS_CORES
+Rscript scripts/deaths_simulation_summary.R   # table of estimates against the truth
+Rscript scripts/deaths_simulation_figures.R   # figures in outputs/
+```
+
+The simulated data and the fits are kept in
+`outputs/deaths_simulation/<study>/` (`<study>` is set by `DEATHS_STUDY`,
+default `first_check`), with a `summary.txt`. While chains run, their progress
+is written to `progress_<scenario>_<chain>.txt` in the same folder.

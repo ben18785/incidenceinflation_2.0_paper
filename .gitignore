@@ -8,3 +8,6 @@
 _targets/
 # raw downloads are fetched by scripts/download_data.R
 data/raw/
+# progress of chains while they run
+outputs/deaths_simulation/*/progress_*.txt
+outputs/deaths_simulation/*/run.log
