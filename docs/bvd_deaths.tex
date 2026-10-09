@@ -227,9 +227,13 @@ things are supplied and not estimated:
 \item $f_t$: the fraction of fatal cases with onset on day $t$ which are
 placed in the curve under their date of death (a single value, or one for
 each day; $f_t=0$ gives the model above);
-\item $h_z$, $z=0,1,\dots,z_{\max}$: the distribution of the time in days
-from onset to death for these cases (a discretised gamma distribution with
-supplied mean and standard deviation).
+\item $h_z$, $z=1,2,\dots,z_{\max}$: the distribution of the time in days
+from onset to death for these cases. It is a gamma distribution with
+supplied mean and standard deviation, rounded up to a whole number of days,
+so that $h_z$ is the probability the gamma distribution gives to times
+between $z-1$ and $z$ days. The time is therefore at least one day: a
+person who dies on their day of onset is under the correct day whichever
+date is used, and is not counted as dated by death.
 \end{itemize}
 
 \paragraph{By day of onset.} $I(t)$, $F(t)$ and $c_t$ keep their meanings:
@@ -245,7 +249,7 @@ are dated by their death, and these die after times from onset drawn
 independently from $h$: writing $W(t,z)$ for the number of them who die $z$
 days after onset,
 \begin{equation}
-\bigl(W(t,0),\dots,W(t,z_{\max})\bigr)\sim
+\bigl(W(t,1),\dots,W(t,z_{\max})\bigr)\sim
 \operatorname{multinomial}\bigl(D(t),\ h\bigr).
 \label{eq:lags}
 \end{equation}
@@ -259,7 +263,7 @@ curve are then
 \midrule
 Non-fatal cases with onset on day $t$ & $N(t)=I(t)-F(t)$ & \\
 Fatal cases with onset on day $t$, dated by onset & $F(t)-D(t)$ & \\
-Fatal cases who died on day $t$, dated by death & $G(t)=\sum_{z}W(t-z,z)$ & \\
+Fatal cases who died on day $t$, dated by death & $G(t)=\sum_{z\geq 1}W(t-z,z)$ & \\
 \bottomrule
 \end{tabular}
 \end{center}
