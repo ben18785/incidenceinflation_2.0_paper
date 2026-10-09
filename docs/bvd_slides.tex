@@ -193,7 +193,7 @@ of onset (about 0.99 here).}
 \smallskip
 A case unreported at report $t_{j-1}$ appears in report $t_j$ with
 probability
-$\displaystyle p(t_j)=1-\frac{S^{*}_\theta(t\given t_j)}{S^{*}_\theta(t\given t_{j-1})}$.
+$\displaystyle p(t\given t_j)=1-\frac{S^{*}_\theta(t\given t_j)}{S^{*}_\theta(t\given t_{j-1})}$.
 \end{frame}
 
 % ---------------------------------------------------------------------------
@@ -205,8 +205,8 @@ cases later reclassified, wrong onset dates.
 Split the count for onset day $t$ in the report of day $t_j$ into two parts,
 neither observed:
 \[
-C(t\given t_j)=\underbrace{D(t_j)}_{\substack{\text{genuine cases}\\\text{reported so far}}}
-+\underbrace{E(t_j)}_{\substack{\text{wrong records}\\\text{currently in the count}}}
+C(t\given t_j)=\underbrace{D(t\given t_j)}_{\substack{\text{genuine cases}\\\text{reported so far}}}
++\underbrace{E(t\given t_j)}_{\substack{\text{wrong records}\\\text{currently in the count}}}
 \]
 
 \medskip
@@ -224,13 +224,13 @@ Between reports $t_{j-1}$ and $t_j$, for onset day $t$:
 
 \medskip
 \begin{align*}
-\text{genuine cases, newly reported}\quad & d(t_j)\sim\operatorname{binomial}\bigl(I(t)-D(t_{j-1}),\ p(t_j)\bigr)\\[3pt]
-\text{wrong records added}\quad & n(t_j)\sim\operatorname{Poisson}\bigl(\eta\times
+\text{genuine cases, newly reported}\quad & d(t\given t_j)\sim\operatorname{binomial}\bigl(I(t)-D(t\given t_{j-1}),\ p(t\given t_j)\bigr)\\[3pt]
+\text{wrong records added}\quad & n(t\given t_j)\sim\operatorname{Poisson}\bigl(\eta\times
 \underbrace{I(t)\,[S^{*}_\theta(t\given t_{j-1})-S^{*}_\theta(t\given t_j)]}_{\text{expected genuine reports}}\bigr)\\[3pt]
-\text{wrong records removed}\quad & e(t_j)\sim\operatorname{binomial}\bigl(E(t_{j-1}),\ 1-(1-\rho)^{t_j-t_{j-1}}\bigr)
+\text{wrong records removed}\quad & e(t\given t_j)\sim\operatorname{binomial}\bigl(E(t\given t_{j-1}),\ 1-(1-\rho)^{t_j-t_{j-1}}\bigr)
 \end{align*}
 \[
-D(t_j)=D(t_{j-1})+d(t_j),\qquad E(t_j)=E(t_{j-1})+n(t_j)-e(t_j)
+D(t\given t_j)=D(t\given t_{j-1})+d(t\given t_j),\qquad E(t\given t_j)=E(t\given t_{j-1})+n(t\given t_j)-e(t\given t_j)
 \]
 
 \smallskip
