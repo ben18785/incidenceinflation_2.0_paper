@@ -319,11 +319,12 @@ list(
   }, format = "file", deployment = "main"),
 
   # ---- Bundibugyo virus disease outbreak, 2026 --------------------------------
-  # the raw files are not tracked, so these targets need them to be present
+  # the raw files are not tracked, so these targets need them to be present;
+  # the folder is listed afresh on every run so that files added to it are seen
   tar_target(bvd_files,
              list.files("data/raw/Ebola CFR", pattern = "^Varified.*\\.csv$",
                         full.names = TRUE),
-             format = "file"),
+             format = "file", cue = tar_cue(mode = "always")),
   tar_target(bvd_snapshots, build_bvd_snapshots(bvd_files)),
   # reporting delays: cases reported by each delay, for onset dates from the
   # first situation report onwards
