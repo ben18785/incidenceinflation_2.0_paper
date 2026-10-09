@@ -717,6 +717,74 @@ probability. The share of draws with $\nu=0$ estimates the posterior
 probability that the two delays are the same.
 \end{enumerate}
 
+\section{A relaxed version}\label{sec:relaxed}
+
+The existing model has a relaxed version, written in Stan, in which true
+cases are continuous and nothing is sampled as a whole number, so that it
+can be fitted by Hamiltonian Monte Carlo or by faster approximate methods.
+Deaths have been added to it. It is an independent check on the sampler of
+\S\ref{sec:fitting} and a much faster way to fit.
+
+\paragraph{The unobserved counts can be removed.} The obstacle is the
+unobserved counts: the fatal cases $F(t)$ and, for each report, the fatal
+cases $C^{F}(t\given t_j)$ among those reported. There are thousands of
+them. But when fatal cases are reported as others are ($\nu=0$) and none
+are dated by death, they can be summed out exactly. Each case is in one of
+three states which the reports show: not yet reported, shown as alive, or
+shown as dead. Because the two delays are independent, the chance that a
+case moves from one state to another between two reports does not depend on
+how long it has been where it is. The counts in a report then depend only on
+those in the report before:
+\begin{align}
+\Delta C(t\given t_j) &\sim\bin\bigl(I(t)-C(t\given t_{j-1}),\ p^{N}(t\given t_j)\bigr),
+ \nonumber\\
+\dnew(t\given t_j) &\sim\bin\Bigl(
+ \underbrace{\Delta C(t\given t_j)}_{\substack{\text{cases new}\\ \text{to the report}}},\
+ \underbrace{c_t\,\bigl[1-S^{D}(t\given t_j)\bigr]}_{\substack{\text{fatal, and the death}\\ \text{recorded by } t_j}}
+ \Bigr),\label{eq:lumpnew}\\[1ex]
+\dold(t\given t_j) &\sim\bin\Bigl(
+ \underbrace{C(t\given t_{j-1})-D(t\given t_{j-1})}_{\substack{\text{cases shown as alive}\\ \text{in the report before}}},\
+ \underbrace{\frac{c_t\,\bigl[S^{D}(t\given t_{j-1})-S^{D}(t\given t_j)\bigr]}
+ {1-c_t+c_t\,S^{D}(t\given t_{j-1})}}_{\substack{\text{fatal, and the death recorded by } t_j\text{,}\\ \text{given shown as alive at } t_{j-1}}}
+ \Bigr).\label{eq:lumpold}
+\end{align}
+Everything on the right is observed except $I(t)$, $c_t$ and the delays.
+These equations give the same probability of the reports as
+\eqref{eq:cfr} and \eqref{eq:a}--\eqref{eq:y} with $F(t)$ and
+$C^{F}(t\given t_j)$ summed over; this has been checked numerically
+(agreement to seven significant figures).
+
+\paragraph{What the relaxed version includes.} The case fatality ratio and
+the delay to a death being recorded each change at unknown onset days, up
+to a maximum number of changes which is set in advance, as $R_t$ and the
+reporting delay already do in the relaxed version. The days of the changes
+are summed over exactly, those of the two quantities together. Wrong
+records shown as dead are summed over by a small recursion, for onset days
+on which a count of deaths falls. The delay to a death being recorded has
+its own day-of-week multipliers.
+
+\paragraph{What it leaves out, and why.} It has no minimum length of
+segment. It does not yet have a different delay for fatal cases ($\nu$) or
+cases dated by death. With either, the probability of one onset day's
+reports depends on the segments of several quantities at once (for example
+on the case fatality ratio \emph{and} the reporting delay), and with cases
+dated by death the true cases of one day depend on the case fatality ratio
+of earlier days. The exact summing over the days of changes then no longer
+separates into small pieces. Both can be added with further approximations,
+which have not been made.
+
+\paragraph{A first fit.} On the simulated outbreak in which the case
+fatality ratio halves (\S\ref{sec:status}), the relaxed version fitted by
+Hamiltonian Monte Carlo (two chains of 300 iterations, 7.5 minutes) gave a
+ratio of 0.52 (0.49--0.54) falling to 0.28 (0.25--0.30), against 0.52 and
+0.27 from the sampler and 0.54 and 0.25 realised; a delay to a death being
+recorded of mean 12.5 (12.0--13.0) and sd 7.2 (6.8--7.7) days, against a
+truth of 12 and 7; and true cases inside the 90\% interval on all of the
+last 14 onset days. The fastest approximate method (a normal approximation
+at the mode) took 30 seconds and gave similar estimates of these, but put
+the probability of a change in the delay to a death being recorded at 0.38
+where there is none (0.04 by Hamiltonian Monte Carlo).
+
 \section{Tests on simulated data}\label{sec:tests}
 
 Data are simulated case by case: each case is given a reporting delay,
@@ -750,7 +818,8 @@ well as by the model without deaths?
 \begin{itemize}
 \item Built and unit-tested (package branch \texttt{deaths}): the whole
 model of \S\ref{sec:model} and the sampler of \S\ref{sec:fitting}, with the
-two sets of counts of \S\ref{sec:dated} in the approximate form; and a
+two sets of counts of \S\ref{sec:dated} in the approximate form and, as a
+switch, in the exact form; the relaxed version of \S\ref{sec:relaxed}; and a
 simulator with a change in any of the delays or the case fatality ratio,
 fatal cases reported at a different speed, cases dated by death and wrong
 records (but not day-of-week effects). The sampling of the paths has been
@@ -759,6 +828,14 @@ small examples, with and without wrong records, and the changes to the
 cases dated by death against the full probability of the model. These are
 checks that the code does what the equations say, not that the estimates
 are right.
+\item The exact form for cases dated by death is slower than the
+approximate form by about a factor of two (3.0 against 1.5 seconds an
+iteration on the simulated outbreaks, with wrong records allowed for), not
+the five to ten first guessed. The changes which move a case between the
+two kinds must sum over the split of the reports, since that split fixes
+how many of each kind there are.
+\item The tests on simulated data are run by the pipeline of the paper
+repository (targets named \texttt{deaths\_sim}).
 \item A first check on simulated data has been run: one simulated outbreak
 (60 onset days, about 40 cases a day, reporting delay of mean 8 and sd 6
 days, delay to a death being recorded of mean 12 and sd 7 days), with
