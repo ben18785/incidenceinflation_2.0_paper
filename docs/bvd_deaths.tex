@@ -1,0 +1,318 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{enumitem}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage[hidelinks]{hyperref}
+
+\newcommand{\given}{\,|\,}
+\newcommand{\bin}{\operatorname{binomial}}
+\newcommand{\pois}{\operatorname{Poisson}}
+\newcommand{\nb}{\operatorname{NB}}
+\newcommand{\betad}{\operatorname{beta}}
+
+\title{Bundibugyo virus disease, 2026: adding deaths, and a case fatality
+ratio which changes at unknown times\\[4pt]
+\large Specification of the model (nothing here has yet been fitted to the data)}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\noindent This note sets out how deaths are to be added to the model of
+cases, $R_t$ and reporting described in the companion note. It is a
+specification, written before the model is built, so that the assumptions can
+be checked. The model is to be tested on simulated data before it is fitted
+to the outbreak (\S\ref{sec:tests}). \S\ref{sec:status} says what has been
+built so far.
+
+\section{What the reports show}
+
+Each situation report gives an epidemic curve by date of symptom onset in
+which the confirmed cases of each onset day are split into those alive and
+those who have died, as known at the date of the report. For onset day $t$
+and a report made on day $t_j$ we therefore have two counts:
+\begin{align*}
+C(t\given t_j) &: \text{confirmed cases with onset on day $t$};\\
+M(t\given t_j) &: \text{those of them shown as having died},\qquad
+M(t\given t_j)\le C(t\given t_j).
+\end{align*}
+Three features of these data shape the model.
+\begin{itemize}
+\item Deaths are indexed by the date of \emph{onset}, not the date of death.
+We never see when a person died, only that the count of dead for their onset
+day rose between two reports.
+\item The dead are among the cases already counted. A death cannot be shown
+before the case is itself in the report.
+\item Deaths lag cases. Among onset days more than five weeks old, the case
+count is about 79\% of its latest value 7 to 14 days after onset, and the
+death count about 60\% of its latest value; at 21 to 28 days these are 97\%
+and 87\%. The crude ratio $M/C$ in the latest report is 0.45 to 0.49 for
+onset fortnights up to early September and 0.28 for the latest fortnight,
+which is almost entirely this lag.
+\end{itemize}
+(These figures are from all 49 reports, for onset days from 12 July. They are
+descriptive only.)
+
+Counts are occasionally revised downwards. The case count for an onset day
+falls between consecutive reports 41 times out of 2{,}129, and the death
+count 18 times, never by more than 2. On 11 of the 18 occasions the case
+count fell as well: a record which was removed had been shown as dead.
+
+\section{Model}\label{sec:model}
+
+Throughout, $t$ is an onset day and $t_1<t_2<\dots$ are the days of the
+reports which include it. The transmission model, the change points in $R_t$
+and the reporting delay of cases are as in the companion note; they are
+restated only where deaths alter them.
+
+\subsection{Cases which will die}
+
+Let $I(t)$ be the true number of cases with onset on day $t$. Of these,
+$F(t)$ will eventually die:
+\begin{equation}
+F(t)\sim\bin\bigl(I(t),\ c_t\bigr),
+\label{eq:cfr}
+\end{equation}
+where $c_t$ is the case fatality ratio of cases with onset on day $t$. The
+remaining $N(t)=I(t)-F(t)$ survive. We call the two groups \emph{fatal} and
+\emph{non-fatal} cases. Neither $F(t)$ nor $N(t)$ is observed.
+
+Two points about what $c_t$ means. It is indexed by onset day, so a change in
+$c_t$ is a change between cohorts of cases by when they fell ill. And it is a
+ratio among confirmed cases with a known onset date, which are the only cases
+in these data.
+
+\subsection{Two delays for each case}
+
+Each case, fatal or not, comes to be reported after a delay $X$ from onset,
+with survival function $S_\theta$ (a gamma distribution with mean $\mu$ and
+standard deviation $\sigma$, piecewise constant in the onset day). This is
+the reporting delay of the existing model.
+
+For a fatal case, the death comes to be recorded after a delay $Y$ from
+onset, with survival function $S_\phi$ (a gamma distribution with mean
+$\mu^{d}$ and standard deviation $\sigma^{d}$). The delay $Y$ runs from onset
+to the death being known to those who compile the reports: it includes both
+the time from onset to death and any delay in recording it. Its parameters
+$\phi=(\mu^{d},\sigma^{d})$ are also piecewise constant in the onset day,
+with changes at unknown times (\S\ref{sec:changes}).
+
+A fatal case is \emph{shown as dead} in the report of day $t'$ once it has
+been reported \emph{and} its death recorded, that is, once
+$\max(X,Y)\le t'-t$. If it has been reported but its death has not been
+recorded ($X\le t'-t<Y$), it is shown as alive.
+
+Days of the week are handled as for cases. The hazard of each delay on day
+$k$ is multiplied by $m_k=\psi_w$, where $w$ is the day of the week of the
+next report, giving effective survival functions $S^{*}_\theta(t\given t')$
+and $S^{*}_\phi(t\given t')$. The same multipliers are used for both delays:
+they describe when reports are compiled, which is common to both.
+
+\subsection{What a report shows}
+
+Leaving wrong records aside until \S\ref{sec:wrong}, the cases of onset day
+$t$ in the report of day $t_j$ are of three kinds:
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+ & Number & Shown as \\
+\midrule
+Non-fatal cases reported so far & $s(t\given t_j)$ & alive \\
+Fatal cases reported, death not yet recorded & $r(t\given t_j)-m(t\given t_j)$ & alive \\
+Fatal cases reported, death recorded & $m(t\given t_j)$ & dead \\
+\bottomrule
+\end{tabular}
+\end{center}
+Here $r(t\given t_j)$ is the number of fatal cases reported by day $t_j$.
+So
+\begin{equation}
+C(t\given t_j)=s(t\given t_j)+r(t\given t_j),\qquad M(t\given t_j)=m(t\given t_j).
+\label{eq:observed}
+\end{equation}
+The counts $C$ and $M$ are observed. The number $r$ of fatal cases among
+those reported is not: some of the cases shown as alive will die. This is the
+one new unobserved quantity for each onset day and report.
+
+\subsection{From one report to the next}
+
+Write $p(t\given t_j)=1-S^{*}_\theta(t\given t_j)/S^{*}_\theta(t\given t_{j-1})$
+for the probability that a case not reported by $t_{j-1}$ is reported by
+$t_j$, as in the existing model. Between the reports of $t_{j-1}$ and $t_j$:
+\begin{align}
+\text{fatal cases newly reported}\quad
+ & a(t\given t_j)\sim\bin\bigl(F(t)-r(t\given t_{j-1}),\ p(t\given t_j)\bigr),
+ \label{eq:a}\\
+\text{non-fatal cases newly reported}\quad
+ & b(t\given t_j)\sim\bin\bigl(N(t)-s(t\given t_{j-1}),\ p(t\given t_j)\bigr),
+ \label{eq:b}\\
+\text{of the $a(t\given t_j)$, death already recorded}\quad
+ & x(t\given t_j)\sim\bin\bigl(a(t\given t_j),\ 1-S^{*}_\phi(t\given t_j)\bigr),
+ \label{eq:x}\\
+\text{reported earlier, death now recorded}\quad
+ & y(t\given t_j)\sim\bin\Bigl(r(t\given t_{j-1})-m(t\given t_{j-1}),\
+ 1-\frac{S^{*}_\phi(t\given t_j)}{S^{*}_\phi(t\given t_{j-1})}\Bigr),
+ \label{eq:y}
+\end{align}
+and then
+\[
+r(t\given t_j)=r(t\given t_{j-1})+a(t\given t_j),\quad
+s(t\given t_j)=s(t\given t_{j-1})+b(t\given t_j),\quad
+m(t\given t_j)=m(t\given t_{j-1})+x(t\given t_j)+y(t\given t_j).
+\]
+All counts are zero before onset. In words: new deaths in a report come from
+two sources. Some are fatal cases which were already in the count, shown as
+alive, whose death has now been recorded \eqref{eq:y}. The others are fatal
+cases entering the count for the first time whose death had been recorded by
+then \eqref{eq:x}; for these, being unreported until now says nothing about
+whether the death has been recorded, so the probability is simply that $Y$
+has elapsed.
+
+Two consequences follow, and both are checks on the construction.
+\begin{itemize}
+\item The case counts alone behave exactly as in the existing model: adding
+\eqref{eq:a} and \eqref{eq:b}, new cases are
+$\bin(I(t)-C(t\given t_{j-1}),\ p(t\given t_j))$.
+\item A fatal case is shown as dead by day $t'$ with probability
+$[1-S^{*}_\theta(t\given t')]\,[1-S^{*}_\phi(t\given t')]$, the probability
+that both delays have elapsed.
+\end{itemize}
+
+\subsection{Wrong records}\label{sec:wrong}
+
+The existing model lets records be added to a count in error and later
+removed: between two reports $n(t\given t_j)\sim\pois(\eta\,I(t)\,
+[S^{*}_\theta(t\given t_{j-1})-S^{*}_\theta(t\given t_j)])$ wrong records are
+added, and each wrong record present is removed with probability
+$1-(1-\rho)^{t_j-t_{j-1}}$. Since removed records are sometimes dead, a wrong
+record is now of one of two kinds: each new wrong record is shown as dead
+with probability $\delta$ and as alive otherwise. With $E^{A}$ and $E^{D}$
+the numbers of wrong records shown as alive and as dead, \eqref{eq:observed}
+becomes
+\[
+C(t\given t_j)=s(t\given t_j)+r(t\given t_j)+E^{A}(t\given t_j)+E^{D}(t\given t_j),
+\qquad
+M(t\given t_j)=m(t\given t_j)+E^{D}(t\given t_j).
+\]
+As now, the total $E^{A}+E^{D}$ for an onset day is limited to a small
+number (one more than the largest fall seen in a count). A fall in the death
+count with no fall in the case count (7 of the 18 falls) needs no further
+mechanism: it is a wrong record shown as dead being removed while a genuine
+case is added.
+
+\subsection{Changes at unknown times}\label{sec:changes}
+
+Three quantities are piecewise constant in the onset day, each with its own
+change points and the same prior on them as in the companion note (each day
+starts a new segment with probability $p$, $p\sim\betad(1,T)$, and segments
+have a minimum length).
+\begin{center}
+\begin{tabular}{llll}
+\toprule
+Quantity & Prior within a segment & Minimum segment & Status \\
+\midrule
+$R_t$ & gamma & 7 days & existing \\
+Reporting delay $(\mu,\sigma)$ & hierarchical log-normal & 14 days & existing \\
+Case fatality ratio $c_t$ & $\betad(1,1)$ & 14 days & new \\
+Delay to death recorded $(\mu^{d},\sigma^{d})$ & hierarchical log-normal & 14 days & new \\
+\bottomrule
+\end{tabular}
+\end{center}
+The remaining new parameter is $\delta\sim\betad(1,1)$.
+
+\section{Assumptions to check}\label{sec:assumptions}
+
+\begin{enumerate}
+\item \emph{The two delays of a fatal case are independent.} In truth a
+case found at or near death has both delays short. Independence is what
+makes \eqref{eq:x} simple. The posterior predictive check for it is the share
+of reported cases shown as dead by time since onset, which in the data is
+0.41 within 3 days of onset, 0.33 at 3 to 7 days and 0.46 after six weeks.
+\item \emph{Fatal and non-fatal cases have the same reporting delay.} If
+those who die are found sooner, \eqref{eq:a} and \eqref{eq:b} need different
+$\theta$. This could be added as an option at little cost, since given the
+split of reported cases the two groups are separate.
+\item \emph{The same day-of-week multipliers apply to both delays.}
+\item \emph{A wrong record is as likely to be shown as dead whenever it is
+added.}
+\end{enumerate}
+
+\section{What can and cannot be learned}\label{sec:identifiability}
+
+A recent fall in the case fatality ratio and deaths not yet recorded look
+the same in the latest reports. For onset days in the last three to four
+weeks the death count is far from complete, so $c_t$ there is informed
+mostly by the delay $\phi$ estimated from earlier onset days. We therefore
+expect that a change in $c_t$ in the last three to four weeks cannot be
+detected, and that a change in $\phi$ and a change in $c_t$ at about the same
+time will be hard to tell apart. The simulations in \S\ref{sec:tests} are
+designed to measure both.
+
+Deaths also inform recent case numbers a little, through \eqref{eq:cfr}:
+many early deaths among few reported cases make a small $I(t)$ unlikely.
+
+\section{Fitting}\label{sec:fitting}
+
+The sampler extends the existing one (Metropolis within Gibbs). The new
+unobserved counts are the fatal cases $F(t)$ and, for each onset day, the
+path over reports of the fatal cases reported $r(t\given t_j)$ and of the
+wrong records $E^{A},E^{D}$.
+\begin{enumerate}
+\item \emph{Paths.} For each onset day the path of
+$(r,E^{A},E^{D})$ over reports is drawn exactly given everything else, by
+forward filtering and backward sampling. The state space is small because
+$r$ can rise between two reports by no more than the case count does.
+\item \emph{$I(t)$ and $F(t)$.} Given the paths, the likelihood separates
+into a term in $F(t)$ from \eqref{eq:a}, a term in $N(t)$ from \eqref{eq:b}
+and the renewal terms in $I(t)$. $I(t)$ is drawn from its discrete
+conditional with $F(t)$ summed out, and $F(t)$ is then drawn given $I(t)$,
+so the pair is drawn jointly.
+\item \emph{Case fatality ratio.} Given $F$ and $I$, the segments of $c_t$
+are drawn exactly, with the value in each segment integrated out
+(beta-binomial), as for $R_t$ under the Poisson model. The values are then
+drawn from their beta conditionals.
+\item \emph{Delay to death recorded.} Given the paths, $\phi$ enters only
+through \eqref{eq:x} and \eqref{eq:y}. Its segments are updated by the
+split, merge and shift moves already used for the reporting delay.
+\item \emph{Reporting delay.} As now, with the likelihood from \eqref{eq:a}
+and \eqref{eq:b}.
+\item \emph{$R_t$, $\kappa$, $\psi_w$, $\eta$, $\rho$:} as now. $\delta$
+is drawn from its beta conditional given the paths.
+\end{enumerate}
+
+\section{Tests on simulated data}\label{sec:tests}
+
+Data are simulated case by case: each case is given a reporting delay,
+whether it dies and, if so, a delay to the death being recorded, and the
+reports are counted from these. The tests, each over several simulated
+outbreaks and with at least three chains checked by split $\hat{R}$:
+\begin{enumerate}
+\item constant $c_t$ and $\phi$: are $c_t$, $\phi$ and recent $F(t)$
+recovered, with no changes inferred?
+\item a change in $c_t$ at 6, 4, 3 and 2 weeks before the end of the series:
+how old must a change be to be found?
+\item a change in $\phi$ with $c_t$ constant: is it attributed to $\phi$ and
+not to $c_t$?
+\item changes in both;
+\item data simulated with the two delays of a fatal case \emph{dependent},
+and with fatal cases reported sooner: how far wrong is the model when
+assumptions 1 and 2 fail?
+\item cases, $R_t$ and the reporting delay: are these estimated at least as
+well as by the model without deaths?
+\end{enumerate}
+
+\section{Status}\label{sec:status}
+
+\begin{itemize}
+\item Built: the simulator; the exact update of the segments of $c_t$; a
+first, simpler version of the model in which deaths were treated as a
+separate series from cases. That version is superseded by the joint model
+above.
+\item To build, in order: the joint model without wrong records, and tests
+1 to 6; wrong records of two kinds; then the fit to the outbreak with all 49
+reports.
+\end{itemize}
+
+\end{document}
