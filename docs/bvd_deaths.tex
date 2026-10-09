@@ -115,14 +115,13 @@ in these data.
 \subsection{Two delays for each case}
 
 Each case, fatal or not, comes to be reported after a delay $X$ from onset.
-For a non-fatal case this has survival function $S_\theta$ (a gamma
-distribution with mean $\mu$ and standard deviation $\sigma$, piecewise
-constant in the onset day), the reporting delay of the existing model.
+For a non-fatal case this is the reporting delay of the existing model: a
+gamma distribution with mean $\mu$ and standard deviation $\sigma$,
+$\theta=(\mu,\sigma)$, piecewise constant in the onset day.
 
 Fatal cases may be found sooner or later than others. Their reporting delay
 is that of non-fatal cases with time rescaled: a gamma distribution with
-mean $\mu e^{\nu}$ and standard deviation $\sigma e^{\nu}$, written
-$S_{\theta,\nu}$. The prior on the single parameter $\nu$ says that the two
+mean $\mu e^{\nu}$ and standard deviation $\sigma e^{\nu}$. The prior on the single parameter $\nu$ says that the two
 delays are the same unless the data show otherwise:
 \begin{equation}
 \nu=0\ \text{with probability } \tfrac12,\qquad
@@ -136,8 +135,8 @@ deviation would also shrink $\nu$ towards zero, but would never return
 exactly the common delay and gives no such probability.)
 
 For a fatal case, the death comes to be recorded after a delay $Y$ from
-onset, with survival function $S_\phi$ (a gamma distribution with mean
-$\mu^{d}$ and standard deviation $\sigma^{d}$). The delay $Y$ is the time from onset until the death is entered in the records from which the reports are made. It is therefore the time from onset to death plus however long the death then takes to be entered; the two parts are not separated. Its parameters
+onset, which has a gamma distribution with mean $\mu^{d}$ and standard
+deviation $\sigma^{d}$. The delay $Y$ is the time from onset until the death is entered in the records from which the reports are made. It is therefore the time from onset to death plus however long the death then takes to be entered; the two parts are not separated. Its parameters
 $\phi=(\mu^{d},\sigma^{d})$ are also piecewise constant in the onset day,
 with changes at unknown times (\S\ref{sec:changes}).
 
@@ -149,11 +148,30 @@ recorded ($X\le t'-t<Y$), it is shown as alive.
 Days of the week are handled as for cases, but separately for the two
 delays. The hazard of the reporting delay on day $k$ is multiplied by
 $\psi_w$ and that of the delay to a death being recorded by $\psi^{d}_w$,
-where $w$ is the day of the week of the next report. This gives effective
-survival functions $S^{*}_\theta(t\given t')$ and $S^{*}_\phi(t\given t')$.
-The two sets of multipliers have the same prior but are estimated
+where $w$ is the day of the week of the next report. The two sets of
+multipliers have the same prior but are estimated
 separately: cases and deaths need not reach those who compile the reports by
 the same route or on the same days.
+
+\paragraph{Notation for the delays.} What the model needs from each delay
+is the probability that the event has \emph{not} happened by the day of a
+report, with the day-of-week multipliers allowed for. These follow the rule
+used for the counts: $S^{C}$ is about cases being reported and $S^{D}$ about
+deaths being recorded, and a second letter says which cases.
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+Symbol & Probability that, by day $t'$, \ldots \\
+\midrule
+$S^{C,N}(t\given t')$ & a non-fatal case with onset on day $t$ has not been reported \\
+$S^{C,F}(t\given t')$ & a fatal case with onset on day $t$ has not been reported \\
+$S^{D}(t\given t')$ & the death of a fatal case with onset on day $t$ has not been recorded \\
+\bottomrule
+\end{tabular}
+\end{center}
+$S^{C,N}$ depends on $\theta$ and $\psi_w$, $S^{C,F}$ on $\theta$, $\nu$
+and $\psi_w$, and $S^{D}$ on $\phi$ and $\psi^{d}_w$. When $\nu=0$,
+$S^{C,F}=S^{C,N}$.
 
 \subsection{What a report shows}
 
@@ -186,10 +204,10 @@ before.
 
 \subsection{From one report to the next}
 
-Write $p^{N}(t\given t_j)=1-S^{*}_\theta(t\given t_j)/S^{*}_\theta(t\given t_{j-1})$
+Write $p^{N}(t\given t_j)=1-S^{C,N}(t\given t_j)/S^{C,N}(t\given t_{j-1})$
 for the probability that a non-fatal case not reported by $t_{j-1}$ is
 reported by $t_j$, as in the existing model, and $p^{F}(t\given t_j)$ for
-the same with $S^{*}_{\theta,\nu}$, for a fatal case.
+the same with $S^{C,F}$, for a fatal case.
 
 The model says how each running total changes from the report of $t_{j-1}$
 to the report of $t_j$. These changes are differences between what two
@@ -226,7 +244,7 @@ they have different probabilities:
 the first time and are already shown as dead in it. Such a case was not in
 the report of $t_{j-1}$ at all, so it adds one to the count of cases and one
 to the count of deaths at once. This happens if its death had been recorded
-by $t_j$, which has probability $1-S^{*}_\phi(t\given t_j)$: its being
+by $t_j$, which has probability $1-S^{D}(t\given t_j)$: its being
 unreported until now says nothing about whether the death has been recorded,
 since the two delays are independent.
 \item $\dold(t\given t_j)$: fatal cases which were in the report of
@@ -239,12 +257,12 @@ So
 \begin{align}
 \dnew(t\given t_j) &\sim\bin\Bigl(
  \underbrace{\Delta C^{F}(t\given t_j)}_{\substack{\text{fatal cases new}\\ \text{to the report}}},\
- \underbrace{1-S^{*}_\phi(t\given t_j)}_{\substack{\text{probability the death}\\ \text{has been recorded by } t_j}}
+ \underbrace{1-S^{D}(t\given t_j)}_{\substack{\text{probability the death}\\ \text{has been recorded by } t_j}}
  \Bigr),
  \label{eq:x}\\[1ex]
 \dold(t\given t_j) &\sim\bin\Bigl(
  \underbrace{C^{F}(t\given t_{j-1})-D(t\given t_{j-1})}_{\substack{\text{fatal cases shown as alive}\\ \text{in the report before}}},\
- \underbrace{1-\frac{S^{*}_\phi(t\given t_j)}{S^{*}_\phi(t\given t_{j-1})}}_{\substack{\text{probability the death has been}\\ \text{recorded by } t_j \text{, given that it}\\ \text{had not been by } t_{j-1}}}
+ \underbrace{1-\frac{S^{D}(t\given t_j)}{S^{D}(t\given t_{j-1})}}_{\substack{\text{probability the death has been}\\ \text{recorded by } t_j \text{, given that it}\\ \text{had not been by } t_{j-1}}}
  \Bigr).
  \label{eq:y}
 \end{align}
@@ -263,7 +281,7 @@ Two consequences follow, and both are checks on the construction.
 model: adding \eqref{eq:a} and \eqref{eq:b}, new cases are
 $\bin(I(t)-C(t\given t_{j-1}),\ p^{N}(t\given t_j))$.
 \item A fatal case is shown as dead by day $t'$ with probability
-$[1-S^{*}_{\theta,\nu}(t\given t')]\,[1-S^{*}_\phi(t\given t')]$, the
+$[1-S^{C,F}(t\given t')]\,[1-S^{D}(t\given t')]$, the
 probability that both delays have elapsed.
 \end{itemize}
 
@@ -364,13 +382,15 @@ switch:
 \begin{itemize}
 \item \emph{supplied} (intended for use): the delay from the date of death
 to first appearing in a report has its own gamma distribution, with supplied
-mean and standard deviation and survival function $S_\omega$. A person
+mean and standard deviation. Write $S^{C,d}(t\given t')$ for the
+probability that such a case, which died on day $t$, has not been reported
+by day $t'$ ($d$ for dated by death). A person
 identified at death is likely to enter the reports quickly, so this would
 usually be shorter than the reporting delay of other cases. It is not
 estimated and does not change over time. The day-of-week multipliers
-$\psi_w$ of the reporting delay apply to it, giving $S^{*}_\omega$;
+$\psi_w$ of the reporting delay apply to it;
 \item \emph{same as other fatal cases}: the delay from the date of death is
-that of other fatal cases from their date of onset, $S_\omega=S_{\theta,\nu}$.
+that of other fatal cases from their date of onset, $S^{C,d}=S^{C,F}$.
 This needs no further input, but there is little reason to believe it.
 \end{itemize}
 
@@ -386,10 +406,10 @@ From the report of $t_{j-1}$ to the report of $t_j$,
  \label{eq:ao}\\
 \text{dated by death, new to the report}\quad
  & \Delta C^{F,d}(t\given t_j)\sim\bin\Bigl(G(t)-C^{F,d}(t\given t_{j-1}),\
- 1-\frac{S^{*}_\omega(t\given t_j)}{S^{*}_\omega(t\given t_{j-1})}\Bigr),
+ 1-\frac{S^{C,d}(t\given t_j)}{S^{C,d}(t\given t_{j-1})}\Bigr),
  \label{eq:ad}\\
 \text{of the $\Delta C^{F,o}(t\given t_j)$, shown as dead}\quad
- & \Delta D^{o,\mathrm{new}}(t\given t_j)\sim\bin\bigl(\Delta C^{F,o}(t\given t_j),\ 1-S^{*}_\phi(t\given t_j)\bigr),
+ & \Delta D^{o,\mathrm{new}}(t\given t_j)\sim\bin\bigl(\Delta C^{F,o}(t\given t_j),\ 1-S^{D}(t\given t_j)\bigr),
  \label{eq:xo}
 \end{align}
 with $\dold(t\given t_j)$ as in \eqref{eq:y} for the cases dated by onset
@@ -419,31 +439,31 @@ $t$ as dated by death with probability
 independently of the others. The probability that such a case has not been
 reported by day $t_j$ is then a mixture over the two kinds,
 \begin{equation}
-\tilde{S}(t\given t_j)=(1-\tilde{f}_t)\,S^{*}_{\theta,\nu}(t\given t_j)
-+\tilde{f}_t\,S^{*}_\omega(t\given t_j),
+\tilde{S}^{C,F}(t\given t_j)=(1-\tilde{f}_t)\,S^{C,F}(t\given t_j)
++\tilde{f}_t\,S^{C,d}(t\given t_j),
 \label{eq:mixture}
 \end{equation}
 and \eqref{eq:ao} and \eqref{eq:ad} are replaced by a single equation for
 the fatal cases new to the report, of either kind,
 \begin{equation}
 \Delta C^{F}(t\given t_j)\sim\bin\Bigl(\tilde{F}(t)-C^{F}(t\given t_{j-1}),\
-1-\frac{\tilde{S}(t\given t_j)}{\tilde{S}(t\given t_{j-1})}\Bigr).
+1-\frac{\tilde{S}^{C,F}(t\given t_j)}{\tilde{S}^{C,F}(t\given t_{j-1})}\Bigr).
 \label{eq:amix}
 \end{equation}
 Each of these is one of those dated by death with probability
 \begin{equation}
-\pi(t\given t_j)=\frac{\tilde{f}_t\,\bigl[S^{*}_\omega(t\given t_{j-1})-S^{*}_\omega(t\given t_j)\bigr]}
-{\tilde{S}(t\given t_{j-1})-\tilde{S}(t\given t_j)},
+\pi(t\given t_j)=\frac{\tilde{f}_t\,\bigl[S^{C,d}(t\given t_{j-1})-S^{C,d}(t\given t_j)\bigr]}
+{\tilde{S}^{C,F}(t\given t_{j-1})-\tilde{S}^{C,F}(t\given t_j)},
 \label{eq:pi}
 \end{equation}
 which is large in the first reports after day $t$ if these cases are
 reported quickly, and small later. It is then shown as dead in its first
 report with certainty if it is dated by death, and with probability
-$1-S^{*}_\phi(t\given t_j)$ if it is dated by onset, so that \eqref{eq:xo}
+$1-S^{D}(t\given t_j)$ if it is dated by onset, so that \eqref{eq:xo}
 and the cases dated by death together give
 \begin{equation}
 \dnew(t\given t_j)\sim\bin\Bigl(\Delta C^{F}(t\given t_j),\
-\pi(t\given t_j)+\bigl(1-\pi(t\given t_j)\bigr)\bigl[1-S^{*}_\phi(t\given t_j)\bigr]\Bigr)
+\pi(t\given t_j)+\bigl(1-\pi(t\given t_j)\bigr)\bigl[1-S^{D}(t\given t_j)\bigr]\Bigr)
 \label{eq:xdated}
 \end{equation}
 for the number new to the report and shown as dead. Equation \eqref{eq:y} is
@@ -451,7 +471,7 @@ unchanged, since a fatal case shown as alive cannot be dated by its death.
 These are \eqref{eq:a}--\eqref{eq:y} with $\tilde{F}(t)$ for $F(t)$ and two
 probabilities altered. The delay $\phi$ is that of the fatal cases dated by
 onset only. With the switch at \emph{same as other fatal cases},
-$\tilde{S}=S^{*}_{\theta,\nu}$ and $\pi(t\given t_j)=\tilde{f}_t$.
+$\tilde{S}^{C,F}=S^{C,F}$ and $\pi(t\given t_j)=\tilde{f}_t$.
 
 \paragraph{What the approximation changes.} For a single fatal case,
 \eqref{eq:mixture}--\eqref{eq:xdated} are exact: a case taken at random from
@@ -517,7 +537,7 @@ both is therefore part of any analysis which uses them.
 
 The existing model lets records be added to a count in error and later
 removed: between two reports $n(t\given t_j)\sim\pois(\eta\,I(t)\,
-[S^{*}_\theta(t\given t_{j-1})-S^{*}_\theta(t\given t_j)])$ wrong records are
+[S^{C,N}(t\given t_{j-1})-S^{C,N}(t\given t_j)])$ wrong records are
 added, and each wrong record present is removed with probability
 $1-(1-\rho)^{t_j-t_{j-1}}$. Since removed records are sometimes dead, a wrong
 record is now of one of two kinds: each new wrong record is shown as dead
