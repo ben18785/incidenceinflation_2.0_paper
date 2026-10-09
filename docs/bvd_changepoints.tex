@@ -301,22 +301,22 @@ duplicate, or a case later reclassified) which are subsequently removed.
 Between consecutive reports on days $t_{j-1}$ and $t_j$, the count for onset
 day $t$ changes through three independent quantities:
 \begin{itemize}[itemsep=2pt]
-\item $d_j(t)$, the number of genuine cases reported for the first time;
+\item $\Delta C^{G}_j(t)$, the number of genuine cases reported for the first time;
 \item $n_j(t)$, the number of erroneous records added to the count;
 \item $e_j(t)$, the number of erroneous records, added earlier, which are
 removed from the count.
 \end{itemize}
 Their distributions are
 \begin{align}
-d_j(t) &\sim \bin\bigl(I(t) - D(t\given t_{j-1}),\; p_j(t)\bigr), \label{eq:d}\\
+\Delta C^{G}_j(t) &\sim \bin\bigl(I(t) - C^{G}(t\given t_{j-1}),\; p_j(t)\bigr), \label{eq:d}\\
 n_j(t) &\sim \pois\bigl(\eta\,I(t)\,[S^{*}_\theta(t\given t_{j-1}) - S^{*}_\theta(t\given t_j)]\bigr), \label{eq:n}\\
 e_j(t) &\sim \bin\bigl(E(t\given t_{j-1}),\; 1-(1-\rho)^{\,t_j-t_{j-1}}\bigr), \label{eq:m}
 \end{align}
 where $p_j(t)=1-S^{*}_\theta(t\given t_j)/S^{*}_\theta(t\given t_{j-1})$,
-$D$ is the number of genuine cases reported so far and $E$ the number of
+$C^{G}$ is the number of genuine cases reported so far and $E$ the number of
 erroneous records currently in the count, so that
 \begin{equation}\label{eq:deltaC}
-C(t\given t_j)-C(t\given t_{j-1}) = d_j(t)+n_j(t)-e_j(t).
+C(t\given t_j)-C(t\given t_{j-1}) = \Delta C^{G}_j(t)+n_j(t)-e_j(t).
 \end{equation}
 The form of \eqref{eq:n} reflects the assumption that erroneous records are a
 by-product of reporting: whenever cases of an onset day are being reported,
@@ -328,7 +328,7 @@ Poisson distribution is the natural one for a count of rare events arising
 independently in this way, and it has the practical advantage that the number
 of erroneous records in the count at any time is also Poisson, which keeps
 the likelihood simple. The rate depends on the expected and not the realised
-number of genuine reports, so that $n_j(t)$ and $d_j(t)$ are independent
+number of genuine reports, so that $n_j(t)$ and $\Delta C^{G}_j(t)$ are independent
 given $I(t)$.
 
 With $\eta=0$ this is the model of \cite{bajaj2025}, in which counts can only
@@ -338,7 +338,7 @@ number of erroneous records per genuine case reported, with a gamma prior of
 mean and standard deviation 0.005; $\rho$ is the daily probability that an
 erroneous record is removed, with a $\operatorname{beta}(1,4)$ prior.
 
-$D$ and $E$ are not observed. Given $I(t)$ and the parameters, the likelihood
+$C^{G}$ and $E$ are not observed. Given $I(t)$ and the parameters, the likelihood
 of the counts for onset day $t$, $L_t$, is obtained by a forward recursion
 over the possible values of $E$ (at most 3 here), and onset days are
 independent given the $I(t)$.

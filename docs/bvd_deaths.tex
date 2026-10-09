@@ -12,8 +12,8 @@
 \newcommand{\pois}{\operatorname{Poisson}}
 \newcommand{\nb}{\operatorname{NB}}
 \newcommand{\betad}{\operatorname{beta}}
-\newcommand{\dnew}{\Delta M^{\mathrm{new}}}
-\newcommand{\dold}{\Delta M^{\mathrm{old}}}
+\newcommand{\dnew}{\Delta D^{\mathrm{new}}}
+\newcommand{\dold}{\Delta D^{\mathrm{old}}}
 
 \title{Bundibugyo virus disease, 2026: adding deaths, and a case fatality
 ratio which changes at unknown times\\[4pt]
@@ -40,18 +40,17 @@ day $t$ of the curve and a report made on day $t_j$ we therefore have two
 counts:
 \begin{align*}
 C(t\given t_j) &: \text{confirmed cases counted for day $t$, as now};\\
-M(t\given t_j) &: \text{the number of those cases shown as dead in that report}
-\ (M \text{ for mortality}).
+D(t\given t_j) &: \text{the number of those cases shown as dead in that report}.
 \end{align*}
-Both are read directly from the report: $M(t\given t_j)$ is the height of
+Both are read directly from the report: $D(t\given t_j)$ is the height of
 the ``dead'' part of the bar for day $t$ and $C(t\given t_j)$ the
-height of the whole bar, so $M(t\given t_j)\le C(t\given t_j)$ and
-$C(t\given t_j)-M(t\given t_j)$ are shown as alive. 
+height of the whole bar, so $D(t\given t_j)\le C(t\given t_j)$ and
+$C(t\given t_j)-D(t\given t_j)$ are shown as alive. 
 
 Notation for what the reports show follows three rules.
 \begin{itemize}
-\item Everything about cases is a $C$ and everything about deaths an $M$.
-\item $C(t\given t_j)$ and $M(t\given t_j)$ with no superscript are the
+\item Everything about cases is a $C$ and everything about deaths a $D$.
+\item $C(t\given t_j)$ and $D(t\given t_j)$ with no superscript are the
 counts in the report, which are observed. A superscript marks a part of one
 of them which is not observed: for example $C^{F}(t\given t_j)$ below is
 the number of the $C(t\given t_j)$ cases which are fatal.
@@ -73,7 +72,7 @@ before the case is itself in the report.
 \item Deaths lag cases. Among onset days more than five weeks old, the case
 count is about 79\% of its latest value 7 to 14 days after onset, and the
 death count about 60\% of its latest value; at 21 to 28 days these are 97\%
-and 87\%. The crude ratio $M/C$ in the latest report is 0.45 to 0.49 for
+and 87\%. The crude ratio $D/C$ in the latest report is 0.45 to 0.49 for
 onset fortnights up to early September and 0.28 for the latest fortnight,
 which is almost entirely this lag.
 \end{itemize}
@@ -174,12 +173,12 @@ the report are then of three kinds:
  & Number & Shown as \\
 \midrule
 Non-fatal cases reported so far & $C^{N}(t\given t_j)$ & alive \\
-Fatal cases reported, death not yet recorded & $C^{F}(t\given t_j)-M(t\given t_j)$ & alive \\
-Fatal cases reported, death recorded & $M(t\given t_j)$ & dead \\
+Fatal cases reported, death not yet recorded & $C^{F}(t\given t_j)-D(t\given t_j)$ & alive \\
+Fatal cases reported, death recorded & $D(t\given t_j)$ & dead \\
 \bottomrule
 \end{tabular}
 \end{center}
-The counts $C$ and $M$ are observed. How the cases divide into $C^{F}$ and
+The counts $C$ and $D$ are observed. How the cases divide into $C^{F}$ and
 $C^{N}$ is not: some of the cases shown as alive will die. One further thing
 is not observed, which is described next: how the deaths newly shown in a
 report divide between cases new to that report and cases already in the one
@@ -187,7 +186,7 @@ before.
 
 \subsection{From one report to the next}
 
-Write $p(t\given t_j)=1-S^{*}_\theta(t\given t_j)/S^{*}_\theta(t\given t_{j-1})$
+Write $p^{N}(t\given t_j)=1-S^{*}_\theta(t\given t_j)/S^{*}_\theta(t\given t_{j-1})$
 for the probability that a non-fatal case not reported by $t_{j-1}$ is
 reported by $t_j$, as in the existing model, and $p^{F}(t\given t_j)$ for
 the same with $S^{*}_{\theta,\nu}$, for a fatal case.
@@ -209,18 +208,18 @@ The cases newly in the report of $t_j$ are fatal or not:
 \underbrace{\Delta C^{N}(t\given t_j)}_{\substack{\text{non-fatal cases new}\\ \text{to the report}}}
  &\sim\bin\Bigl(
  \underbrace{N(t)-C^{N}(t\given t_{j-1})}_{\substack{\text{non-fatal cases not in}\\ \text{the report before}}},\
- \underbrace{p(t\given t_j)}_{\substack{\text{probability a non-fatal case}\\ \text{not reported by } t_{j-1}\\ \text{is reported by } t_j}}
+ \underbrace{p^{N}(t\given t_j)}_{\substack{\text{probability a non-fatal case}\\ \text{not reported by } t_{j-1}\\ \text{is reported by } t_j}}
  \Bigr),
  \label{eq:b}
 \end{align}
 and $\Delta C(t\given t_j)=\Delta C^{F}(t\given t_j)+\Delta C^{N}(t\given t_j)$ is
 the observed rise in the case count.
 
-The deaths newly shown in the report of $t_j$, $\Delta M(t\given t_j)$,
+The deaths newly shown in the report of $t_j$, $\Delta D(t\given t_j)$,
 which are observed, belong to cases of two kinds, and the two are counted separately because
 they have different probabilities:
 \[
-\Delta M(t\given t_j)=\dnew(t\given t_j)+\dold(t\given t_j).
+\Delta D(t\given t_j)=\dnew(t\given t_j)+\dold(t\given t_j).
 \]
 \begin{itemize}
 \item $\dnew(t\given t_j)$: fatal cases which are in the report of $t_j$ for
@@ -232,7 +231,7 @@ unreported until now says nothing about whether the death has been recorded,
 since the two delays are independent.
 \item $\dold(t\given t_j)$: fatal cases which were in the report of
 $t_{j-1}$, shown there as alive, and are shown as dead in the report of
-$t_j$. There were $C^{F}(t\given t_{j-1})-M(t\given t_{j-1})$ such cases to
+$t_j$. There were $C^{F}(t\given t_{j-1})-D(t\given t_{j-1})$ such cases to
 start with, and for each the death was not recorded by $t_{j-1}$ but is by
 $t_j$.
 \end{itemize}
@@ -244,16 +243,16 @@ So
  \Bigr),
  \label{eq:x}\\[1ex]
 \dold(t\given t_j) &\sim\bin\Bigl(
- \underbrace{C^{F}(t\given t_{j-1})-M(t\given t_{j-1})}_{\substack{\text{fatal cases shown as alive}\\ \text{in the report before}}},\
+ \underbrace{C^{F}(t\given t_{j-1})-D(t\given t_{j-1})}_{\substack{\text{fatal cases shown as alive}\\ \text{in the report before}}},\
  \underbrace{1-\frac{S^{*}_\phi(t\given t_j)}{S^{*}_\phi(t\given t_{j-1})}}_{\substack{\text{probability the death has been}\\ \text{recorded by } t_j \text{, given that it}\\ \text{had not been by } t_{j-1}}}
  \Bigr).
  \label{eq:y}
 \end{align}
-Only their sum $\Delta M(t\given t_j)$ is observed, not the two parts. All totals are zero before the first report.
+Only their sum $\Delta D(t\given t_j)$ is observed, not the two parts. All totals are zero before the first report.
 
 For example, suppose a report shows 10 cases for an onset day, 3 of them
 dead, and the next report shows 12 cases, 5 of them dead. Then
-$\Delta C=2$ and $\Delta M=2$. The two new deaths could both be among the 7
+$\Delta C=2$ and $\Delta D=2$. The two new deaths could both be among the 7
 cases shown as alive before ($\dnew=0$, $\dold=2$); or both of the 2 new
 cases could have arrived already dead ($\dnew=2$, $\dold=0$); or one of each.
 The reports do not say which, and the model sums over the possibilities.
@@ -262,7 +261,7 @@ Two consequences follow, and both are checks on the construction.
 \begin{itemize}
 \item When $\nu=0$ the case counts alone behave exactly as in the existing
 model: adding \eqref{eq:a} and \eqref{eq:b}, new cases are
-$\bin(I(t)-C(t\given t_{j-1}),\ p(t\given t_j))$.
+$\bin(I(t)-C(t\given t_{j-1}),\ p^{N}(t\given t_j))$.
 \item A fatal case is shown as dead by day $t'$ with probability
 $[1-S^{*}_{\theta,\nu}(t\given t')]\,[1-S^{*}_\phi(t\given t')]$, the
 probability that both delays have elapsed.
@@ -300,7 +299,7 @@ onset}. The renewal model and \eqref{eq:cfr} are unchanged, so that
 transmission and the case fatality ratio are both on the correct days. Of
 the fatal cases of onset day $t$,
 \begin{equation}
-D(t)\sim\bin\bigl(F(t),\ f_t\bigr)
+F^{d}(t)\sim\bin\bigl(F(t),\ f_t\bigr)
 \label{eq:dated}
 \end{equation}
 are dated by their death, and these die after times from onset drawn
@@ -308,7 +307,7 @@ independently from $h$: writing $W(t,z)$ for the number of them who die $z$
 days after onset,
 \begin{equation}
 \bigl(W(t,1),\dots,W(t,z_{\max})\bigr)\sim
-\operatorname{multinomial}\bigl(D(t),\ h\bigr).
+\operatorname{multinomial}\bigl(F^{d}(t),\ h\bigr).
 \label{eq:lags}
 \end{equation}
 
@@ -319,41 +318,41 @@ days after onset,
  & Number & \\
 \midrule
 Non-fatal cases with onset on day $t$ & $N(t)=I(t)-F(t)$ & \\
-Fatal cases with onset on day $t$, dated by onset & $F(t)-D(t)$ & \\
+Fatal cases with onset on day $t$, dated by onset & $F(t)-F^{d}(t)$ & \\
 Fatal cases who died on day $t$, dated by death & $G(t)=\sum_{z\geq 1}W(t-z,z)$ & \\
 \bottomrule
 \end{tabular}
 \end{center}
-so that $\tilde{F}(t)=F(t)-D(t)+G(t)$ fatal cases and
+so that $\tilde{F}(t)=F(t)-F^{d}(t)+G(t)$ fatal cases and
 $\tilde{I}(t)=N(t)+\tilde{F}(t)$ cases in all are recorded for day $t$.
 
-$D(t)$ and $G(t)$ both count fatal cases dated by death, but group them by
-different days. $D(t)$ groups them by onset: it is the number with onset on
+$F^{d}(t)$ and $G(t)$ both count fatal cases dated by death, but group them by
+different days. $F^{d}(t)$ groups them by onset: it is the number with onset on
 day $t$, and these are recorded for later days, not for day $t$. $G(t)$
 groups them by death: it is the number who died on day $t$, whatever their
 day of onset, and these are the ones recorded for day $t$. The two are linked
-by $W$, since $D(t)=\sum_{z\geq 1}W(t,z)$.
+by $W$, since $F^{d}(t)=\sum_{z\geq 1}W(t,z)$.
 
 A fatal case can be recorded for day $t$ in only two ways, which the
 expression for $\tilde{F}(t)$ adds up. Either its onset was day $t$ and it
 is dated by onset: of the $F(t)$ fatal cases with onset on day $t$, the
-$D(t)$ dated by death are recorded for a later day, which leaves
-$F(t)-D(t)$. Or it died on day $t$ and is dated by death, its onset being
+$F^{d}(t)$ dated by death are recorded for a later day, which leaves
+$F(t)-F^{d}(t)$. Or it died on day $t$ and is dated by death, its onset being
 earlier: there are $G(t)$ of these. No case is counted twice, because a
-fatal case is dated either by onset or by death, and none of the $D(t)$
+fatal case is dated either by onset or by death, and none of the $F^{d}(t)$
 cases is among the $G(t)$, because the time from onset to death is at least
 one day.
 
 For example, suppose 10 fatal cases have onset on 9 August, of which 4 are
 dated by death, and that 5 fatal cases with earlier onsets, dated by death,
-die on 9 August. Then $F=10$, $D=4$ and $G=5$ for 9 August, and
+die on 9 August. Then $F=10$, $F^{d}=4$ and $G=5$ for 9 August, and
 $\tilde{F}=10-4+5=11$ fatal cases are recorded for that day, although only
 10 fatal cases truly had onset on it. The 4 are recorded for whichever later
 days they die on, and are counted in $G$ for those days.
 
 It is
 these, not $F(t)$ and $I(t)$, which the counts $C(t\given t_j)$ and
-$M(t\given t_j)$ come to include. In the equations for reports, $t$ is therefore the day cases are recorded
+$D(t\given t_j)$ come to include. In the equations for reports, $t$ is therefore the day cases are recorded
 for; how \eqref{eq:a}--\eqref{eq:y} are altered is set out below, first
 exactly and then in the approximate form which is used. When $f_t=0$ the two
 sets of counts are the same and those equations are unchanged.
@@ -379,18 +378,18 @@ This needs no further input, but there is little reason to believe it.
 $t$ are reported at different speeds, so strictly each must be followed
 separately. Write $C^{F,o}(t\given t_j)$ and $C^{F,d}(t\given t_j)$ for the
 numbers reported by day $t_j$ of those dated by onset and those dated by
-death, and $M^{o}(t\given t_j)$ for the number of the former shown as dead.
+death, and $D^{o}(t\given t_j)$ for the number of the former shown as dead.
 From the report of $t_{j-1}$ to the report of $t_j$,
 \begin{align}
 \text{dated by onset, new to the report}\quad
- & \Delta C^{F,o}(t\given t_j)\sim\bin\bigl(F(t)-D(t)-C^{F,o}(t\given t_{j-1}),\ p^{F}(t\given t_j)\bigr),
+ & \Delta C^{F,o}(t\given t_j)\sim\bin\bigl(F(t)-F^{d}(t)-C^{F,o}(t\given t_{j-1}),\ p^{F}(t\given t_j)\bigr),
  \label{eq:ao}\\
 \text{dated by death, new to the report}\quad
  & \Delta C^{F,d}(t\given t_j)\sim\bin\Bigl(G(t)-C^{F,d}(t\given t_{j-1}),\
  1-\frac{S^{*}_\omega(t\given t_j)}{S^{*}_\omega(t\given t_{j-1})}\Bigr),
  \label{eq:ad}\\
 \text{of the $\Delta C^{F,o}(t\given t_j)$, shown as dead}\quad
- & \Delta M^{o,\mathrm{new}}(t\given t_j)\sim\bin\bigl(\Delta C^{F,o}(t\given t_j),\ 1-S^{*}_\phi(t\given t_j)\bigr),
+ & \Delta D^{o,\mathrm{new}}(t\given t_j)\sim\bin\bigl(\Delta C^{F,o}(t\given t_j),\ 1-S^{*}_\phi(t\given t_j)\bigr),
  \label{eq:xo}
 \end{align}
 with $\dold(t\given t_j)$ as in \eqref{eq:y} for the cases dated by onset
@@ -401,7 +400,7 @@ otherwise is shown as alive for now and changes to dead in a later report.
 The reports then show
 \[
 C(t\given t_j)=C^{N}(t\given t_j)+C^{F,o}(t\given t_j)+C^{F,d}(t\given t_j),\qquad
-M(t\given t_j)=M^{o}(t\given t_j)+C^{F,d}(t\given t_j).
+D(t\given t_j)=D^{o}(t\given t_j)+C^{F,d}(t\given t_j).
 \]
 This is exact, but it has two unobserved numbers for each day and report,
 $C^{F,o}$ and $C^{F,d}$, where the model without these cases has one. The
@@ -528,12 +527,12 @@ report include them:
 \[
 C(t\given t_j)=C^{N}(t\given t_j)+C^{F}(t\given t_j)+E^{A}(t\given t_j)+E^{D}(t\given t_j),
 \qquad
-M(t\given t_j)=M^{G}(t\given t_j)+E^{D}(t\given t_j),
+D(t\given t_j)=D^{G}(t\given t_j)+E^{D}(t\given t_j),
 \]
-where $M^{G}(t\given t_j)$ is the number of genuine fatal cases shown as
-dead. Without wrong records $M^{G}=M$, which is why the deaths of genuine
-cases were written as $M$ above; with them, $M^{G}$ is not observed and
-takes the place of $M$ in \eqref{eq:x} and \eqref{eq:y}.
+where $D^{G}(t\given t_j)$ is the number of genuine fatal cases shown as
+dead. Without wrong records $D^{G}=D$, which is why the deaths of genuine
+cases were written as $D$ above; with them, $D^{G}$ is not observed and
+takes the place of $D$ in \eqref{eq:x} and \eqref{eq:y}.
 As now, the total $E^{A}+E^{D}$ for an onset day is limited to a small
 number (one more than the largest fall seen in a count of cases or of
 deaths). Where some fatal cases are dated by death (\S\ref{sec:dated}), the
@@ -671,7 +670,7 @@ any day. The Metropolis probability involves the renewal model,
 last kinds, the reports of day $t$ through $\tilde{f}_t$. The other updates
 are as above with $\tilde{F}(t)$ and the altered probabilities; for days
 long enough ago to be taken as fully reported, the true cases with onset on
-day $t$ are the latest reported count less $G(t)-D(t)$.
+day $t$ are the latest reported count less $G(t)-F^{d}(t)$.
 \item \emph{$\nu$.} Given the paths, $\nu$ enters only through
 \eqref{eq:a} (and \eqref{eq:pi}, where cases dated by death have their own
 delay). From $\nu=0$, a value drawn from the normal part of the prior is

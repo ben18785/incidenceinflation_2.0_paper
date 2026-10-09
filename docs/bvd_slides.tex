@@ -205,7 +205,7 @@ cases later reclassified, wrong onset dates.
 Split the count for onset day $t$ in the report of day $t_j$ into two parts,
 neither observed:
 \[
-C(t\given t_j)=\underbrace{D(t\given t_j)}_{\substack{\text{genuine cases}\\\text{reported so far}}}
+C(t\given t_j)=\underbrace{C^{G}(t\given t_j)}_{\substack{\text{genuine cases}\\\text{reported so far}}}
 +\underbrace{E(t\given t_j)}_{\substack{\text{wrong records}\\\text{currently in the count}}}
 \]
 
@@ -224,13 +224,13 @@ Between reports $t_{j-1}$ and $t_j$, for onset day $t$:
 
 \medskip
 \begin{align*}
-\text{genuine cases, newly reported}\quad & d(t\given t_j)\sim\operatorname{binomial}\bigl(I(t)-D(t\given t_{j-1}),\ p(t\given t_j)\bigr)\\[3pt]
+\text{genuine cases, newly reported}\quad & \Delta C^{G}(t\given t_j)\sim\operatorname{binomial}\bigl(I(t)-C^{G}(t\given t_{j-1}),\ p(t\given t_j)\bigr)\\[3pt]
 \text{wrong records added}\quad & n(t\given t_j)\sim\operatorname{Poisson}\bigl(\eta\times
 \underbrace{I(t)\,[S^{*}_\theta(t\given t_{j-1})-S^{*}_\theta(t\given t_j)]}_{\text{expected genuine reports}}\bigr)\\[3pt]
 \text{wrong records removed}\quad & e(t\given t_j)\sim\operatorname{binomial}\bigl(E(t\given t_{j-1}),\ 1-(1-\rho)^{t_j-t_{j-1}}\bigr)
 \end{align*}
 \[
-D(t\given t_j)=D(t\given t_{j-1})+d(t\given t_j),\qquad E(t\given t_j)=E(t\given t_{j-1})+n(t\given t_j)-e(t\given t_j)
+C^{G}(t\given t_j)=C^{G}(t\given t_{j-1})+\Delta C^{G}(t\given t_j),\qquad E(t\given t_j)=E(t\given t_{j-1})+n(t\given t_j)-e(t\given t_j)
 \]
 
 \smallskip
@@ -241,7 +241,7 @@ an onset day is being reported, almost none once it is complete.
 \item A wrong record survives each day with probability $1-\rho$, so
 $1-(1-\rho)^{t_j-t_{j-1}}$ is the probability it is removed at some point in
 the $t_j-t_{j-1}$ days between the two reports.
-\item Only $C=D+E$ is observed. We marginalise over $E$ exactly by a forward
+\item Only $C=C^{G}+E$ is observed. We marginalise over $E$ exactly by a forward
 recursion over reports, truncated at $E\le\bvdErroneousMax$ (one more than
 the largest fall seen in a count).
 \end{itemize}
