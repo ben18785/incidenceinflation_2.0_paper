@@ -475,7 +475,10 @@ C(t\given t_j)=s(t\given t_j)+r(t\given t_j)+E^{A}(t\given t_j)+E^{D}(t\given t_
 M(t\given t_j)=m(t\given t_j)+E^{D}(t\given t_j).
 \]
 As now, the total $E^{A}+E^{D}$ for an onset day is limited to a small
-number (one more than the largest fall seen in a count). A fall in the death
+number (one more than the largest fall seen in a count of cases or of
+deaths). Where some fatal cases are dated by death (\S\ref{sec:dated}), the
+$I(t)$ in the rate at which wrong records are added is the number of cases
+recorded for day $t$, $\tilde{I}(t)$. A fall in the death
 count with no fall in the case count (7 of the 18 falls) needs no further
 mechanism: it is a wrong record shown as dead being removed while a genuine
 case is added.
@@ -557,7 +560,10 @@ probability is the result of filtering forwards over the reports.
 \item \emph{Paths.} For each onset day the path of
 $(r,E^{A},E^{D})$ over reports is then drawn exactly given everything else,
 by sampling backwards. The state space is small because $r$ can rise between
-two reports by no more than the case count does.
+two reports by no more than the case count does. Steps 1 and 2 are the
+slowest part of the fitting and are done in compiled code; states whose
+probability given the reports so far is below $10^{-12}$ of the largest are
+dropped.
 \item \emph{$I(t)$ and $F(t)$ given the paths.} Given the paths, the
 likelihood separates into a term in $F(t)$ from \eqref{eq:a}, a term in
 $N(t)$ from \eqref{eq:b} and the renewal terms in $I(t)$. $I(t)$ is drawn
@@ -573,9 +579,15 @@ through \eqref{eq:x} and \eqref{eq:y}. Its segments are updated by the
 split, merge and shift moves already used for the reporting delay.
 \item \emph{Reporting delay.} As now, with the likelihood from \eqref{eq:a}
 and \eqref{eq:b}.
-\item \emph{$R_t$, $\kappa$, $\psi_w$, $\eta$, $\rho$:} as now, and
-$\psi^{d}_w$ in the same way as $\psi_w$. $\delta$ is drawn from its beta
-conditional given the paths.
+\item \emph{$R_t$ and $\kappa$:} as now.
+\item \emph{Wrong records.} Given the paths, the wrong records added and
+removed between reports are known. $\delta$ is drawn from its beta
+conditional and $\eta$ from its gamma conditional; $\rho$ is updated by a
+random walk on the logit scale.
+\item \emph{Day-of-week multipliers.} $\psi_w$ and $\psi^{d}_w$ are each
+updated by a random walk, given the paths: $\psi_w$ through \eqref{eq:a},
+\eqref{eq:b} and the wrong records added, $\psi^{d}_w$ through \eqref{eq:x}
+and \eqref{eq:y}.
 \item \emph{Cases dated by death} (\S\ref{sec:dated}). Given the paths,
 four kinds of change of a single case are proposed, many times in each
 iteration, and each is accepted with the Metropolis probability:
@@ -601,9 +613,12 @@ are as above with $\tilde{F}(t)$ and the altered probabilities; for days
 long enough ago to be taken as fully reported, the true cases with onset on
 day $t$ are the latest reported count less $G(t)-D(t)$.
 \item \emph{$\nu$.} Given the paths, $\nu$ enters only through
-\eqref{eq:a}. A move between $\nu=0$ and $\nu\ne0$ is proposed and accepted
-with the Metropolis probability, and when $\nu\ne0$ it is updated by a
-random walk.
+\eqref{eq:a} (and \eqref{eq:pi}, where cases dated by death have their own
+delay). From $\nu=0$, a value drawn from the normal part of the prior is
+proposed; from $\nu\ne0$, either $\nu=0$ or a small change is proposed,
+with equal probability. Each is accepted with the Metropolis--Hastings
+probability. The share of draws with $\nu=0$ estimates the posterior
+probability that the two delays are the same.
 \end{enumerate}
 
 \section{Tests on simulated data}\label{sec:tests}
@@ -637,28 +652,79 @@ well as by the model without deaths?
 \section{Status}\label{sec:status}
 
 \begin{itemize}
-\item Built and unit-tested (package branch \texttt{deaths}): the
-simulator, including cases dated by death with their own delay from death
-to being reported; the joint model of \S\ref{sec:model}, including the two
-sets of counts of \S\ref{sec:dated} in the approximate form, \emph{without}
-wrong records, day-of-week effects or $\nu$ (fatal and non-fatal cases
-dated by onset share a reporting delay); the sampler of \S\ref{sec:fitting}.
-The sampling of the paths has been checked against enumeration of every
-possible path for small examples, and the changes to the cases dated by
-death against the full probability of the model. These are checks that the
-code does what the equations say, not that the estimates are right.
-\item A first fit to one simulated outbreak (70 onset days, about 40 cases a
-day, $c_t$ falling from 0.5 to 0.25 five weeks before the end) recovered the
-ratio in both periods, the change, and the delay to a death being recorded.
-This is a single run of a single chain, without cases dated by death, and
-is not yet evidence that the method works.
-\item No tests on simulated data have been completed. A first set was
-started and stopped before any chain finished; none will be run until this
-note has been reviewed.
-\item To build: $\nu$; day-of-week effects for each delay; wrong records of
-two kinds. All are
-needed before the model can be fitted to the outbreak. Then the tests of
-\S\ref{sec:tests}, and the fit with all 49 reports.
+\item Built and unit-tested (package branch \texttt{deaths}): the whole
+model of \S\ref{sec:model} and the sampler of \S\ref{sec:fitting}, with the
+two sets of counts of \S\ref{sec:dated} in the approximate form; and a
+simulator with a change in any of the delays or the case fatality ratio,
+fatal cases reported at a different speed, cases dated by death and wrong
+records (but not day-of-week effects). The sampling of the paths has been
+checked against an independent calculation over every possible path for
+small examples, with and without wrong records, and the changes to the
+cases dated by death against the full probability of the model. These are
+checks that the code does what the equations say, not that the estimates
+are right.
+\item A first check on simulated data has been run: one simulated outbreak
+(60 onset days, about 40 cases a day, reporting delay of mean 8 and sd 6
+days, delay to a death being recorded of mean 12 and sd 7 days), with
+seven variants of how it is reported, each fitted with the whole model by
+two chains of 300 iterations (the first 150 discarded). Table
+\ref{tab:first} gives the results. This is a quick check that nothing is
+badly wrong, not the tests of \S\ref{sec:tests}: there is one outbreak, the
+chains are short, and in two variants the two chains had not yet agreed on
+the reporting delay.
+\item To do: the tests of \S\ref{sec:tests} with more outbreaks and longer
+chains, then the fit with all 49 reports.
+\end{itemize}
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{p{3.1cm}p{2.0cm}p{2.3cm}p{2.3cm}p{2.3cm}p{2.3cm}}
+\toprule
+Variant & Truth & Case fatality ratio, early / late & Delay to death recorded, mean / sd & Fatal delay ratio; share of draws at 1 & Wrong records: $\eta$, $\rho$, $\delta$ \\
+\midrule
+Nothing changes & 0.43 / 0.42 & 0.42 / 0.42 & 12.4 / 7.4 & 1.00; 0.77 & $\eta\approx0$ \\
+Ratio halves & 0.54 / 0.25 & 0.52 / 0.27 & 12.5 / 7.2 & 1.00; 0.82 & $\eta\approx0$ \\
+Fatal cases reported twice as fast & 0.43 / 0.42 & 0.42 / 0.42 & 12.4 / 7.4 & 0.49; 0 & $\eta\approx0$ \\
+Wrong records (0.03, 0.3, 0.4) & 0.43 / 0.42 & 0.42 / 0.42 & 12.3 / 7.3 & 1.00; 0.77 & 0.03, 0.36, 0.37 \\
+30\% dated by death & 0.43 / 0.42 & 0.41 / 0.41 & 12.5 / 8.1 & 1.00; 0.74 & $\eta\approx0$ \\
+The same, fitted as if none were & 0.43 / 0.42 & 0.42 / 0.42 & 9.4 / 21.6 & 1.00; 0.81 & $\eta\approx0$ \\
+All of the above together & 0.54 / 0.25 & 0.50 / 0.28 & 12.5 / 6.9 & 0.44; 0 & 0.02, 0.27, 0.60 \\
+\bottomrule
+\end{tabular}
+\caption{First check on simulated data: posterior medians. ``Truth'' is the
+case fatality ratio realised in the simulated outbreak for onset days 5--25
+and 40--55 (the probabilities used were 0.4 throughout, or 0.5 falling to
+0.25 on day 33). The true delay to a death being recorded has mean 12 and
+sd 7 days; the true fatal delay ratio is 1, or 0.5 where fatal cases are
+reported twice as fast. A change in the case fatality ratio was found in
+every draw for the two variants which have one, and in at most 12\% of draws
+for the others.}
+\label{tab:first}
+\end{table}
+
+What the check shows, with the caution above:
+\begin{itemize}
+\item The case fatality ratio, its change, both delays, the fatal delay
+ratio and the wrong-record parameters are all close to the truth. A fatal
+delay ratio of exactly 1 is preferred when that is the truth (about three
+quarters of draws) and never when it is not.
+\item With 30\% of fatal cases dated by death and the right inputs, the
+share of the fatal cases recorded for each day which are dated by death is
+recovered (0.29 against 0.29). The sd of the delay to a death being recorded
+is somewhat high (8.1, 90\% interval 7.3--9.2, against 7), which may be the
+approximation of \S\ref{sec:dated} or chance; more outbreaks will tell.
+\item Fitting those data as if no cases were dated by death distorts the
+delay to a death being recorded badly (sd 22 against 7, and a change in the
+delay found in every draw where there is none), while the case fatality
+ratio and $R_t$ are little affected in this example.
+\item With everything together, the fatal delay ratio (0.44, 0.40--0.50)
+and $\delta$ (0.60, 0.38--0.84) have the truth at the edge of their 90\%
+intervals.
+\item True cases in the last 14 onset days were inside the 90\% interval
+on 12 to 14 of the 14 days in every variant, and $R_t$ over those days was
+0.97--0.98 (truth 1) throughout.
+\item A chain of 300 iterations took 9 to 11 minutes with seven running at
+once, about 2 seconds an iteration.
 \end{itemize}
 
 \end{document}
