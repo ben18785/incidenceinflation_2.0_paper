@@ -705,18 +705,30 @@ for the others.}
 
 \begin{figure}[p]
 \centering
-\includegraphics[width=\textwidth]{bvd_deaths_simulation_check.png}
-\caption{First check on simulated data. Each row is one variant of how the
-same simulated outbreak is reported. Points and dashed lines are the truth;
-solid lines are posterior medians and shaded bands 90\% intervals (two
-chains of 300 iterations, the first 150 discarded). First column: cases
-(blue) and fatal cases (red) by true day of onset. Third column: mean delay
-from onset to a case being reported (blue; orange for fatal cases) and from
-onset to a death being recorded (red).}
+\includegraphics[width=\textwidth]{bvd_deaths_simulation_check_1.png}
+\caption{First check on simulated data: the first three variants. Each row
+is one variant of how the same simulated outbreak is reported. Points and
+dashed lines are the truth; solid lines are posterior medians and shaded
+bands 90\% intervals (two chains of 300 iterations, the first 150
+discarded). First column: cases (blue) and fatal cases (red) by true day of
+onset, with the cases (grey steps) and deaths (black steps) in the latest
+report, which are what the model is given for that report. Third column:
+mean delay from onset to a case being reported (blue; orange for fatal
+cases) and from onset to a death being recorded (red).}
 \label{fig:first}
 \end{figure}
 
-What the check shows (Table \ref{tab:first} and Figure \ref{fig:first}),
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{bvd_deaths_simulation_check_2.png}
+\caption{First check on simulated data: the remaining four variants. As
+Figure \ref{fig:first}. Where some fatal cases are dated by death, the
+reported counts are by the day cases are recorded for, so they differ from
+the truth by day of onset on every day and not only on recent ones.}
+\label{fig:first2}
+\end{figure}
+
+What the check shows (Table \ref{tab:first} and Figures \ref{fig:first} and \ref{fig:first2}),
 with the caution above:
 \begin{itemize}
 \item The case fatality ratio, its change, both delays, the fatal delay
