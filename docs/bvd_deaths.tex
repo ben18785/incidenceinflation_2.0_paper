@@ -200,11 +200,17 @@ true of it in the earlier one.
 
 The cases newly in the report of $t_j$ are fatal or not:
 \begin{align}
-\text{fatal cases new to the report}\quad
- & \Delta C^{F}(t\given t_j)\sim\bin\bigl(F(t)-C^{F}(t\given t_{j-1}),\ p^{F}(t\given t_j)\bigr),
- \label{eq:a}\\
-\text{non-fatal cases new to the report}\quad
- & \Delta C^{N}(t\given t_j)\sim\bin\bigl(N(t)-C^{N}(t\given t_{j-1}),\ p(t\given t_j)\bigr),
+\underbrace{\Delta C^{F}(t\given t_j)}_{\substack{\text{fatal cases new}\\ \text{to the report}}}
+ &\sim\bin\Bigl(
+ \underbrace{F(t)-C^{F}(t\given t_{j-1})}_{\substack{\text{fatal cases not in}\\ \text{the report before}}},\
+ \underbrace{p^{F}(t\given t_j)}_{\substack{\text{probability a fatal case}\\ \text{not reported by } t_{j-1}\\ \text{is reported by } t_j}}
+ \Bigr),
+ \label{eq:a}\\[1ex]
+\underbrace{\Delta C^{N}(t\given t_j)}_{\substack{\text{non-fatal cases new}\\ \text{to the report}}}
+ &\sim\bin\Bigl(
+ \underbrace{N(t)-C^{N}(t\given t_{j-1})}_{\substack{\text{non-fatal cases not in}\\ \text{the report before}}},\
+ \underbrace{p(t\given t_j)}_{\substack{\text{probability a non-fatal case}\\ \text{not reported by } t_{j-1}\\ \text{is reported by } t_j}}
+ \Bigr),
  \label{eq:b}
 \end{align}
 and $\Delta C(t\given t_j)=\Delta C^{F}(t\given t_j)+\Delta C^{N}(t\given t_j)$ is
