@@ -70,8 +70,11 @@ count fell as well: a record which was removed had been shown as dead.
 
 \section{Model}\label{sec:model}
 
-Throughout, $t$ is an onset day and $t_1<t_2<\dots$ are the days of the
-reports which include it. The transmission model, the change points in $R_t$
+Throughout, $t$ is a day of onset and $t_1<t_2<\dots$ are the days of the
+reports which include it. (Strictly, in everything to do with reports $t$ is
+the day under which a case appears in the curve. This is its day of onset
+except for the cases of \S\ref{sec:dated}; until then the two can be read
+as the same.) The transmission model, the change points in $R_t$
 and the reporting delay of cases are as in the companion note; they are
 restated only where deaths alter them.
 
@@ -213,17 +216,65 @@ probability that both delays have elapsed.
 For some of those who died, the date under which the case appears in the
 curve may be the date of death and not the date of onset (for example, where
 a person was identified only at or after death and the onset date is not
-known). The data cannot tell us which cases these are, so the fraction is
-supplied as an input and not estimated:
-\[
-f_t:\ \text{the fraction of the fatal cases appearing under day $t$ which
-are placed there by their date of death.}
-\]
-It can be a single value or differ by day, and $f_t=0$ gives the model
-above. Two things are assumed about these cases.
+known). Such a case has the wrong date: it sits in the curve later than its
+onset by the time from onset to death. The model therefore keeps two sets of
+counts, one by the true day of onset and one by the day under which cases
+appear in the curve, and moves these cases between them.
+
+\paragraph{Inputs.} The data cannot tell us which cases these are, so two
+things are supplied and not estimated:
 \begin{itemize}
-\item They are shown as dead from the first report they appear in.
-\item They take as long to first appear in a report, counted from their date
+\item $f_t$: the fraction of fatal cases with onset on day $t$ which are
+placed in the curve under their date of death (a single value, or one for
+each day; $f_t=0$ gives the model above);
+\item $h_z$, $z=0,1,\dots,z_{\max}$: the distribution of the time in days
+from onset to death for these cases (a discretised gamma distribution with
+supplied mean and standard deviation).
+\end{itemize}
+
+\paragraph{By day of onset.} $I(t)$, $F(t)$ and $c_t$ keep their meanings:
+true cases, fatal cases and the case fatality ratio \emph{by true day of
+onset}. The renewal model and \eqref{eq:cfr} are unchanged, so that
+transmission and the case fatality ratio are both on the correct days. Of
+the fatal cases of onset day $t$,
+\begin{equation}
+D(t)\sim\bin\bigl(F(t),\ f_t\bigr)
+\label{eq:dated}
+\end{equation}
+are dated by their death, and these die after times from onset drawn
+independently from $h$: writing $W(t,z)$ for the number of them who die $z$
+days after onset,
+\begin{equation}
+\bigl(W(t,0),\dots,W(t,z_{\max})\bigr)\sim
+\operatorname{multinomial}\bigl(D(t),\ h\bigr).
+\label{eq:lags}
+\end{equation}
+
+\paragraph{By day in the curve.} The cases which sit under day $t$ of the
+curve are then
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+ & Number & \\
+\midrule
+Non-fatal cases with onset on day $t$ & $N(t)=I(t)-F(t)$ & \\
+Fatal cases with onset on day $t$, dated by onset & $F(t)-D(t)$ & \\
+Fatal cases who died on day $t$, dated by death & $G(t)=\sum_{z}W(t-z,z)$ & \\
+\bottomrule
+\end{tabular}
+\end{center}
+so that $\tilde{F}(t)=F(t)-D(t)+G(t)$ fatal cases and
+$\tilde{I}(t)=N(t)+\tilde{F}(t)$ cases in all sit under day $t$. It is these,
+not $F(t)$ and $I(t)$, which come to be reported under day $t$. In the
+equations for reports (\ref{eq:a}--\ref{eq:y}), $t$ is therefore the day in
+the curve and $F(t)$ is replaced by $\tilde{F}(t)$. When $f_t=0$ the two sets
+of counts are the same.
+
+\paragraph{How these cases are reported.} Two things are assumed about a
+case dated by its death.
+\begin{itemize}
+\item It is shown as dead from the first report it appears in.
+\item It takes as long to first appear in a report, counted from its date
 of death, as other fatal cases take counted from their date of onset. For
 example, if fatal cases dated by onset typically first appear in a report
 about a week after their onset date, a case dated by its death is taken to
@@ -233,28 +284,41 @@ The second assumption is a convenience and may well be wrong: a person
 identified at death could enter the reports sooner. It could be replaced by
 a separate, shorter delay for these cases, estimated or supplied.
 
-Under these assumptions only \eqref{eq:x} changes. A fatal case newly
-reported is of this kind with probability $f_t$, in which case it is shown
-as dead at once; otherwise it is shown as dead if its death has been
-recorded:
+Under these assumptions only \eqref{eq:x} changes. Of the fatal cases under
+day $t$, a fraction $\tilde{f}_t=G(t)/\tilde{F}(t)$ are dated by death. A
+fatal case newly reported is shown as dead at once if it is one of these,
+and otherwise if its death has been recorded:
 \begin{equation}
 x(t\given t_j)\sim\bin\Bigl(a(t\given t_j),\
-f_t+(1-f_t)\bigl[1-S^{*}_\phi(t\given t_j)\bigr]\Bigr).
+\tilde{f}_t+(1-\tilde{f}_t)\bigl[1-S^{*}_\phi(t\given t_j)\bigr]\Bigr).
 \label{eq:xdated}
 \end{equation}
 Equation \eqref{eq:y} is unchanged, since a fatal case shown as alive cannot
-be of this kind. The delay $\phi$ is then that of the other fatal cases only,
-those dated by onset.
+be dated by its death. The delay $\phi$ is then that of the fatal cases dated
+by onset only.
 
-What this does \emph{not} correct is transmission. A case placed under its
-date of death appears in the curve later than its onset, by the time from
-onset to death, so the renewal model sees it on the wrong day. With a large
-$f_t$ the estimated $R_t$ would lag and be smoothed. Correcting this needs
-the distribution of the time from onset to death as a further input, and
-moving those cases back; this is not in the first version, and its size can
-be judged by fitting with $f_t=0$ and with the values suggested by those who
-know the data. Likewise $c_t$ is the case fatality ratio of the cases
-\emph{appearing under} day $t$.
+Equation \eqref{eq:xdated} contains one approximation. It treats each
+newly reported fatal case as dated by death with probability $\tilde{f}_t$
+independently, whereas the $G(t)$ such cases are a fixed number among the
+$\tilde{F}(t)$ (sampling with, not without, replacement). The exact version
+needs the number of fatal cases reported to be tracked separately for the
+two kinds, which makes the sampling of paths much slower; the difference
+should be small and can be checked on simulated data, which are generated
+exactly.
+
+\paragraph{The start of the series.} Fatal cases with onset before the
+first day analysed can die, and so appear, within it. Their number under
+each of the first $z_{\max}$ days is a further unobserved count, with a
+Poisson prior whose mean follows from the known earlier cases, $c_1$, $f$
+and $h$. The known earlier cases themselves are used as they stand.
+
+\paragraph{What is not known.} A case dated by death which has not yet died
+is in no report. Recent onset days therefore have fewer cases under them in
+the curve than they will eventually seem to, for a reason other than delay
+in reporting; the model allows for this through \eqref{eq:dated} and
+\eqref{eq:lags}, but the data say nothing about it, so estimates for recent
+days lean on the supplied $f_t$ and $h$. Fitting with a range of values for
+both is therefore part of any analysis which uses them.
 
 \subsection{Wrong records}\label{sec:wrong}
 
@@ -298,8 +362,8 @@ Delay to death recorded $(\mu^{d},\sigma^{d})$ & hierarchical log-normal & 14 da
 \end{center}
 The remaining new parameters are $\delta\sim\betad(1,1)$, the day-of-week
 multipliers $\psi^{d}_w$ of the delay to a death being recorded (same prior
-as $\psi_w$), and $\nu$ with prior \eqref{eq:nu}. The fractions $f_t$ are
-inputs.
+as $\psi_w$), and $\nu$ with prior \eqref{eq:nu}. The fractions $f_t$ and
+the distribution $h$ are inputs.
 
 \section{Assumptions to check}\label{sec:assumptions}
 
@@ -320,7 +384,8 @@ added.}
 \item \emph{Cases placed under their date of death are shown as dead from
 the first report they appear in, and take as long to first appear, counted
 from their date of death, as other fatal cases take counted from onset}
-(\S\ref{sec:dated}).
+(\S\ref{sec:dated}). The fraction of fatal cases dated in this way and the
+distribution of their time from onset to death are supplied.
 \end{enumerate}
 
 \section{What can and cannot be learned}\label{sec:identifiability}
@@ -373,6 +438,15 @@ and \eqref{eq:b}.
 \item \emph{$R_t$, $\kappa$, $\psi_w$, $\eta$, $\rho$:} as now, and
 $\psi^{d}_w$ in the same way as $\psi_w$. $\delta$ is drawn from its beta
 conditional given the paths.
+\item \emph{Cases dated by death} (\S\ref{sec:dated}). The counts $W(t,z)$
+are updated by proposing to relabel one fatal case under a day $t$ of the
+curve: from a case with onset on day $t$, dated by onset, to a case with
+onset on day $t-z$ which died on day $t$, or the reverse. This leaves the
+number of cases under every day of the curve unchanged and moves one true
+case between onset days $t$ and $t-z$. It is accepted with the Metropolis
+probability, which involves the renewal model, \eqref{eq:cfr},
+\eqref{eq:dated}, \eqref{eq:lags} and, through $\tilde{f}_t$, the reports of
+day $t$.
 \item \emph{$\nu$.} Given the paths, $\nu$ enters only through
 \eqref{eq:a}. A move between $\nu=0$ and $\nu\ne0$ is proposed and accepted
 with the Metropolis probability, and when $\nu\ne0$ it is updated by a
@@ -399,8 +473,10 @@ how far wrong is the model when assumption 1 fails?
 delay: is $\nu$ recovered in the first case and is $\nu=0$ preferred in the
 second?
 \item data simulated with a fraction of fatal cases placed under their date
-of death, fitted with the right fraction, with $f_t=0$ and with a wrong
-fraction: how sensitive are $c_t$, $\phi$ and $R_t$ to this input?
+of death, fitted with the right inputs, with $f_t=0$, and with a wrong
+fraction or a wrong distribution of the time to death: are $R_t$, $c_t$ and
+$\phi$ recovered with the right inputs, and how sensitive are they to wrong
+ones?
 \item cases, $R_t$ and the reporting delay: are these estimated at least as
 well as by the model without deaths?
 \end{enumerate}
@@ -410,21 +486,25 @@ well as by the model without deaths?
 \begin{itemize}
 \item Built and unit-tested (package branch \texttt{deaths}): the
 simulator, including cases placed under their date of death; the joint model
-of \S\ref{sec:model} with the supplied fractions $f_t$ of
-\S\ref{sec:dated}, but \emph{without} wrong records, day-of-week effects or
-$\nu$ (fatal and non-fatal cases share a reporting delay); the sampler of
-\S\ref{sec:fitting}. The sampling of the paths has been checked against
+of \S\ref{sec:model} \emph{without} wrong records, day-of-week effects,
+$\nu$ (fatal and non-fatal cases share a reporting delay) or the two sets of
+counts of \S\ref{sec:dated}; the sampler of \S\ref{sec:fitting}. (For
+\S\ref{sec:dated} only a simpler version exists, which alters \eqref{eq:x}
+with a supplied fraction but leaves those cases on the wrong day; it is to
+be replaced.) The sampling of the paths has been checked against
 enumeration of every possible path for small examples.
 \item A first fit to one simulated outbreak (70 onset days, about 40 cases a
 day, $c_t$ falling from 0.5 to 0.25 five weeks before the end) recovered the
 ratio in both periods, the change, and the delay to a death being recorded.
 This is a single run of a single chain and is not yet evidence that the
 method works.
-\item Running: tests 1 to 5 and 8 of \S\ref{sec:tests} and the first half
-of test 6, one simulated outbreak for each and three chains.
-\item To build: $\nu$; day-of-week effects for each delay; wrong records of
-two kinds. All are needed before the model can be fitted to the outbreak.
-Then tests 6 and 7, and the fit with all 49 reports.
+\item No tests on simulated data have been completed. A first set was
+started and stopped before any chain finished; none will be run until this
+note has been reviewed.
+\item To build: the two sets of counts of \S\ref{sec:dated}; $\nu$;
+day-of-week effects for each delay; wrong records of two kinds. All are
+needed before the model can be fitted to the outbreak. Then the tests of
+\S\ref{sec:tests}, and the fit with all 49 reports.
 \end{itemize}
 
 \end{document}
