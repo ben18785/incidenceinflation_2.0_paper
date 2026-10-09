@@ -1182,9 +1182,9 @@ bvd_data_table <- function(analysis) {
       max(old$latest)),
     "Of these, reported within 7 and 14 days of onset" = sprintf(
       "%d\\%% and %d\\%%", f_within(7), f_within(14)),
-    "Times an onset day's count appears in two consecutive reports" = format(
+    "Comparisons of a count with the report before$^{*}$" = format(
       nrow(updates), big.mark = ","),
-    "\\quad of which the later count is higher, the same, lower" = paste(
+    "\\quad of which the count went up, stayed the same, went down" = paste(
       f_percent(mean(updates$change > 0)), f_percent(mean(updates$change == 0)),
       f_percent(mean(updates$change < 0)), sep = ", "),
     "Largest fall in a count; cases removed in all" = sprintf(
