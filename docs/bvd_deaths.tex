@@ -340,9 +340,18 @@ $t_{j-1}$ and $t_j$ is one of those dated by death with probability
 \label{eq:pi}
 \end{equation}
 which is large in the first reports after day $t$ if these cases are
-reported quickly, and small later. It is shown as dead at once if it is one
-of these, and otherwise if its death has been recorded, so that
-\eqref{eq:x} becomes
+reported quickly, and small later. Whether the first report a fatal case
+appears in shows it as dead or as alive then depends on which kind it is:
+\begin{itemize}
+\item if it is dated by death, that report shows it as dead, always, since
+it enters the reports only once it has died;
+\item if it is dated by onset, that report shows it as dead only if its
+death has been recorded by then, which has probability
+$1-S^{*}_\phi(t\given t_j)$. Otherwise it is shown as alive for now, and
+changes to dead in a later report \eqref{eq:y}.
+\end{itemize}
+Weighting the two by their probabilities $\pi(t\given t_j)$ and
+$1-\pi(t\given t_j)$, \eqref{eq:x} becomes
 \begin{equation}
 x(t\given t_j)\sim\bin\Bigl(a(t\given t_j),\
 \pi(t\given t_j)+\bigl(1-\pi(t\given t_j)\bigr)\bigl[1-S^{*}_\phi(t\given t_j)\bigr]\Bigr).
