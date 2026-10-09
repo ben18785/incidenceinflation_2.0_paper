@@ -266,7 +266,24 @@ So
  \Bigr).
  \label{eq:y}
 \end{align}
-Only their sum $\Delta D(t\given t_j)$ is observed, not the two parts. All totals are zero before the first report.
+Only their sum $\Delta D(t\given t_j)$ is observed, not the two parts.
+
+\paragraph{The first report.} For the first report which includes onset day
+$t$, on day $t_1$, there is no report before. The equations then hold with
+nothing yet reported and nothing yet recorded: the totals of the report
+before are taken as zero,
+$C^{F}(t\given t_0)=C^{N}(t\given t_0)=D(t\given t_0)=0$, and the
+probabilities that nothing has yet happened as one,
+$S^{C,N}(t\given t_0)=S^{C,F}(t\given t_0)=S^{D}(t\given t_0)=1$. So
+\[
+C^{F}(t\given t_1)\sim\bin\bigl(F(t),\ 1-S^{C,F}(t\given t_1)\bigr),\qquad
+C^{N}(t\given t_1)\sim\bin\bigl(N(t),\ 1-S^{C,N}(t\given t_1)\bigr),
+\]
+and, since no case was shown as alive in a report before,
+$\Delta D^{\mathrm{old}}(t\given t_1)=0$ and
+\[
+D(t\given t_1)\sim\bin\bigl(C^{F}(t\given t_1),\ 1-S^{D}(t\given t_1)\bigr).
+\]
 
 For example, suppose a report shows 10 cases for an onset day, 3 of them
 dead, and the next report shows 12 cases, 5 of them dead. Then
