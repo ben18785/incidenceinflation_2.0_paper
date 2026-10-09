@@ -8,11 +8,12 @@
 #' in figures
 deaths_scenarios <- function() {
   dplyr::tibble(
-    scenario = c("base", "cfr", "sooner", "wrong", "dated", "dated_ignored", "all"),
+    scenario = c("base", "cfr", "sooner", "wrong", "dated", "dated_exact",
+                 "dated_ignored", "all"),
     label = c("Nothing changes", "Case fatality\nratio halves",
               "Fatal cases reported\ntwice as fast", "Wrong records",
-              "30% dated\nby death", "30% dated by death,\nfitted as if none",
-              "All together"))
+              "30% dated\nby death", "30% dated by death,\nexact form",
+              "30% dated by death,\nfitted as if none", "All together"))
 }
 
 #' What each scenario changes from the base case
@@ -20,8 +21,9 @@ deaths_scenarios <- function() {
 #' @param scenario the name of a scenario
 #' @return a named list which can contain: 'cfr' (a function of onset day),
 #' 'fatal_reporting', 'wrong' and 'dated' (as the arguments of
-#' incidenceinflation::simulate_cases_deaths) and 'fit_dated' (FALSE if the
-#' model is fitted as if no cases were dated by death)
+#' incidenceinflation::simulate_cases_deaths), 'fit_dated' (FALSE if the
+#' model is fitted as if no cases were dated by death) and 'fit_exact' (TRUE
+#' if the exact form for cases dated by death is fitted)
 deaths_scenario_settings <- function(scenario) {
   f_step <- function(day, before, after) function(t) ifelse(t < day, before, after)
   dated <- list(fraction = 0.3, mean = 7, sd = 4, reporting = list(mean = 2, sd = 1.5))
@@ -32,6 +34,7 @@ deaths_scenario_settings <- function(scenario) {
     sooner = list(fatal_reporting = list(mean = 4, sd = 3)),
     wrong = list(wrong = wrong),
     dated = list(dated = dated),
+    dated_exact = list(dated = dated, fit_exact = TRUE),
     dated_ignored = list(dated = dated, fit_dated = FALSE),
     all = list(cfr = f_step(33, 0.5, 0.25), fatal_reporting = list(mean = 4, sd = 3),
                wrong = wrong, dated = dated))[[scenario]]
@@ -125,6 +128,8 @@ fit_deaths_chain <- function(dataset, chain, niterations,
     delay_changepoints = list(min_length = 14, n_partition_moves = 20))
   if(!is.null(dataset$settings$dated) && !identical(dataset$settings$fit_dated, FALSE))
     settings$dated_by_death <- dataset$settings$dated
+  if(isTRUE(dataset$settings$fit_exact))
+    settings$dated_by_death$exact <- TRUE
 
   time_start <- Sys.time()
   fit <- tryCatch(
@@ -291,6 +296,25 @@ deaths_cases_coverage <- function(dataset, fits) {
                   is_inside = .data$truth >= .data$lo & .data$truth <= .data$hi,
                   is_exact = .data$lo == .data$hi & .data$lo == .data$truth) %>%
     dplyr::relocate("scenario", "replicate")
+}
+
+#' Coverage of the true cases by how long before the end their onset was
+#'
+#' @param coverage rows of results of deaths_cases_coverage()
+#' @return a tibble with a row for each scenario and band of days before the
+#' end: the number of onset days (over all replicates), the share of them on
+#' which the truth is inside the 90% interval, the share on which the interval
+#' has no width, and the mean width of the interval
+summarise_deaths_coverage <- function(coverage) {
+  coverage %>%
+    dplyr::mutate(band = cut(.data$days_before_end, c(-1, 13, 27, Inf),
+                             labels = c("0-13", "14-27", "28 or more"))) %>%
+    dplyr::group_by(.data$scenario, days_before_end = .data$band) %>%
+    dplyr::summarise(n_days = dplyr::n(),
+                     coverage = round(mean(.data$is_inside), 2),
+                     no_width = round(mean(.data$lo == .data$hi), 2),
+                     mean_width = round(mean(.data$hi - .data$lo), 1),
+                     .groups = "drop")
 }
 
 #' The simulated truth and the estimates for a set of scenarios of one

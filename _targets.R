@@ -628,7 +628,10 @@ list(
                      row.names = FALSE)
     utils::write.csv(deaths_sim_coverage, "outputs/deaths_simulation_coverage.csv",
                      row.names = FALSE)
-    c("outputs/deaths_simulation_summary.csv", "outputs/deaths_simulation_coverage.csv")
+    utils::write.csv(summarise_deaths_coverage(deaths_sim_coverage),
+                     "outputs/deaths_simulation_coverage_summary.csv", row.names = FALSE)
+    c("outputs/deaths_simulation_summary.csv", "outputs/deaths_simulation_coverage.csv",
+      "outputs/deaths_simulation_coverage_summary.csv")
   }, format = "file", deployment = "main"),
   tar_target(figure_deaths_sim_1,
              save_plot(plot_deaths_simulation(deaths_sim_dataset, deaths_sim_fit,
@@ -637,8 +640,9 @@ list(
              format = "file", deployment = "main"),
   tar_target(figure_deaths_sim_2,
              save_plot(plot_deaths_simulation(deaths_sim_dataset, deaths_sim_fit,
-                                              c("wrong", "dated", "dated_ignored", "all")),
-                       "outputs/bvd_deaths_simulation_check_2.png", 11, 7.1),
+                                              c("wrong", "dated", "dated_exact",
+                                                "dated_ignored", "all")),
+                       "outputs/bvd_deaths_simulation_check_2.png", 11, 8.8),
              format = "file", deployment = "main"),
 
   # ---- outputs ---------------------------------------------------------------
