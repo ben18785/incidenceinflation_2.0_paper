@@ -227,13 +227,13 @@ summarise_deaths_fits <- function(dataset, fits) {
       dplyr::group_by(.data$iteration, .data$chain) %>%
       dplyr::summarise(value = mean(.data[[column]]), .groups = "drop")
   }
-  cfr_early <- f_mean_over(deaths, early, "cfr")
-  cfr_late <- f_mean_over(deaths, late, "cfr")
-  recording_mean <- f_mean_over(deaths, late, "delay_mean")
-  recording_sd <- f_mean_over(deaths, late, "delay_sd")
-  reporting_mean <- f_mean_over(fitted$draws("reporting_days"), 20:50, "mean")
-  Rt_recent <- f_mean_over(fitted$draws("Rt"), (n_days - 13):n_days, "Rt")
-  dated_share <- deaths %>%
+  draws_cfr_early <- f_mean_over(deaths, early, "cfr")
+  draws_cfr_late <- f_mean_over(deaths, late, "cfr")
+  draws_recording_mean <- f_mean_over(deaths, late, "delay_mean")
+  draws_recording_sd <- f_mean_over(deaths, late, "delay_sd")
+  draws_reporting_mean <- f_mean_over(fitted$draws("reporting_days"), 20:50, "mean")
+  draws_Rt_recent <- f_mean_over(fitted$draws("Rt"), (n_days - 13):n_days, "Rt")
+  draws_dated_share <- deaths %>%
     dplyr::filter(.data$time_onset %in% 10:50) %>%
     dplyr::group_by(.data$iteration, .data$chain) %>%
     dplyr::summarise(value = sum(.data$dated_by_death) / sum(.data$deaths_recorded),
@@ -242,32 +242,32 @@ summarise_deaths_fits <- function(dataset, fits) {
   recent <- coverage$days_before_end < 14
   dplyr::bind_cols(out, dplyr::tibble(
     minutes = round(fitted$minutes, 1),
-    cfr_early = f_interval(cfr_early$value),
-    cfr_late = f_interval(cfr_late$value),
+    cfr_early = f_interval(draws_cfr_early$value),
+    cfr_late = f_interval(draws_cfr_late$value),
     cfr_realised = sprintf(
       "%.2f / %.2f",
       sum(truth$deaths_onset[early]) / sum(truth$cases_onset[early]),
       sum(truth$deaths_onset[late]) / sum(truth$cases_onset[late])),
     p_cfr_change = round(mean(parameters$n_cfr_changes > 0), 2),
-    recording_mean = f_interval(recording_mean$value),
-    recording_sd = f_interval(recording_sd$value),
+    recording_mean = f_interval(draws_recording_mean$value),
+    recording_sd = f_interval(draws_recording_sd$value),
     p_recording_change = round(mean(parameters$n_delay_changes > 0), 2),
-    reporting_mean = f_interval(reporting_mean$value),
+    reporting_mean = f_interval(draws_reporting_mean$value),
     fatal_delay_ratio = f_interval(parameters$fatal_delay_ratio),
     p_ratio_one = round(mean(parameters$fatal_delay_ratio == 1), 2),
     eta = f_interval(revisions$eta),
     rho = f_interval(revisions$rho),
     wrong_dead = f_interval(parameters$wrong_dead),
-    dated_share = f_interval(dated_share$value),
+    dated_share = f_interval(draws_dated_share$value),
     dated_share_truth = round(
       sum(truth$n_dated_by_death[10:50]) / sum(truth$deaths_true[10:50]), 2),
-    Rt_recent = f_interval(Rt_recent$value),
+    Rt_recent = f_interval(draws_Rt_recent$value),
     cases_recent_coverage = round(mean(coverage$is_inside[recent]), 2),
     cases_recent_bias = round(mean((coverage$mid - coverage$truth)[recent]), 1),
     cases_earlier_coverage = round(mean(coverage$is_inside[!recent]), 2),
-    rhat_cfr = round(rhat_chains(cfr_late$value, cfr_late$chain), 2),
-    rhat_recording = round(rhat_chains(recording_mean$value, recording_mean$chain), 2),
-    rhat_reporting = round(rhat_chains(reporting_mean$value, reporting_mean$chain), 2)))
+    rhat_cfr = round(rhat_chains(draws_cfr_late$value, draws_cfr_late$chain), 2),
+    rhat_recording = round(rhat_chains(draws_recording_mean$value, draws_recording_mean$chain), 2),
+    rhat_reporting = round(rhat_chains(draws_reporting_mean$value, draws_reporting_mean$chain), 2)))
 }
 
 #' Whether the true cases of each onset day are inside the 90% interval
