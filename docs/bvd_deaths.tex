@@ -12,8 +12,8 @@
 \newcommand{\pois}{\operatorname{Poisson}}
 \newcommand{\nb}{\operatorname{NB}}
 \newcommand{\betad}{\operatorname{beta}}
-\newcommand{\dnew}{\Delta m^{\mathrm{new}}}
-\newcommand{\dold}{\Delta m^{\mathrm{old}}}
+\newcommand{\dnew}{\Delta M^{\mathrm{new}}}
+\newcommand{\dold}{\Delta M^{\mathrm{old}}}
 
 \title{Bundibugyo virus disease, 2026: adding deaths, and a case fatality
 ratio which changes at unknown times\\[4pt]
@@ -46,12 +46,19 @@ M(t\given t_j) &: \text{the number of those cases shown as dead in that report}
 Both are read directly from the report: $M(t\given t_j)$ is the height of
 the ``dead'' part of the bar for day $t$ and $C(t\given t_j)$ the
 height of the whole bar, so $M(t\given t_j)\le C(t\given t_j)$ and
-$C(t\given t_j)-M(t\given t_j)$ are shown as alive. Capital letters with a
-report day, $C(t\given t_j)$ and $M(t\given t_j)$, are always observed
-counts. Lower-case letters introduced below ($r$, $s$, $m$) are unobserved
-counts. All of these are running totals: what a report shows. The change in
-a total from one report to the next is written with a $\Delta$, for example
-$\Delta C(t\given t_j)=C(t\given t_j)-C(t\given t_{j-1})$.
+$C(t\given t_j)-M(t\given t_j)$ are shown as alive. 
+
+Notation for what the reports show follows three rules.
+\begin{itemize}
+\item Everything about cases is a $C$ and everything about deaths an $M$.
+\item $C(t\given t_j)$ and $M(t\given t_j)$ with no superscript are the
+counts in the report, which are observed. A superscript marks a part of one
+of them which is not observed: for example $C^{F}(t\given t_j)$ below is
+the number of the $C(t\given t_j)$ cases which are fatal.
+\item These are all running totals: what the report of $t_j$ shows. The
+change in a total from the report before is written with a $\Delta$, for
+example $\Delta C(t\given t_j)=C(t\given t_j)-C(t\given t_{j-1})$.
+\end{itemize}
 Three features of these data shape the model.
 \begin{itemize}
 \item A death is counted on the day its case is counted for, and the reports
@@ -151,31 +158,32 @@ the same route or on the same days.
 
 \subsection{What a report shows}
 
-Leaving wrong records aside until \S\ref{sec:wrong}, the cases of onset day
-$t$ in the report of day $t_j$ are of three kinds:
+Leaving wrong records aside until \S\ref{sec:wrong}, the
+$C(t\given t_j)$ cases of onset day $t$ in the report of day $t_j$ are some
+of them fatal and the rest not:
+\begin{equation}
+C(t\given t_j)=C^{F}(t\given t_j)+C^{N}(t\given t_j),
+\label{eq:observed}
+\end{equation}
+where $C^{F}(t\given t_j)$ is the number of fatal cases reported by day
+$t_j$ and $C^{N}(t\given t_j)$ the number of non-fatal cases. The cases in
+the report are then of three kinds:
 \begin{center}
 \begin{tabular}{lll}
 \toprule
  & Number & Shown as \\
 \midrule
-Non-fatal cases reported so far & $s(t\given t_j)$ & alive \\
-Fatal cases reported, death not yet recorded & $r(t\given t_j)-m(t\given t_j)$ & alive \\
-Fatal cases reported, death recorded & $m(t\given t_j)$ & dead \\
+Non-fatal cases reported so far & $C^{N}(t\given t_j)$ & alive \\
+Fatal cases reported, death not yet recorded & $C^{F}(t\given t_j)-M(t\given t_j)$ & alive \\
+Fatal cases reported, death recorded & $M(t\given t_j)$ & dead \\
 \bottomrule
 \end{tabular}
 \end{center}
-Here $r(t\given t_j)$ is the number of fatal cases reported by day $t_j$.
-So
-\begin{equation}
-C(t\given t_j)=s(t\given t_j)+r(t\given t_j),\qquad M(t\given t_j)=m(t\given t_j).
-\label{eq:observed}
-\end{equation}
-The counts $C$ and $M$ are observed. The number $r$ of fatal cases among
-those reported is not: some of the cases shown as alive will die. Given $r$,
-the other two follow from what is observed: $s=C-r$ and $m=M$. One further
-thing is not observed, which is described next: how the deaths newly shown
-in a report divide between cases new to that report and cases already in
-the one before.
+The counts $C$ and $M$ are observed. How the cases divide into $C^{F}$ and
+$C^{N}$ is not: some of the cases shown as alive will die. One further thing
+is not observed, which is described next: how the deaths newly shown in a
+report divide between cases new to that report and cases already in the one
+before.
 
 \subsection{From one report to the next}
 
@@ -193,20 +201,20 @@ true of it in the earlier one.
 The cases newly in the report of $t_j$ are fatal or not:
 \begin{align}
 \text{fatal cases new to the report}\quad
- & \Delta r(t\given t_j)\sim\bin\bigl(F(t)-r(t\given t_{j-1}),\ p^{F}(t\given t_j)\bigr),
+ & \Delta C^{F}(t\given t_j)\sim\bin\bigl(F(t)-C^{F}(t\given t_{j-1}),\ p^{F}(t\given t_j)\bigr),
  \label{eq:a}\\
 \text{non-fatal cases new to the report}\quad
- & \Delta s(t\given t_j)\sim\bin\bigl(N(t)-s(t\given t_{j-1}),\ p(t\given t_j)\bigr),
+ & \Delta C^{N}(t\given t_j)\sim\bin\bigl(N(t)-C^{N}(t\given t_{j-1}),\ p(t\given t_j)\bigr),
  \label{eq:b}
 \end{align}
-and $\Delta C(t\given t_j)=\Delta r(t\given t_j)+\Delta s(t\given t_j)$ is
+and $\Delta C(t\given t_j)=\Delta C^{F}(t\given t_j)+\Delta C^{N}(t\given t_j)$ is
 the observed rise in the case count.
 
-The deaths newly shown in the report of $t_j$, $\Delta m(t\given t_j)$,
-belong to cases of two kinds, and the two are counted separately because
+The deaths newly shown in the report of $t_j$, $\Delta M(t\given t_j)$,
+which are observed, belong to cases of two kinds, and the two are counted separately because
 they have different probabilities:
 \[
-\Delta m(t\given t_j)=\dnew(t\given t_j)+\dold(t\given t_j).
+\Delta M(t\given t_j)=\dnew(t\given t_j)+\dold(t\given t_j).
 \]
 \begin{itemize}
 \item $\dnew(t\given t_j)$: fatal cases which are in the report of $t_j$ for
@@ -218,22 +226,24 @@ unreported until now says nothing about whether the death has been recorded,
 since the two delays are independent.
 \item $\dold(t\given t_j)$: fatal cases which were in the report of
 $t_{j-1}$, shown there as alive, and are shown as dead in the report of
-$t_j$. There were $r(t\given t_{j-1})-m(t\given t_{j-1})$ such cases to
+$t_j$. There were $C^{F}(t\given t_{j-1})-M(t\given t_{j-1})$ such cases to
 start with, and for each the death was not recorded by $t_{j-1}$ but is by
 $t_j$.
 \end{itemize}
 So
 \begin{align}
-\text{new to the report, shown as dead}\quad
- & \dnew(t\given t_j)\sim\bin\bigl(\Delta r(t\given t_j),\ 1-S^{*}_\phi(t\given t_j)\bigr),
- \label{eq:x}\\
-\text{in the report before as alive, now shown as dead}\quad
- & \dold(t\given t_j)\sim\bin\Bigl(r(t\given t_{j-1})-m(t\given t_{j-1}),\
- 1-\frac{S^{*}_\phi(t\given t_j)}{S^{*}_\phi(t\given t_{j-1})}\Bigr).
+\dnew(t\given t_j) &\sim\bin\Bigl(
+ \underbrace{\Delta C^{F}(t\given t_j)}_{\substack{\text{fatal cases new}\\ \text{to the report}}},\
+ \underbrace{1-S^{*}_\phi(t\given t_j)}_{\substack{\text{probability the death}\\ \text{has been recorded by } t_j}}
+ \Bigr),
+ \label{eq:x}\\[1ex]
+\dold(t\given t_j) &\sim\bin\Bigl(
+ \underbrace{C^{F}(t\given t_{j-1})-M(t\given t_{j-1})}_{\substack{\text{fatal cases shown as alive}\\ \text{in the report before}}},\
+ \underbrace{1-\frac{S^{*}_\phi(t\given t_j)}{S^{*}_\phi(t\given t_{j-1})}}_{\substack{\text{probability the death has been}\\ \text{recorded by } t_j \text{, given that it}\\ \text{had not been by } t_{j-1}}}
+ \Bigr).
  \label{eq:y}
 \end{align}
-Only the sum $\Delta m(t\given t_j)=\Delta M(t\given t_j)$ is observed, not
-its two parts. All totals are zero before the first report.
+Only their sum $\Delta M(t\given t_j)$ is observed, not the two parts. All totals are zero before the first report.
 
 For example, suppose a report shows 10 cases for an onset day, 3 of them
 dead, and the next report shows 12 cases, 5 of them dead. Then
@@ -361,20 +371,20 @@ This needs no further input, but there is little reason to believe it.
 
 \paragraph{The exact version.} The two kinds of fatal case recorded for day
 $t$ are reported at different speeds, so strictly each must be followed
-separately. Write $r^{o}(t\given t_j)$ and $r^{d}(t\given t_j)$ for the
+separately. Write $C^{F,o}(t\given t_j)$ and $C^{F,d}(t\given t_j)$ for the
 numbers reported by day $t_j$ of those dated by onset and those dated by
-death, and $m^{o}(t\given t_j)$ for the number of the former shown as dead.
+death, and $M^{o}(t\given t_j)$ for the number of the former shown as dead.
 From the report of $t_{j-1}$ to the report of $t_j$,
 \begin{align}
 \text{dated by onset, new to the report}\quad
- & \Delta r^{o}(t\given t_j)\sim\bin\bigl(F(t)-D(t)-r^{o}(t\given t_{j-1}),\ p^{F}(t\given t_j)\bigr),
+ & \Delta C^{F,o}(t\given t_j)\sim\bin\bigl(F(t)-D(t)-C^{F,o}(t\given t_{j-1}),\ p^{F}(t\given t_j)\bigr),
  \label{eq:ao}\\
 \text{dated by death, new to the report}\quad
- & \Delta r^{d}(t\given t_j)\sim\bin\Bigl(G(t)-r^{d}(t\given t_{j-1}),\
+ & \Delta C^{F,d}(t\given t_j)\sim\bin\Bigl(G(t)-C^{F,d}(t\given t_{j-1}),\
  1-\frac{S^{*}_\omega(t\given t_j)}{S^{*}_\omega(t\given t_{j-1})}\Bigr),
  \label{eq:ad}\\
-\text{of the $\Delta r^{o}(t\given t_j)$, shown as dead}\quad
- & \Delta m^{o,\mathrm{new}}(t\given t_j)\sim\bin\bigl(\Delta r^{o}(t\given t_j),\ 1-S^{*}_\phi(t\given t_j)\bigr),
+\text{of the $\Delta C^{F,o}(t\given t_j)$, shown as dead}\quad
+ & \Delta M^{o,\mathrm{new}}(t\given t_j)\sim\bin\bigl(\Delta C^{F,o}(t\given t_j),\ 1-S^{*}_\phi(t\given t_j)\bigr),
  \label{eq:xo}
 \end{align}
 with $\dold(t\given t_j)$ as in \eqref{eq:y} for the cases dated by onset
@@ -384,17 +394,17 @@ in its first report only if its death has been recorded by then, and
 otherwise is shown as alive for now and changes to dead in a later report.
 The reports then show
 \[
-C(t\given t_j)=s(t\given t_j)+r^{o}(t\given t_j)+r^{d}(t\given t_j),\qquad
-M(t\given t_j)=m^{o}(t\given t_j)+r^{d}(t\given t_j).
+C(t\given t_j)=C^{N}(t\given t_j)+C^{F,o}(t\given t_j)+C^{F,d}(t\given t_j),\qquad
+M(t\given t_j)=M^{o}(t\given t_j)+C^{F,d}(t\given t_j).
 \]
 This is exact, but it has two unobserved numbers for each day and report,
-$r^{o}$ and $r^{d}$, where the model without these cases has one. The
+$C^{F,o}$ and $C^{F,d}$, where the model without these cases has one. The
 sampling of these numbers (\S\ref{sec:fitting}) is the slowest part of the
 fitting and would be several times slower, by a factor of roughly the
 number of cases dated by death recorded for a day.
 
 \paragraph{The approximation used.} The model as built follows only the
-total, $r(t\given t_j)=r^{o}(t\given t_j)+r^{d}(t\given t_j)$, as before. To
+total, $C^{F}(t\given t_j)=C^{F,o}(t\given t_j)+C^{F,d}(t\given t_j)$, as before. To
 do this it does not use the number $G(t)$ of cases dated by death as a fixed
 number. It treats each of the $\tilde{F}(t)$ fatal cases recorded for day
 $t$ as dated by death with probability
@@ -411,7 +421,7 @@ reported by day $t_j$ is then a mixture over the two kinds,
 and \eqref{eq:ao} and \eqref{eq:ad} are replaced by a single equation for
 the fatal cases new to the report, of either kind,
 \begin{equation}
-\Delta r(t\given t_j)\sim\bin\Bigl(\tilde{F}(t)-r(t\given t_{j-1}),\
+\Delta C^{F}(t\given t_j)\sim\bin\Bigl(\tilde{F}(t)-C^{F}(t\given t_{j-1}),\
 1-\frac{\tilde{S}(t\given t_j)}{\tilde{S}(t\given t_{j-1})}\Bigr).
 \label{eq:amix}
 \end{equation}
@@ -427,7 +437,7 @@ report with certainty if it is dated by death, and with probability
 $1-S^{*}_\phi(t\given t_j)$ if it is dated by onset, so that \eqref{eq:xo}
 and the cases dated by death together give
 \begin{equation}
-\dnew(t\given t_j)\sim\bin\Bigl(\Delta r(t\given t_j),\
+\dnew(t\given t_j)\sim\bin\Bigl(\Delta C^{F}(t\given t_j),\
 \pi(t\given t_j)+\bigl(1-\pi(t\given t_j)\bigr)\bigl[1-S^{*}_\phi(t\given t_j)\bigr]\Bigr)
 \label{eq:xdated}
 \end{equation}
@@ -507,13 +517,17 @@ added, and each wrong record present is removed with probability
 $1-(1-\rho)^{t_j-t_{j-1}}$. Since removed records are sometimes dead, a wrong
 record is now of one of two kinds: each new wrong record is shown as dead
 with probability $\delta$ and as alive otherwise. With $E^{A}$ and $E^{D}$
-the numbers of wrong records shown as alive and as dead, \eqref{eq:observed}
-becomes
+the numbers of wrong records shown as alive and as dead, the counts in a
+report include them:
 \[
-C(t\given t_j)=s(t\given t_j)+r(t\given t_j)+E^{A}(t\given t_j)+E^{D}(t\given t_j),
+C(t\given t_j)=C^{N}(t\given t_j)+C^{F}(t\given t_j)+E^{A}(t\given t_j)+E^{D}(t\given t_j),
 \qquad
-M(t\given t_j)=m(t\given t_j)+E^{D}(t\given t_j).
+M(t\given t_j)=M^{G}(t\given t_j)+E^{D}(t\given t_j),
 \]
+where $M^{G}(t\given t_j)$ is the number of genuine fatal cases shown as
+dead. Without wrong records $M^{G}=M$, which is why the deaths of genuine
+cases were written as $M$ above; with them, $M^{G}$ is not observed and
+takes the place of $M$ in \eqref{eq:x} and \eqref{eq:y}.
 As now, the total $E^{A}+E^{D}$ for an onset day is limited to a small
 number (one more than the largest fall seen in a count of cases or of
 deaths). Where some fatal cases are dated by death (\S\ref{sec:dated}), the
@@ -587,19 +601,19 @@ many early deaths among few reported cases make a small $I(t)$ unlikely.
 
 The sampler extends the existing one (Metropolis within Gibbs). The new
 unobserved counts are the fatal cases $F(t)$ and, for each onset day, the
-path over reports of the fatal cases reported $r(t\given t_j)$ and of the
+path over reports of the fatal cases reported $C^{F}(t\given t_j)$ and of the
 wrong records $E^{A},E^{D}$.
 \begin{enumerate}
 \item \emph{$F(t)$, with the path summed out.} Once every case of an onset
 day has been reported, the fatal cases among those reported are all the
-fatal cases, $r=F(t)$, so neither can move while the other is held fixed.
+fatal cases, $C^{F}=F(t)$, so neither can move while the other is held fixed.
 $F(t)$ is therefore updated first with the path summed out: a change of up
 to three is proposed and accepted with the Metropolis probability, using the
 probability of the reports of that onset day given $I(t)$ and $F(t)$. This
 probability is the result of filtering forwards over the reports.
 \item \emph{Paths.} For each onset day the path of
-$(r,E^{A},E^{D})$ over reports is then drawn exactly given everything else,
-by sampling backwards. The state space is small because $r$ can rise between
+$(C^{F},E^{A},E^{D})$ over reports is then drawn exactly given everything else,
+by sampling backwards. The state space is small because $C^{F}$ can rise between
 two reports by no more than the case count does. Steps 1 and 2 are the
 slowest part of the fitting and are done in compiled code; states whose
 probability given the reports so far is below $10^{-12}$ of the largest are
