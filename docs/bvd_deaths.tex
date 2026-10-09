@@ -419,18 +419,42 @@ dated by death. Whether this biases any estimate is checked on simulated
 data (\S\ref{sec:tests}), which are generated exactly, each case being of
 one kind or the other. If it does, the exact version is the remedy.
 
-\paragraph{The start of the series.} Fatal cases with onset before the
-first day analysed can die within it and, if dated by death, are then
-recorded for a day within it. The number of these recorded for each of the
-first $z_{\max}$ days is a further unobserved count, with a
-Poisson prior whose mean follows from the known earlier cases, $c_1$, $f$
-and $h$. The known earlier cases themselves are used as they stand.
+\paragraph{The start of the series.} Some fatal cases had their onset
+before the first day analysed but died after it. If such a case is dated by
+death, it is recorded for its day of death, which is inside the period
+analysed. For example, with a first day of 12 July, a person with onset on
+8 July who died on 15 July and is dated by death is among the cases the
+reports count for 15 July.
+
+Such a case must not be taken as a case with onset on 15 July. For onsets
+inside the period analysed the model moves a case dated by death back to its
+day of onset, but here it cannot: the onset is before the first day, where
+the case counts are taken as known and are not changed. So for each of the
+first $z_{\max}$ days there is one further unobserved count, $G_0(t)$: the
+number of fatal cases recorded for day $t$ whose onset was before the first
+day. These are part of $G(t)$,
+\[
+G(t)=G_0(t)+\sum_{z\geq 1}W(t-z,z),
+\]
+where the sum is over onsets within the period, and they are left out of
+the true cases with onset on day $t$.
+
+The prior for $G_0(t)$ is Poisson, with mean equal to the number of such
+cases expected: for each earlier day, the known cases, times the case
+fatality ratio $c_1$, times the fraction dated by death, times the
+probability under $h$ of dying on day $t$; summed over the earlier days.
+After the first $z_{\max}$ days there are none. If no earlier cases are
+supplied, there are taken to be none at all. (In updating $c_1$ the
+dependence of this prior on it is ignored; it involves only the first few
+weeks.)
 
 \paragraph{What is not known.} A case dated by death which has not yet died
 is in no report, and once it has died it is recorded for its day of death, not
 its day of onset. Recent onset days are therefore missing cases for a reason
-other than delay in reporting; the model allows for this through \eqref{eq:dated} and
-\eqref{eq:lags}, but the data say nothing about it, so estimates for recent
+other than delay in reporting. The model allows for this: \eqref{eq:lags}
+includes deaths after the last day for which there are reports, and the
+number of such cases for each recent onset day is a further unobserved
+count. But the data say nothing about it, so estimates for recent
 days lean on the supplied $f_t$ and $h$. Fitting with a range of values for
 both is therefore part of any analysis which uses them.
 
@@ -552,15 +576,30 @@ and \eqref{eq:b}.
 \item \emph{$R_t$, $\kappa$, $\psi_w$, $\eta$, $\rho$:} as now, and
 $\psi^{d}_w$ in the same way as $\psi_w$. $\delta$ is drawn from its beta
 conditional given the paths.
-\item \emph{Cases dated by death} (\S\ref{sec:dated}). The counts $W(t,z)$
-are updated by proposing to relabel one fatal case recorded for day $t$:
-from a case with onset on day $t$, dated by onset, to a case with
-onset on day $t-z$ which died on day $t$, or the reverse. This leaves the
-number of cases recorded for each day unchanged and moves one true
-case between onset days $t$ and $t-z$. It is accepted with the Metropolis
-probability, which involves the renewal model, \eqref{eq:cfr},
-\eqref{eq:dated}, \eqref{eq:lags} and, through $\tilde{f}_t$, the reports of
-day $t$.
+\item \emph{Cases dated by death} (\S\ref{sec:dated}). Given the paths,
+four kinds of change of a single case are proposed, many times in each
+iteration, and each is accepted with the Metropolis probability:
+\begin{itemize}
+\item \emph{relabel}: one fatal case recorded for day $t$ changes from a
+case with onset on day $t$, dated by onset, to a case with onset on day
+$t-z$ which died on day $t$, dated by death, or the reverse. This moves one
+true case between onset days $t$ and $t-z$;
+\item \emph{change of onset}: one case dated by death and recorded for day
+$t$ changes its time from onset to death, which moves one true case between
+two onset days;
+\item \emph{death after the last day}: one fatal case dated by death which
+has not yet died is added to, or removed from, a recent onset day;
+\item \emph{onset before the first day}: one fatal case recorded for one of
+the first days changes from a case with onset on that day to one with
+earlier onset, or the reverse.
+\end{itemize}
+None of these alters the number of cases, or of fatal cases, recorded for
+any day. The Metropolis probability involves the renewal model,
+\eqref{eq:cfr}, \eqref{eq:dated}, \eqref{eq:lags} and, for the first and
+last kinds, the reports of day $t$ through $\tilde{f}_t$. The other updates
+are as above with $\tilde{F}(t)$ and the altered probabilities; for days
+long enough ago to be taken as fully reported, the true cases with onset on
+day $t$ are the latest reported count less $G(t)-D(t)$.
 \item \emph{$\nu$.} Given the paths, $\nu$ enters only through
 \eqref{eq:a}. A move between $\nu=0$ and $\nu\ne0$ is proposed and accepted
 with the Metropolis probability, and when $\nu\ne0$ it is updated by a
@@ -599,24 +638,25 @@ well as by the model without deaths?
 
 \begin{itemize}
 \item Built and unit-tested (package branch \texttt{deaths}): the
-simulator, including cases dated by death; the joint model
-of \S\ref{sec:model} \emph{without} wrong records, day-of-week effects,
-$\nu$ (fatal and non-fatal cases share a reporting delay) or the two sets of
-counts of \S\ref{sec:dated}; the sampler of \S\ref{sec:fitting}. (For
-\S\ref{sec:dated} only a simpler version exists, which alters \eqref{eq:x}
-with a supplied fraction but leaves those cases on the wrong day; it is to
-be replaced.) The sampling of the paths has been checked against
-enumeration of every possible path for small examples.
+simulator, including cases dated by death with their own delay from death
+to being reported; the joint model of \S\ref{sec:model}, including the two
+sets of counts of \S\ref{sec:dated} in the approximate form, \emph{without}
+wrong records, day-of-week effects or $\nu$ (fatal and non-fatal cases
+dated by onset share a reporting delay); the sampler of \S\ref{sec:fitting}.
+The sampling of the paths has been checked against enumeration of every
+possible path for small examples, and the changes to the cases dated by
+death against the full probability of the model. These are checks that the
+code does what the equations say, not that the estimates are right.
 \item A first fit to one simulated outbreak (70 onset days, about 40 cases a
 day, $c_t$ falling from 0.5 to 0.25 five weeks before the end) recovered the
 ratio in both periods, the change, and the delay to a death being recorded.
-This is a single run of a single chain and is not yet evidence that the
-method works.
+This is a single run of a single chain, without cases dated by death, and
+is not yet evidence that the method works.
 \item No tests on simulated data have been completed. A first set was
 started and stopped before any chain finished; none will be run until this
 note has been reviewed.
-\item To build: the two sets of counts of \S\ref{sec:dated}; $\nu$;
-day-of-week effects for each delay; wrong records of two kinds. All are
+\item To build: $\nu$; day-of-week effects for each delay; wrong records of
+two kinds. All are
 needed before the model can be fitted to the outbreak. Then the tests of
 \S\ref{sec:tests}, and the fit with all 49 reports.
 \end{itemize}
