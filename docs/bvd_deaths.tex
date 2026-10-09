@@ -260,15 +260,23 @@ unobserved counts are the fatal cases $F(t)$ and, for each onset day, the
 path over reports of the fatal cases reported $r(t\given t_j)$ and of the
 wrong records $E^{A},E^{D}$.
 \begin{enumerate}
+\item \emph{$F(t)$, with the path summed out.} Once every case of an onset
+day has been reported, the fatal cases among those reported are all the
+fatal cases, $r=F(t)$, so neither can move while the other is held fixed.
+$F(t)$ is therefore updated first with the path summed out: a change of up
+to three is proposed and accepted with the Metropolis probability, using the
+probability of the reports of that onset day given $I(t)$ and $F(t)$. This
+probability is the result of filtering forwards over the reports.
 \item \emph{Paths.} For each onset day the path of
-$(r,E^{A},E^{D})$ over reports is drawn exactly given everything else, by
-forward filtering and backward sampling. The state space is small because
-$r$ can rise between two reports by no more than the case count does.
-\item \emph{$I(t)$ and $F(t)$.} Given the paths, the likelihood separates
-into a term in $F(t)$ from \eqref{eq:a}, a term in $N(t)$ from \eqref{eq:b}
-and the renewal terms in $I(t)$. $I(t)$ is drawn from its discrete
-conditional with $F(t)$ summed out, and $F(t)$ is then drawn given $I(t)$,
-so the pair is drawn jointly.
+$(r,E^{A},E^{D})$ over reports is then drawn exactly given everything else,
+by sampling backwards. The state space is small because $r$ can rise between
+two reports by no more than the case count does.
+\item \emph{$I(t)$ and $F(t)$ given the paths.} Given the paths, the
+likelihood separates into a term in $F(t)$ from \eqref{eq:a}, a term in
+$N(t)$ from \eqref{eq:b} and the renewal terms in $I(t)$. $I(t)$ is drawn
+from its discrete conditional with $F(t)$ summed out, and $F(t)$ is then
+drawn given $I(t)$, so the pair is drawn jointly. This is what moves the
+recent onset days, for which many cases are still to be reported.
 \item \emph{Case fatality ratio.} Given $F$ and $I$, the segments of $c_t$
 are drawn exactly, with the value in each segment integrated out
 (beta-binomial), as for $R_t$ under the Poisson model. The values are then
@@ -306,13 +314,21 @@ well as by the model without deaths?
 \section{Status}\label{sec:status}
 
 \begin{itemize}
-\item Built: the simulator; the exact update of the segments of $c_t$; a
-first, simpler version of the model in which deaths were treated as a
-separate series from cases. That version is superseded by the joint model
-above.
-\item To build, in order: the joint model without wrong records, and tests
-1 to 6; wrong records of two kinds; then the fit to the outbreak with all 49
-reports.
+\item Built and unit-tested (package branch \texttt{deaths}): the
+simulator; the joint model of \S\ref{sec:model} \emph{without} wrong records
+and without day-of-week effects; the sampler of \S\ref{sec:fitting}. The
+sampling of the paths has been checked against enumeration of every possible
+path for small examples.
+\item A first fit to one simulated outbreak (70 onset days, about 40 cases a
+day, $c_t$ falling from 0.5 to 0.25 five weeks before the end) recovered the
+ratio in both periods, the change, and the delay to a death being recorded.
+This is a single run of a single chain and is not yet evidence that the
+method works.
+\item Running: tests 1 to 6 of \S\ref{sec:tests}, one simulated outbreak
+for each and three chains.
+\item To build: wrong records of two kinds and day-of-week effects, both
+needed before the model can be fitted to the outbreak; then the fit with all
+49 reports.
 \end{itemize}
 
 \end{document}
