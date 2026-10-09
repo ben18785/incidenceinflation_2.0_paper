@@ -12,6 +12,8 @@
 \newcommand{\pois}{\operatorname{Poisson}}
 \newcommand{\nb}{\operatorname{NB}}
 \newcommand{\betad}{\operatorname{beta}}
+\newcommand{\dnew}{\Delta m^{\mathrm{new}}}
+\newcommand{\dold}{\Delta m^{\mathrm{old}}}
 
 \title{Bundibugyo virus disease, 2026: adding deaths, and a case fatality
 ratio which changes at unknown times\\[4pt]
@@ -46,8 +48,10 @@ the ``dead'' part of the bar for day $t$ and $C(t\given t_j)$ the
 height of the whole bar, so $M(t\given t_j)\le C(t\given t_j)$ and
 $C(t\given t_j)-M(t\given t_j)$ are shown as alive. Capital letters with a
 report day, $C(t\given t_j)$ and $M(t\given t_j)$, are always observed
-counts. Lower-case letters introduced below ($r$, $s$, $m$, $a$, $b$, $x$,
-$y$) are unobserved.
+counts. Lower-case letters introduced below ($r$, $s$, $m$) are unobserved
+counts. All of these are running totals: what a report shows. The change in
+a total from one report to the next is written with a $\Delta$, for example
+$\Delta C(t\given t_j)=C(t\given t_j)-C(t\given t_{j-1})$.
 Three features of these data shape the model.
 \begin{itemize}
 \item A death is counted on the day its case is counted for, and the reports
@@ -127,9 +131,7 @@ exactly the common delay and gives no such probability.)
 
 For a fatal case, the death comes to be recorded after a delay $Y$ from
 onset, with survival function $S_\phi$ (a gamma distribution with mean
-$\mu^{d}$ and standard deviation $\sigma^{d}$). The delay $Y$ runs from onset
-to the death being known to those who compile the reports: it includes both
-the time from onset to death and any delay in recording it. Its parameters
+$\mu^{d}$ and standard deviation $\sigma^{d}$). The delay $Y$ is the time from onset until the death is entered in the records from which the reports are made. It is therefore the time from onset to death plus however long the death then takes to be entered; the two parts are not separated. Its parameters
 $\phi=(\mu^{d},\sigma^{d})$ are also piecewise constant in the onset day,
 with changes at unknown times (\S\ref{sec:changes}).
 
@@ -169,44 +171,76 @@ C(t\given t_j)=s(t\given t_j)+r(t\given t_j),\qquad M(t\given t_j)=m(t\given t_j
 \label{eq:observed}
 \end{equation}
 The counts $C$ and $M$ are observed. The number $r$ of fatal cases among
-those reported is not: some of the cases shown as alive will die. This is the
-one new unobserved quantity for each onset day and report.
+those reported is not: some of the cases shown as alive will die. Given $r$,
+the other two follow from what is observed: $s=C-r$ and $m=M$. One further
+thing is not observed, which is described next: how the deaths newly shown
+in a report divide between cases new to that report and cases already in
+the one before.
 
 \subsection{From one report to the next}
 
 Write $p(t\given t_j)=1-S^{*}_\theta(t\given t_j)/S^{*}_\theta(t\given t_{j-1})$
 for the probability that a non-fatal case not reported by $t_{j-1}$ is
 reported by $t_j$, as in the existing model, and $p^{F}(t\given t_j)$ for
-the same with $S^{*}_{\theta,\nu}$, for a fatal case. Between the reports of
-$t_{j-1}$ and $t_j$:
+the same with $S^{*}_{\theta,\nu}$, for a fatal case.
+
+The model says how each running total changes from the report of $t_{j-1}$
+to the report of $t_j$. These changes are differences between what two
+consecutive reports show. They are not events with their own dates: all
+that is known is that something true of a case in the later report was not
+true of it in the earlier one.
+
+The cases newly in the report of $t_j$ are fatal or not:
 \begin{align}
-\text{fatal cases newly reported}\quad
- & a(t\given t_j)\sim\bin\bigl(F(t)-r(t\given t_{j-1}),\ p^{F}(t\given t_j)\bigr),
+\text{fatal cases new to the report}\quad
+ & \Delta r(t\given t_j)\sim\bin\bigl(F(t)-r(t\given t_{j-1}),\ p^{F}(t\given t_j)\bigr),
  \label{eq:a}\\
-\text{non-fatal cases newly reported}\quad
- & b(t\given t_j)\sim\bin\bigl(N(t)-s(t\given t_{j-1}),\ p(t\given t_j)\bigr),
- \label{eq:b}\\
-\text{of the $a(t\given t_j)$, death already recorded}\quad
- & x(t\given t_j)\sim\bin\bigl(a(t\given t_j),\ 1-S^{*}_\phi(t\given t_j)\bigr),
+\text{non-fatal cases new to the report}\quad
+ & \Delta s(t\given t_j)\sim\bin\bigl(N(t)-s(t\given t_{j-1}),\ p(t\given t_j)\bigr),
+ \label{eq:b}
+\end{align}
+and $\Delta C(t\given t_j)=\Delta r(t\given t_j)+\Delta s(t\given t_j)$ is
+the observed rise in the case count.
+
+The deaths newly shown in the report of $t_j$, $\Delta m(t\given t_j)$,
+belong to cases of two kinds, and the two are counted separately because
+they have different probabilities:
+\[
+\Delta m(t\given t_j)=\dnew(t\given t_j)+\dold(t\given t_j).
+\]
+\begin{itemize}
+\item $\dnew(t\given t_j)$: fatal cases which are in the report of $t_j$ for
+the first time and are already shown as dead in it. Such a case was not in
+the report of $t_{j-1}$ at all, so it adds one to the count of cases and one
+to the count of deaths at once. This happens if its death had been recorded
+by $t_j$, which has probability $1-S^{*}_\phi(t\given t_j)$: its being
+unreported until now says nothing about whether the death has been recorded,
+since the two delays are independent.
+\item $\dold(t\given t_j)$: fatal cases which were in the report of
+$t_{j-1}$, shown there as alive, and are shown as dead in the report of
+$t_j$. There were $r(t\given t_{j-1})-m(t\given t_{j-1})$ such cases to
+start with, and for each the death was not recorded by $t_{j-1}$ but is by
+$t_j$.
+\end{itemize}
+So
+\begin{align}
+\text{new to the report, shown as dead}\quad
+ & \dnew(t\given t_j)\sim\bin\bigl(\Delta r(t\given t_j),\ 1-S^{*}_\phi(t\given t_j)\bigr),
  \label{eq:x}\\
-\text{reported earlier, death now recorded}\quad
- & y(t\given t_j)\sim\bin\Bigl(r(t\given t_{j-1})-m(t\given t_{j-1}),\
- 1-\frac{S^{*}_\phi(t\given t_j)}{S^{*}_\phi(t\given t_{j-1})}\Bigr),
+\text{in the report before as alive, now shown as dead}\quad
+ & \dold(t\given t_j)\sim\bin\Bigl(r(t\given t_{j-1})-m(t\given t_{j-1}),\
+ 1-\frac{S^{*}_\phi(t\given t_j)}{S^{*}_\phi(t\given t_{j-1})}\Bigr).
  \label{eq:y}
 \end{align}
-and then
-\[
-r(t\given t_j)=r(t\given t_{j-1})+a(t\given t_j),\quad
-s(t\given t_j)=s(t\given t_{j-1})+b(t\given t_j),\quad
-m(t\given t_j)=m(t\given t_{j-1})+x(t\given t_j)+y(t\given t_j).
-\]
-All counts are zero before onset. In words: new deaths in a report come from
-two sources. Some are fatal cases which were already in the count, shown as
-alive, whose death has now been recorded \eqref{eq:y}. The others are fatal
-cases entering the count for the first time whose death had been recorded by
-then \eqref{eq:x}; for these, being unreported until now says nothing about
-whether the death has been recorded, so the probability is simply that $Y$
-has elapsed.
+Only the sum $\Delta m(t\given t_j)=\Delta M(t\given t_j)$ is observed, not
+its two parts. All totals are zero before the first report.
+
+For example, suppose a report shows 10 cases for an onset day, 3 of them
+dead, and the next report shows 12 cases, 5 of them dead. Then
+$\Delta C=2$ and $\Delta M=2$. The two new deaths could both be among the 7
+cases shown as alive before ($\dnew=0$, $\dold=2$); or both of the 2 new
+cases could have arrived already dead ($\dnew=2$, $\dold=0$); or one of each.
+The reports do not say which, and the model sums over the possibilities.
 
 Two consequences follow, and both are checks on the construction.
 \begin{itemize}
@@ -330,21 +364,21 @@ $t$ are reported at different speeds, so strictly each must be followed
 separately. Write $r^{o}(t\given t_j)$ and $r^{d}(t\given t_j)$ for the
 numbers reported by day $t_j$ of those dated by onset and those dated by
 death, and $m^{o}(t\given t_j)$ for the number of the former shown as dead.
-Between the reports of $t_{j-1}$ and $t_j$,
+From the report of $t_{j-1}$ to the report of $t_j$,
 \begin{align}
-\text{dated by onset, newly reported}\quad
- & a^{o}(t\given t_j)\sim\bin\bigl(F(t)-D(t)-r^{o}(t\given t_{j-1}),\ p^{F}(t\given t_j)\bigr),
+\text{dated by onset, new to the report}\quad
+ & \Delta r^{o}(t\given t_j)\sim\bin\bigl(F(t)-D(t)-r^{o}(t\given t_{j-1}),\ p^{F}(t\given t_j)\bigr),
  \label{eq:ao}\\
-\text{dated by death, newly reported}\quad
- & a^{d}(t\given t_j)\sim\bin\Bigl(G(t)-r^{d}(t\given t_{j-1}),\
+\text{dated by death, new to the report}\quad
+ & \Delta r^{d}(t\given t_j)\sim\bin\Bigl(G(t)-r^{d}(t\given t_{j-1}),\
  1-\frac{S^{*}_\omega(t\given t_j)}{S^{*}_\omega(t\given t_{j-1})}\Bigr),
  \label{eq:ad}\\
-\text{of the $a^{o}(t\given t_j)$, death already recorded}\quad
- & x^{o}(t\given t_j)\sim\bin\bigl(a^{o}(t\given t_j),\ 1-S^{*}_\phi(t\given t_j)\bigr),
+\text{of the $\Delta r^{o}(t\given t_j)$, shown as dead}\quad
+ & \Delta m^{o,\mathrm{new}}(t\given t_j)\sim\bin\bigl(\Delta r^{o}(t\given t_j),\ 1-S^{*}_\phi(t\given t_j)\bigr),
  \label{eq:xo}
 \end{align}
-with $y(t\given t_j)$ as in \eqref{eq:y} for the cases dated by onset which
-were reported earlier and shown as alive. A case dated by death is shown as
+with $\dold(t\given t_j)$ as in \eqref{eq:y} for the cases dated by onset
+which were in the report before, shown as alive. A case dated by death is shown as
 dead in the first report it appears in; one dated by onset is shown as dead
 in its first report only if its death has been recorded by then, and
 otherwise is shown as alive for now and changes to dead in a later report.
@@ -375,9 +409,9 @@ reported by day $t_j$ is then a mixture over the two kinds,
 \label{eq:mixture}
 \end{equation}
 and \eqref{eq:ao} and \eqref{eq:ad} are replaced by a single equation for
-the fatal cases newly reported, of either kind,
+the fatal cases new to the report, of either kind,
 \begin{equation}
-a(t\given t_j)\sim\bin\Bigl(\tilde{F}(t)-r(t\given t_{j-1}),\
+\Delta r(t\given t_j)\sim\bin\Bigl(\tilde{F}(t)-r(t\given t_{j-1}),\
 1-\frac{\tilde{S}(t\given t_j)}{\tilde{S}(t\given t_{j-1})}\Bigr).
 \label{eq:amix}
 \end{equation}
@@ -393,11 +427,11 @@ report with certainty if it is dated by death, and with probability
 $1-S^{*}_\phi(t\given t_j)$ if it is dated by onset, so that \eqref{eq:xo}
 and the cases dated by death together give
 \begin{equation}
-x(t\given t_j)\sim\bin\Bigl(a(t\given t_j),\
+\dnew(t\given t_j)\sim\bin\Bigl(\Delta r(t\given t_j),\
 \pi(t\given t_j)+\bigl(1-\pi(t\given t_j)\bigr)\bigl[1-S^{*}_\phi(t\given t_j)\bigr]\Bigr)
 \label{eq:xdated}
 \end{equation}
-for the number newly reported and shown as dead. Equation \eqref{eq:y} is
+for the number new to the report and shown as dead. Equation \eqref{eq:y} is
 unchanged, since a fatal case shown as alive cannot be dated by its death.
 These are \eqref{eq:a}--\eqref{eq:y} with $\tilde{F}(t)$ for $F(t)$ and two
 probabilities altered. The delay $\phi$ is that of the fatal cases dated by

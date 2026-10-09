@@ -23,6 +23,10 @@ n_iterations_bvd <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_BVD", "600"))
 n_iterations_demo <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_DEMO", "1500"))
 n_chains_bvd <- as.integer(Sys.getenv("PIPELINE_CHAINS_BVD", "3"))
 n_iterations_bvd_cp <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_BVD_CP", "3000"))
+# tests of the joint model of cases and deaths on simulated data
+n_replicates_deaths <- as.integer(Sys.getenv("PIPELINE_REPLICATES_DEATHS", "1"))
+n_chains_deaths <- as.integer(Sys.getenv("PIPELINE_CHAINS_DEATHS", "2"))
+n_iterations_deaths <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_DEATHS", "300"))
 
 list(
   # ---- simulated data -------------------------------------------------------
@@ -598,6 +602,44 @@ list(
       save_plot(plot_changepoint_demonstrations(changepoint_demo_result),
                 "outputs/changepoint_demonstrations.png", 14, 9))
   }, format = "file", deployment = "main"),
+
+  # ---- cases and deaths: tests on simulated data (docs/bvd_deaths.tex) -------
+  tar_target(deaths_sim_grid,
+             tidyr::expand_grid(scenario = deaths_scenarios()$scenario,
+                                replicate = seq_len(n_replicates_deaths))),
+  tar_target(deaths_sim_dataset,
+             simulate_deaths_dataset(deaths_sim_grid$scenario, deaths_sim_grid$replicate),
+             pattern = map(deaths_sim_grid), iteration = "list"),
+  tar_target(deaths_sim_chain, seq_len(n_chains_deaths)),
+  # progress of each chain is written to outputs/deaths_simulation/progress/
+  tar_target(deaths_sim_fit,
+             fit_deaths_chain(deaths_sim_dataset, deaths_sim_chain, n_iterations_deaths),
+             pattern = cross(deaths_sim_dataset, deaths_sim_chain), iteration = "list"),
+  tar_target(deaths_sim_summary,
+             purrr::map_dfr(deaths_sim_dataset, summarise_deaths_fits,
+                            fits = deaths_sim_fit),
+             deployment = "main"),
+  tar_target(deaths_sim_coverage,
+             purrr::map_dfr(deaths_sim_dataset, deaths_cases_coverage,
+                            fits = deaths_sim_fit),
+             deployment = "main"),
+  tar_target(file_deaths_sim, {
+    utils::write.csv(deaths_sim_summary, "outputs/deaths_simulation_summary.csv",
+                     row.names = FALSE)
+    utils::write.csv(deaths_sim_coverage, "outputs/deaths_simulation_coverage.csv",
+                     row.names = FALSE)
+    c("outputs/deaths_simulation_summary.csv", "outputs/deaths_simulation_coverage.csv")
+  }, format = "file", deployment = "main"),
+  tar_target(figure_deaths_sim_1,
+             save_plot(plot_deaths_simulation(deaths_sim_dataset, deaths_sim_fit,
+                                              c("base", "cfr", "sooner")),
+                       "outputs/bvd_deaths_simulation_check_1.png", 11, 5.6),
+             format = "file", deployment = "main"),
+  tar_target(figure_deaths_sim_2,
+             save_plot(plot_deaths_simulation(deaths_sim_dataset, deaths_sim_fit,
+                                              c("wrong", "dated", "dated_ignored", "all")),
+                       "outputs/bvd_deaths_simulation_check_2.png", 11, 7.1),
+             format = "file", deployment = "main"),
 
   # ---- outputs ---------------------------------------------------------------
   tar_target(file_scores, {

@@ -83,18 +83,18 @@ cases by onset date with every change to an individual case's onset date
 
 ## Cases and deaths (docs/bvd_deaths.tex)
 
-The joint model of cases and deaths is tested on simulated data by scripts
-which are separate from the pipeline. Open `incidenceinflation_2.0_paper.Rproj`
-(or run from the root of this repository), with the package in
-`../incidenceinflation_2.0` on its `deaths` branch:
+The joint model of cases and deaths is tested on simulated data by targets
+whose names start with `deaths_sim` (`R/deaths_simulation.R`). They need the
+package on its `deaths` branch installed into `.lib/`
+(`Rscript scripts/install_package.R`). To run only these:
 
 ```
-Rscript scripts/deaths_simulation_run.R       # fits; set DEATHS_ITERATIONS, DEATHS_CORES
-Rscript scripts/deaths_simulation_summary.R   # table of estimates against the truth
-Rscript scripts/deaths_simulation_figures.R   # figures in outputs/
+Rscript -e 'targets::tar_make(names = tidyselect::matches("deaths_sim"))'
 ```
 
-The simulated data and the fits are kept in
-`outputs/deaths_simulation/<study>/` (`<study>` is set by `DEATHS_STUDY`,
-default `first_check`), with a `summary.txt`. While chains run, their progress
-is written to `progress_<scenario>_<chain>.txt` in the same folder.
+The size of the run is set by `PIPELINE_REPLICATES_DEATHS` (simulated
+outbreaks, default 1), `PIPELINE_CHAINS_DEATHS` (2) and
+`PIPELINE_ITERATIONS_DEATHS` (300). While chains run, their progress is
+written to `outputs/deaths_simulation/progress/<scenario>_<replicate>_<chain>.txt`.
+The simulated data and fits are kept in the targets store; the summary, the
+coverage of true cases by onset day and the figures are written to `outputs/`.
