@@ -5,6 +5,7 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage[hidelinks]{hyperref}
+\graphicspath{{../outputs/}{outputs/}}
 
 \newcommand{\given}{\,|\,}
 \newcommand{\bin}{\operatorname{binomial}}
@@ -702,7 +703,21 @@ for the others.}
 \label{tab:first}
 \end{table}
 
-What the check shows, with the caution above:
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{bvd_deaths_simulation_check.png}
+\caption{First check on simulated data. Each row is one variant of how the
+same simulated outbreak is reported. Points and dashed lines are the truth;
+solid lines are posterior medians and shaded bands 90\% intervals (two
+chains of 300 iterations, the first 150 discarded). First column: cases
+(blue) and fatal cases (red) by true day of onset. Third column: mean delay
+from onset to a case being reported (blue; orange for fatal cases) and from
+onset to a death being recorded (red).}
+\label{fig:first}
+\end{figure}
+
+What the check shows (Table \ref{tab:first} and Figure \ref{fig:first}),
+with the caution above:
 \begin{itemize}
 \item The case fatality ratio, its change, both delays, the fatal delay
 ratio and the wrong-record parameters are all close to the truth. A fatal
