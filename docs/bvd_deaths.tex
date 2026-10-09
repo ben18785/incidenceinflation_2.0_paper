@@ -269,7 +269,33 @@ Fatal cases who died on day $t$, dated by death & $G(t)=\sum_{z\geq 1}W(t-z,z)$ 
 \end{tabular}
 \end{center}
 so that $\tilde{F}(t)=F(t)-D(t)+G(t)$ fatal cases and
-$\tilde{I}(t)=N(t)+\tilde{F}(t)$ cases in all are recorded for day $t$. It is
+$\tilde{I}(t)=N(t)+\tilde{F}(t)$ cases in all are recorded for day $t$.
+
+$D(t)$ and $G(t)$ both count fatal cases dated by death, but group them by
+different days. $D(t)$ groups them by onset: it is the number with onset on
+day $t$, and these are recorded for later days, not for day $t$. $G(t)$
+groups them by death: it is the number who died on day $t$, whatever their
+day of onset, and these are the ones recorded for day $t$. The two are linked
+by $W$, since $D(t)=\sum_{z\geq 1}W(t,z)$.
+
+A fatal case can be recorded for day $t$ in only two ways, which the
+expression for $\tilde{F}(t)$ adds up. Either its onset was day $t$ and it
+is dated by onset: of the $F(t)$ fatal cases with onset on day $t$, the
+$D(t)$ dated by death are recorded for a later day, which leaves
+$F(t)-D(t)$. Or it died on day $t$ and is dated by death, its onset being
+earlier: there are $G(t)$ of these. No case is counted twice, because a
+fatal case is dated either by onset or by death, and none of the $D(t)$
+cases is among the $G(t)$, because the time from onset to death is at least
+one day.
+
+For example, suppose 10 fatal cases have onset on 9 August, of which 4 are
+dated by death, and that 5 fatal cases with earlier onsets, dated by death,
+die on 9 August. Then $F=10$, $D=4$ and $G=5$ for 9 August, and
+$\tilde{F}=10-4+5=11$ fatal cases are recorded for that day, although only
+10 fatal cases truly had onset on it. The 4 are recorded for whichever later
+days they die on, and are counted in $G$ for those days.
+
+It is
 these, not $F(t)$ and $I(t)$, which the counts $C(t\given t_j)$ and
 $M(t\given t_j)$ come to include. In the equations for reports
 (\ref{eq:a}--\ref{eq:y}), $t$ is therefore the day cases are recorded for and $F(t)$ is
