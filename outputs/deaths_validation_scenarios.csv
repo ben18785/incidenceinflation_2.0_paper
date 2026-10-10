@@ -1,0 +1,61 @@
+"scenario","label","group","why"
+"base","Nothing changes","Should do well","Nothing to find."
+"cfr_fall","CFR halves","Should do well","A large change with four weeks of later data."
+"cfr_rise","CFR doubles","Should do well","As CFR halves, in the other direction."
+"cfr_low","CFR 0.1","Should do well","Few deaths to inform the delay to a death being recorded."
+"cfr_high","CFR 0.7","Should do well","Most cases die."
+"sooner","Fatal cases reported
+twice as fast","Should do well","The delay ratio for fatal cases is 0.5."
+"later","Fatal cases reported
+half as fast again","Should do well","The delay ratio for fatal cases is 1.5."
+"wrong","Wrong records","Should do well","Counts of cases and deaths sometimes fall."
+"recording_change","Deaths recorded
+more slowly later","Should do well","The delay to a death being recorded rises from 12 to 20 days."
+"reporting_change","Cases reported
+faster later","Should do well","The reporting delay falls from 8 to 5 days."
+"Rt_fall","Rt falls from
+1.2 to 0.8","Should do well","Cases rise and then fall."
+"dated","30% dated by death","Should do well","Fitted in the exact form with the right inputs."
+"dated_approximate","30% dated by death,
+approximate form","Should do well","As the scenario before, fitted in the approximate form."
+"early","First report on
+day 25","Should do well","The first 24 onset days are first seen 1 to 24 days after onset."
+"early_cfr","First report on day 25,
+CFR halves on day 15","Should do well","The change is among onset days first seen late."
+"early_recording","First report on day 25,
+deaths recorded more
+slowly before day 15","Should do well","The delay to a death being recorded falls from 25 to 12 days."
+"corrected","Report of day 45 corrects
+onset days 1 to 20","Should do well","Fitted with the reports before the correction as a separate series."
+"corrected_cfr","Report of day 45 corrects
+onset days 1 to 20,
+CFR halves on day 15","Should do well","As the scenario before, with a change among the corrected onset days."
+"corrected_dropped","Report of day 45 corrects
+onset days 1 to 20,
+earlier reports of them
+left out","Should do well","Less information on the delays, but nothing wrong."
+"all","All together","Should do well","CFR halves, fatal cases reported faster, wrong records and 30% dated by death."
+"cfr_late","CFR halves ten
+days before the end","Should struggle","Few deaths of the later cases have been recorded."
+"cfr_two","CFR halves, then
+doubles","Should struggle","Two changes, twenty days apart."
+"cfr_gradual","CFR falls gradually","Should struggle","The model has steps, not slopes."
+"cfr_recording_together","CFR halves as deaths
+are recorded more slowly","Should struggle","Both make recent deaths fewer, on the same day."
+"few_cases","Eight cases a day","Should struggle","Little information."
+"dependent","Death recorded only
+after the case is reported","Should struggle","The two delays of a fatal case are not independent."
+"Rt_late","Rt rises ten days
+before the end","Should struggle","The rise is among cases few of which have been reported."
+"dated_ignored","30% dated by death,
+fitted as if none","Should struggle","The model is told nothing about them."
+"dated_fraction_low","30% dated by death,
+fitted with 10%","Should struggle","Too small a fraction is supplied."
+"dated_fraction_high","30% dated by death,
+fitted with 50%","Should struggle","Too large a fraction is supplied."
+"dated_lag_wrong","30% dated by death,
+fitted with too long
+a time to death","Should struggle","A time from onset to death of mean 12 days is supplied; it is 7."
+"dated_delay_wrong","30% dated by death,
+fitted as reported
+like other fatal cases","Should struggle","They are reported much sooner than the model is told."

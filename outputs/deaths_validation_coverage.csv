@@ -1,0 +1,97 @@
+"scenario","days_before_end","n_days","coverage","no_width","mean_width"
+"Rt_fall","0-13",42,0.95,0,20.3
+"Rt_fall","14-27",42,0.95,0,8.1
+"Rt_fall","28 or more",96,0.83,0.96,0.1
+"Rt_late","0-13",42,0.81,0,26
+"Rt_late","14-27",42,1,0,4.5
+"Rt_late","28 or more",96,0.94,0.94,0.1
+"all","0-13",42,0.95,0,15.2
+"all","14-27",42,0.83,0,7.4
+"all","28 or more",96,0.81,0,7.4
+"base","0-13",42,0.95,0,15.2
+"base","14-27",42,0.93,0,4.4
+"base","28 or more",96,0.96,0.94,0.1
+"cfr_fall","0-13",42,0.95,0,15.2
+"cfr_fall","14-27",42,0.95,0,4.5
+"cfr_fall","28 or more",96,0.96,0.94,0.1
+"cfr_gradual","0-13",42,0.95,0,15.2
+"cfr_gradual","14-27",42,0.93,0,4.5
+"cfr_gradual","28 or more",96,0.96,0.95,0.1
+"cfr_high","0-13",42,0.95,0,15.5
+"cfr_high","14-27",42,0.98,0,4.5
+"cfr_high","28 or more",96,0.96,0.93,0.1
+"cfr_late","0-13",42,0.9,0,15.1
+"cfr_late","14-27",42,0.93,0,4.3
+"cfr_late","28 or more",96,0.96,0.95,0.1
+"cfr_low","0-13",42,0.93,0,15.2
+"cfr_low","14-27",42,1,0,4.5
+"cfr_low","28 or more",96,0.97,0.94,0.1
+"cfr_recording_together","0-13",42,0.93,0,15.4
+"cfr_recording_together","14-27",42,0.93,0,4.6
+"cfr_recording_together","28 or more",96,0.96,0.94,0.1
+"cfr_rise","0-13",42,0.9,0,15.1
+"cfr_rise","14-27",42,0.93,0,4.5
+"cfr_rise","28 or more",96,0.97,0.94,0.1
+"cfr_two","0-13",42,0.93,0,15.2
+"cfr_two","14-27",42,0.93,0,4.4
+"cfr_two","28 or more",96,0.97,0.95,0.1
+"corrected","0-13",42,0.86,0,15.1
+"corrected","14-27",42,0.98,0,4.5
+"corrected","28 or more",96,0.99,0.95,0.1
+"corrected_cfr","0-13",42,0.86,0,15.1
+"corrected_cfr","14-27",42,0.98,0,4.4
+"corrected_cfr","28 or more",96,0.99,0.94,0.1
+"corrected_dropped","0-13",42,0.86,0,15
+"corrected_dropped","14-27",42,0.98,0,4.4
+"corrected_dropped","28 or more",96,0.99,0.94,0.1
+"dated","0-13",42,0.95,0,16.4
+"dated","14-27",42,0.88,0,8
+"dated","28 or more",96,0.85,0,6.1
+"dated_approximate","0-13",42,0.95,0,16.6
+"dated_approximate","14-27",42,0.9,0,9.4
+"dated_approximate","28 or more",96,0.89,0,7.5
+"dated_delay_wrong","0-13",42,0.93,0,16.2
+"dated_delay_wrong","14-27",42,0.88,0,9.4
+"dated_delay_wrong","28 or more",96,0.83,0,8
+"dated_fraction_high","0-13",42,0.93,0,16.5
+"dated_fraction_high","14-27",42,0.86,0,8.3
+"dated_fraction_high","28 or more",96,0.79,0,6.4
+"dated_fraction_low","0-13",42,0.93,0,15.9
+"dated_fraction_low","14-27",42,0.79,0,7.2
+"dated_fraction_low","28 or more",96,0.79,0,5.5
+"dated_ignored","0-13",42,0.88,0,14.8
+"dated_ignored","14-27",42,0.64,0,4.3
+"dated_ignored","28 or more",96,0.14,0.89,0.1
+"dated_lag_wrong","0-13",42,0.93,0,16.3
+"dated_lag_wrong","14-27",42,0.9,0,7.9
+"dated_lag_wrong","28 or more",96,0.79,0,6.4
+"dependent","0-13",42,0.93,0,15.4
+"dependent","14-27",42,0.98,0,4.6
+"dependent","28 or more",96,0.99,0.81,0.3
+"early","0-13",42,0.95,0,15.2
+"early","14-27",42,0.95,0,4.5
+"early","28 or more",96,0.96,0.92,0.1
+"early_cfr","0-13",42,0.93,0,15.3
+"early_cfr","14-27",42,0.93,0,4.4
+"early_cfr","28 or more",96,0.97,0.94,0.1
+"early_recording","0-13",42,0.95,0,15.1
+"early_recording","14-27",42,0.95,0,4.5
+"early_recording","28 or more",96,0.96,0.95,0.1
+"few_cases","0-13",42,0.95,0,6.3
+"few_cases","14-27",42,0.98,0.02,1.7
+"few_cases","28 or more",96,0.99,0.97,0
+"later","0-13",42,0.93,0,16.1
+"later","14-27",42,0.98,0,6.1
+"later","28 or more",96,0.85,0.93,0.2
+"recording_change","0-13",42,0.95,0,15.1
+"recording_change","14-27",42,0.95,0,4.4
+"recording_change","28 or more",96,0.96,0.94,0.1
+"reporting_change","0-13",42,0.95,0,11.6
+"reporting_change","14-27",42,0.9,0.6,0.9
+"reporting_change","28 or more",96,0.95,1,0
+"sooner","0-13",42,0.93,0,13.4
+"sooner","14-27",42,1,0,3.4
+"sooner","28 or more",96,0.99,0.94,0.1
+"wrong","0-13",42,0.93,0,15.2
+"wrong","14-27",42,0.93,0,4.4
+"wrong","28 or more",96,0.96,0.93,0.1

@@ -996,19 +996,8 @@ two kinds must sum over the split of the reports, since that split fixes
 how many of each kind there are.
 \item The tests on simulated data are run by the pipeline of the paper
 repository (targets named \texttt{deaths\_sim}).
-\item A first check on simulated data has been run: one simulated outbreak
-(60 onset days, about 40 cases a day, reporting delay of mean 8 and sd 6
-days, delay to a death being recorded of mean 12 and sd 7 days), with
-seven variants of how it is reported, each fitted with the whole model by
-two chains of 300 iterations (the first 150 discarded). Table
-\ref{tab:first} gives the results. This is a quick check that nothing is
-badly wrong, not the tests of \S\ref{sec:tests}: there is one outbreak, the
-chains are short, and in two variants the two chains had not yet agreed on
-the reporting delay.
-\item A larger run of the tests (26 variants, three outbreaks each) was
-started and then stopped part-way, so that the model could first be
-extended to onset days before the first report. No results from it are
-reported.
+\item The tests on simulated data have been run: \S\ref{sec:results}. They
+replace an earlier quick check of seven variants on one outbreak.
 \item Onset days before the first report (\S\ref{sec:early}) need no change
 to the model: a fit starting 14 days before the first report runs. Leaving
 out the reports made before a correction (\S\ref{sec:correction}) needs no
@@ -1019,81 +1008,148 @@ make a report which removes records, adds missing cases and moves cases
 between onset days.
 \end{itemize}
 
-\begin{table}[h]
-\centering\small
-\begin{tabular}{p{3.1cm}p{2.0cm}p{2.3cm}p{2.3cm}p{2.3cm}p{2.3cm}}
-\toprule
-Variant & Truth & Case fatality ratio, early / late & Delay to death recorded, mean / sd & Fatal delay ratio; share of draws at 1 & Wrong records: $\eta$, $\rho$, $\delta$ \\
-\midrule
-Nothing changes & 0.43 / 0.42 & 0.42 / 0.42 & 12.4 / 7.4 & 1.00; 0.77 & $\eta\approx0$ \\
-Ratio halves & 0.54 / 0.25 & 0.52 / 0.27 & 12.5 / 7.2 & 1.00; 0.82 & $\eta\approx0$ \\
-Fatal cases reported twice as fast & 0.43 / 0.42 & 0.42 / 0.42 & 12.4 / 7.4 & 0.49; 0 & $\eta\approx0$ \\
-Wrong records (0.03, 0.3, 0.4) & 0.43 / 0.42 & 0.42 / 0.42 & 12.3 / 7.3 & 1.00; 0.77 & 0.03, 0.36, 0.37 \\
-30\% dated by death & 0.43 / 0.42 & 0.41 / 0.41 & 12.5 / 8.1 & 1.00; 0.74 & $\eta\approx0$ \\
-The same, fitted as if none were & 0.43 / 0.42 & 0.42 / 0.42 & 9.4 / 21.6 & 1.00; 0.81 & $\eta\approx0$ \\
-All of the above together & 0.54 / 0.25 & 0.50 / 0.28 & 12.5 / 6.9 & 0.44; 0 & 0.02, 0.27, 0.60 \\
-\bottomrule
-\end{tabular}
-\caption{First check on simulated data: posterior medians. ``Truth'' is the
-case fatality ratio realised in the simulated outbreak for onset days 5--25
-and 40--55 (the probabilities used were 0.4 throughout, or 0.5 falling to
-0.25 on day 33). The true delay to a death being recorded has mean 12 and
-sd 7 days; the true fatal delay ratio is 1, or 0.5 where fatal cases are
-reported twice as fast. A change in the case fatality ratio was found in
-every draw for the two variants which have one, and in at most 12\% of draws
-for the others.}
-\label{tab:first}
-\end{table}
+\section{Results on simulated data}\label{sec:results}
 
-\begin{figure}[p]
-\centering
-\includegraphics[width=\textwidth]{bvd_deaths_simulation_check_1.png}
-\caption{First check on simulated data: the first three variants. Each row
-is one variant of how the same simulated outbreak is reported. Points and
-dashed lines are the truth; solid lines are posterior medians and shaded
-bands 90\% intervals (two chains of 300 iterations, the first 150
-discarded). First two columns: cases (blue) and fatal cases (red) by true
-day of onset, with the cases and deaths in the latest report (black steps),
-which are what the model is given for that report. Fourth column: mean
-delay from onset to a case being reported (blue; orange for fatal
-cases) and from onset to a death being recorded (red).}
-\label{fig:first}
-\end{figure}
+\paragraph{What was run.} 32 variants of how an outbreak is reported, each
+on the same three simulated outbreaks of 60 onset days (about 40 cases a
+day; reporting delay of mean 8 and sd 6 days; delay to a death being
+recorded of mean 12 and sd 7 days; case fatality ratio 0.4 unless stated).
+Each was fitted by two chains of 600 iterations, the first 300 discarded.
+Twenty variants are ones the model should handle and twelve are ones where
+it should struggle, either because the data say little or because the
+model is told something wrong. Figure \ref{fig:validation} shows every
+variant and outbreak; Figure \ref{fig:validationnew} shows the fits for the
+variants with a correcting report.
 
-\begin{figure}[p]
-\centering
-\includegraphics[width=\textwidth]{bvd_deaths_simulation_check_2.png}
-\caption{First check on simulated data: the remaining four variants. As
-Figure \ref{fig:first}. Where some fatal cases are dated by death, the
-reported counts are by the day cases are recorded for, so they differ from
-the truth by day of onset on every day and not only on recent ones.}
-\label{fig:first2}
-\end{figure}
+\paragraph{Cautions.} Three outbreaks is few. The same three are used for
+every variant, so a miss which belongs to one outbreak appears in many rows
+of Figure \ref{fig:validation}. Coverage of a quantity which is constant
+over the outbreak is then 0, 1/3, 2/3 or 1 and cannot be compared with
+90\%. The chains are short and there are two, not the three or more of
+\S\ref{sec:tests}. The heavier tail of the reporting delay
+(\S\ref{sec:early}) is not in any variant. Of 192 chains one failed (one
+chain of the approximate form for cases dated by death, which stopped with
+true cases fewer than the cases reported); its variant has one chain for
+that outbreak.
 
-What the check shows (Table \ref{tab:first} and Figures \ref{fig:first} and \ref{fig:first2}),
-with the caution above:
+\paragraph{Where the model should do well.}
 \begin{itemize}
-\item The case fatality ratio, its change, both delays, the fatal delay
-ratio and the wrong-record parameters are all close to the truth. A fatal
-delay ratio of exactly 1 is preferred when that is the truth (about three
-quarters of draws) and never when it is not.
-\item With 30\% of fatal cases dated by death and the right inputs, the
-share of the fatal cases recorded for each day which are dated by death is
-recovered (0.29 against 0.29). The sd of the delay to a death being recorded
-is somewhat high (8.1, 90\% interval 7.3--9.2, against 7), which may be the
-approximation of \S\ref{sec:dated} or chance; more outbreaks will tell.
-\item Fitting those data as if no cases were dated by death distorts the
-delay to a death being recorded badly (sd 22 against 7, and a change in the
-delay found in every draw where there is none), while the case fatality
-ratio and $R_t$ are little affected in this example.
-\item With everything together, the fatal delay ratio (0.44, 0.40--0.50)
-and $\delta$ (0.60, 0.38--0.84) have the truth at the edge of their 90\%
-intervals.
-\item True cases in the last 14 onset days were inside the 90\% interval
-on 12 to 14 of the 14 days in every variant, and $R_t$ over those days was
-0.97--0.98 (truth 1) throughout.
-\item A chain of 300 iterations took 9 to 11 minutes with seven running at
-once, about 2 seconds an iteration.
+\item \emph{Case fatality ratio.} The posterior median is within 0.02 of
+the truth in all twenty variants (mean absolute error 0.001 to 0.019). A
+change is found in every draw wherever there is one, and in 1\% to 12\% of
+draws where there is none.
+\item \emph{Delay to a death being recorded.} The mean is within about half
+a day of the truth where it is constant (0.15 to 0.6 days; 0.9 when the
+case fatality ratio is 0.1 and deaths are few). A change in it is found in
+every draw in both variants which have one, with an error of 0.6 to 1.0
+days in the mean. Its 90\% intervals miss more often than they should in
+several variants, so they are probably too narrow.
+\item \emph{Fatal cases reported at a different speed.} The ratio is
+estimated as 0.51 (0.44 to 0.59) against 0.5, and 1.41 (1.31 to 1.53)
+against 1.5. Where the truth is 1, a ratio of exactly 1 has 55\% to 88\% of
+draws.
+\item \emph{Wrong records.} $\eta$ 0.027 against 0.03, $\rho$ 0.33 against
+0.3, $\delta$ 0.47 against 0.4.
+\item \emph{True cases and fatal cases.} For the latest 14 onset days the
+90\% intervals contain the truth on 86\% to 95\% of days for cases and 83\%
+to 98\% for fatal cases. For earlier days, 87\% to 99\%, and 82\% to 89\%
+where some fatal cases are dated by death.
+\item \emph{Cases dated by death.} With the right inputs the share dated
+by death is recovered (0.27 and 0.28 against 0.27) by both the exact and
+the approximate form.
 \end{itemize}
+
+\paragraph{Onset days first seen late, and a correcting report.} These are
+the variants added for the outbreak (\S\ref{sec:early},
+\S\ref{sec:correction}).
+\begin{itemize}
+\item With the first report on day 25, the case fatality ratio is as well
+estimated as with a report every day (error 0.007 to 0.011). A halving of
+it on day 15, among onset days first seen ten or more days after onset, is
+found in every draw. A fall in the delay to a death being recorded on day
+15 is also found in every draw, with an error of 0.6 days in the mean, but
+the intervals for that delay contained the truth on under half the days.
+\item With a report on day 45 which corrects onset days 1 to 20, leaving
+out the earlier reports of those days gives a case fatality ratio with
+error 0.008 and a mean delay to a death being recorded with error 0.52
+days. Using the earlier reports as a separate series gives 0.007 and 0.48:
+no better. Its intervals for the delay contained the truth less often (47\%
+of days against 76\%), which is what using the same deaths twice would do.
+This supports leaving the earlier reports out. A halving of the case
+fatality ratio among the corrected onset days was found in every draw.
+\end{itemize}
+
+\paragraph{Where the model should struggle.}
+\begin{itemize}
+\item \emph{A change ten days before the end.} A halving of the case
+fatality ratio is found in 3\% of draws, and the fatal cases of the latest
+14 days are then overestimated (intervals contain the truth on 43\% of
+days). A rise in $R_t$ ten days before the end is also missed: the error in
+recent $R_t$ is 0.11 against 0.02 elsewhere.
+\item \emph{The case fatality ratio and the delay to a death being recorded
+changing together.} The two chains disagree (split $\hat R$ 2.8) and the
+error in the mean delay is 2.5 days. This is the confounding of
+\S\ref{sec:identifiability}.
+\item \emph{A gradual fall} in the case fatality ratio is fitted as one
+step, with error 0.04.
+\item \emph{A death recorded only after the case is reported} (assumption 1
+false). The case fatality ratio is unaffected (error 0.01), but the fatal
+delay ratio is estimated as 0.59 where it is 1 and the reporting delay is
+wrong by 1.8 days in the mean, outside its interval in all three outbreaks.
+\item \emph{Cases dated by death, told wrongly.} Fitting as if there were
+none leaves the case fatality ratio nearly right (error 0.02) but the
+intervals for true cases on earlier days contain the truth on 29\% of
+days. Being told 10\% or 50\% where it is 30\%, or too long a time to
+death, costs little (coverage of earlier cases 79\% to 83\%). Being told
+that these cases are reported like other fatal cases gives an error of 2.9
+days in the delay to a death being recorded and a fatal delay ratio of
+0.63.
+\end{itemize}
+
+\paragraph{Things to look at.}
+\begin{itemize}
+\item $R_t$ is constant at 1 in most variants. Its posterior median
+differs from 1 by 0.02 in one outbreak and 0.04 in another, and in the
+second the interval excludes 1 in nearly every variant. The earlier quick
+check gave 0.97 to 0.98. This may be the outbreaks or a small bias; it has
+not been traced.
+\item The intervals for the case fatality ratio missed the truth for one
+outbreak in about a third of the variants, by about 0.02. Three outbreaks
+cannot say whether those intervals are too narrow.
+\item Agreement between chains for the reporting delay was poor in a few
+variants (split $\hat R$ up to 1.28), and for the delay to a death being
+recorded where it changes (1.24).
+\end{itemize}
+
+\paragraph{Time.} A chain of 600 iterations took 12 to 15 minutes in most
+variants with eight running at once (about 1.3 seconds an iteration), 28
+minutes with the exact form for cases dated by death, 34 to 98 minutes
+with all features together, and 47 to 109 minutes where cases reach several
+hundred a day.
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{deaths_validation_overview.png}
+\caption{Tests on simulated data. Each point is one simulated outbreak
+(three for each variant). Coverage is the share of onset days on which the
+90\% interval contains the truth (dashed line: 0.9); for a quantity which
+is constant over the outbreak it is close to 0 or 1. The error of the case
+fatality ratio is the mean absolute difference between the posterior median
+and the truth over onset days.}
+\label{fig:validation}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{deaths_validation_page_5.png}
+\caption{Fits to the first simulated outbreak for the variants with a
+correcting report, and for all features together. Points and dashed lines
+are the truth; solid lines are posterior medians and shaded bands 90\%
+intervals. First two columns: cases (blue) and fatal cases (red) by day of
+onset, with the cases and deaths in the latest report (black steps). Fourth
+column: mean delay from onset to a case being reported (blue; orange for
+fatal cases) and from onset to a death being recorded (red).}
+\label{fig:validationnew}
+\end{figure}
 
 \end{document}
