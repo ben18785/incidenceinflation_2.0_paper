@@ -5,16 +5,26 @@
 #' Prepares the cases and deaths shown in each report, as of a date
 #'
 #' As prepare_bvd_changepoint_analysis, with the deaths shown in each report
-#' added. With days_earlier above zero the first onset day analysed is that
-#' many days before the first situation report: those onset days are first
-#' seen some days after onset, so say little about the reporting delay, but
-#' deaths among their cases go on being recorded from report to report.
-prepare_bvd_deaths_analysis <- function(snapshots, date_now, days_earlier = 0,
+#' added and with two differences.
+#'
+#' The first onset day analysed is date_first, which is before the first
+#' situation report: those onset days are first seen some time after onset,
+#' so say little about the reporting delay, but deaths among their cases go
+#' on being recorded from report to report.
+#'
+#' The report of date_corrected corrected the records of onset days before
+#' date_onset_corrected (it removed many records, added some and changed
+#' which were shown as dead). For those onset days the reports made before it
+#' are returned separately, as 'uncorrected', to be fitted as a separate
+#' series.
+prepare_bvd_deaths_analysis <- function(snapshots, date_now,
+                                        date_first = "2026-05-11",
+                                        date_corrected = "2026-09-06",
+                                        date_onset_corrected = "2026-06-28",
                                         serial_max = 40) {
   date_now <- as.Date(date_now)
-  analysis <- prepare_bvd_analysis(
-    snapshots, date_now,
-    date_earliest = min(snapshots$date_reported) - days_earlier, Rt_piece_width = 1)
+  analysis <- prepare_bvd_analysis(snapshots, date_now, date_earliest = date_first,
+                                   Rt_piece_width = 1)
   date_start <- min(analysis$dates$date)
   analysis$weekday_first <- as.integer(format(date_start, "%u"))
   known <- snapshots %>%
@@ -28,18 +38,30 @@ prepare_bvd_deaths_analysis <- function(snapshots, date_now, days_earlier = 0,
     dplyr::mutate(cases = dplyr::coalesce(as.numeric(.data$cases_reported), 0))
   analysis$cases_before <- before$cases
   analysis$dates_before <- before$date
-  analysis$days_earlier <- days_earlier
   deaths <- snapshots %>%
     dplyr::transmute(
       time_onset = as.integer(.data$date_onset - date_start) + 1L,
       time_reported = as.integer(.data$date_reported - date_start) + 1L,
       deaths_reported = as.integer(.data$deaths_reported))
-  analysis$snapshots <- dplyr::left_join(analysis$snapshots, deaths,
-                                         by = c("time_onset", "time_reported"))
-  if(any(is.na(analysis$snapshots$deaths_reported)))
+  all_reports <- dplyr::left_join(analysis$snapshots, deaths,
+                                  by = c("time_onset", "time_reported"))
+  if(any(is.na(all_reports$deaths_reported)))
     stop("Some reports of cases have no count of deaths.")
-  if(any(analysis$snapshots$deaths_reported > analysis$snapshots$cases_reported))
+  if(any(all_reports$deaths_reported > all_reports$cases_reported))
     stop("Some reports show more deaths than cases.")
+  f_time <- function(date) as.integer(as.Date(date) - date_start) + 1L
+  analysis$all_reports <- all_reports
+  analysis$snapshots <- all_reports
+  analysis$uncorrected <- NULL
+  if(as.Date(date_corrected) <= date_now & as.Date(date_onset_corrected) > date_start) {
+    analysis$correction <- list(
+      time_reported = f_time(date_corrected),
+      onset_times = seq_len(f_time(date_onset_corrected) - 1))
+    parts <- incidenceinflation::split_corrected_reports(
+      all_reports, analysis$correction$time_reported, analysis$correction$onset_times)
+    analysis$snapshots <- parts$corrected
+    analysis$uncorrected <- parts$uncorrected
+  }
   analysis
 }
 
@@ -62,7 +84,9 @@ bvd_deaths_variants <- function() {
 #'
 #' As fit_bvd_changepoint_chain (wrong records, an effect of the day of the
 #' week of each report, a negative binomial renewal model, earlier cases
-#' supplied as known), with the deaths shown in each report.
+#' supplied as known), with the deaths shown in each report. The reports made
+#' before the correction, of the onset days it corrected, are a separate
+#' series which informs only the delays and the wrong records.
 fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws = 300,
                                  serial_parameters = list(mean = 15.3, sd = 9.3),
                                  progress_dir = "outputs/bvd_deaths/progress") {
@@ -80,8 +104,13 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
     dplyr::mutate(cases_true = ceiling(
       .data$cases_true * (1 + inflation * exp(-days_before_end / 4)) +
         5 * (days_before_end < 5)))
+  uncorrected <- analysis$uncorrected
   f_largest_fall <- function(column) {
-    falls <- snapshots %>%
+    # a fall across the correction is not one the model has to explain
+    falls <- dplyr::bind_rows(
+      snapshots,
+      if(!is.null(uncorrected))
+        dplyr::mutate(uncorrected, time_onset = .data$time_onset + 1e6)) %>%
       dplyr::group_by(.data$time_onset) %>%
       dplyr::arrange(.data$time_reported, .by_group = TRUE) %>%
       dplyr::summarise(fall = max(c(0, -diff(.data[[column]]))))
@@ -98,6 +127,10 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
       settings$priors$revisions[c("eta_mu", "eta_sigma", "rho_alpha", "rho_beta")],
       list(eta_mu = 0.005, eta_sigma = 0.005)),
     max_erroneous = max_erroneous,
+    # a small share of cases are reported with a long delay: a few cases are
+    # added to an onset day months after it
+    reporting_effects = list(tail_weight_alpha = 1, tail_weight_beta = 19,
+                             tail_mean_mu = 40, tail_mean_sigma = 30),
     Rt_changepoints = list(),
     reporting_changepoints = bvd_delay_settings())
   deaths_settings <- list(
@@ -128,16 +161,18 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
       overdispersion_metropolis_sd = 8,
       initial_revision_parameters = list(
         eta = settings$initial_revisions$eta, rho = settings$initial_revisions$rho,
-        weekday = TRUE, weekday_first = analysis$weekday_first),
+        weekday = TRUE, weekday_first = analysis$weekday_first,
+        tail = list(weight = c(0.02, 0.05, 0.01)[index], mean = c(40, 25, 60)[index])),
       revision_metropolis_parameters = settings$revision_metropolis,
       cases_before = analysis$cases_before,
       n_parameter_steps = 5,
       progress_file = file.path(progress_dir, sprintf(
         "%s_%s_%d.txt", gsub(" ", "_", variant), analysis$date_now, chain)),
       progress_every = 10,
-      deaths = list(snapshot = snapshots %>%
-                      dplyr::select("time_onset", "time_reported", "deaths_reported"),
-                    settings = deaths_settings)),
+      deaths = c(list(snapshot = snapshots %>%
+                        dplyr::select("time_onset", "time_reported", "deaths_reported"),
+                      settings = deaths_settings),
+                 if(!is.null(uncorrected)) list(uncorrected = uncorrected))),
     error = function(e) list(error = conditionMessage(e)))
   out <- list(variant = variant, chain = chain, analysis = analysis,
               niterations = niterations,
@@ -150,7 +185,8 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
   kept <- unique(round(seq(warmup + 1, niterations, length.out = n_draws)))
   for(name in intersect(names(fit), c(
     "cases", "Rt", "reporting_days", "overdispersion", "deaths", "deaths_parameters",
-    "Rt_changepoints", "reporting_changepoints", "revisions", "reporting_effects")))
+    "Rt_changepoints", "reporting_changepoints", "revisions", "reporting_effects",
+    "deaths_uncorrected")))
     out[[name]] <- fit[[name]] %>%
     dplyr::filter(.data$iteration %in% kept) %>%
     dplyr::select(-dplyr::any_of("chain")) %>%
@@ -203,6 +239,10 @@ bvd_deaths_monitored <- function(chains, variant, days_recent = 14) {
     f_parameter(parameters, "fatal_delay_ratio",
                 "Reporting delay of fatal cases relative to others"),
     f_parameter(parameters, "wrong_dead", "Share of wrong records shown as dead"),
+    f_parameter(f("reporting_effects"), "tail_weight",
+                "Share of cases reported with a long delay"),
+    f_parameter(f("reporting_effects"), "tail_mean",
+                "Mean of the long reporting delay (days)"),
     f_parameter(revisions, "eta", "Wrong records per case and report (eta)"),
     f_parameter(revisions, "rho", "Removal of wrong records per report (rho)"))
 }

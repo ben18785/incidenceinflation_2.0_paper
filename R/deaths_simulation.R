@@ -23,6 +23,12 @@ deaths_scenarios <- function() {
     "Rt_fall", "Rt falls from\n1.2 to 0.8", "Should do well", "Cases rise and then fall.",
     "dated", "30% dated by death", "Should do well", "Fitted in the exact form with the right inputs.",
     "dated_approximate", "30% dated by death,\napproximate form", "Should do well", "As the scenario before, fitted in the approximate form.",
+    "early", "First report on\nday 25", "Should do well", "The first 24 onset days are first seen 1 to 24 days after onset.",
+    "early_cfr", "First report on day 25,\nCFR halves on day 15", "Should do well", "The change is among onset days first seen late.",
+    "early_recording", "First report on day 25,\ndeaths recorded more\nslowly before day 15", "Should do well", "The delay to a death being recorded falls from 25 to 12 days.",
+    "corrected", "Report of day 45 corrects\nonset days 1 to 20", "Should do well", "Fitted with the reports before the correction as a separate series.",
+    "corrected_cfr", "Report of day 45 corrects\nonset days 1 to 20,\nCFR halves on day 15", "Should do well", "As the scenario before, with a change among the corrected onset days.",
+    "corrected_dropped", "Report of day 45 corrects\nonset days 1 to 20,\nearlier reports of them\nleft out", "Should do well", "Less information on the delays, but nothing wrong.",
     "all", "All together", "Should do well", "CFR halves, fatal cases reported faster, wrong records and 30% dated by death.",
     "cfr_late", "CFR halves ten\ndays before the end", "Should struggle", "Few deaths of the later cases have been recorded.",
     "cfr_two", "CFR halves, then\ndoubles", "Should struggle", "Two changes, twenty days apart.",
@@ -47,7 +53,12 @@ deaths_scenarios <- function() {
 #' ratio of the reporting delay of fatal cases to that of others);
 #' 'death_from', 'dated' and 'wrong' (as the arguments of
 #' incidenceinflation::simulate_cases_deaths); and 'fit_dated' (what the model
-#' is told about fatal cases dated by death: NULL for nothing)
+#' is told about fatal cases dated by death: NULL for nothing); 'first_report'
+#' (the day of the first report; there is one each day from then);
+#' 'correction' (NULL, or a report which corrects the records of some onset
+#' days, as the argument of simulate_cases_deaths); and 'fit_uncorrected'
+#' (whether the reports made before such a correction, of the onset days
+#' corrected, are fitted as a separate series or left out)
 deaths_scenario_settings <- function(scenario) {
   f_step <- function(day, before, after) function(t) ifelse(t < day, before, after)
   f_delay <- function(mean, sd) function(t) list(mean = mean + 0 * t, sd = sd + 0 * t)
@@ -66,8 +77,23 @@ deaths_scenario_settings <- function(scenario) {
     n_days = 60, cases_mean = 40, Rt = function(t) 1 + 0 * t,
     cfr = function(t) 0.4 + 0 * t, reporting = f_delay(8, 6),
     recording = f_delay(12, 7), fatal_ratio = 1, death_from = "onset",
-    dated = NULL, wrong = NULL, fit_dated = NULL)
+    dated = NULL, wrong = NULL, fit_dated = NULL, first_report = 1,
+    correction = NULL, fit_uncorrected = TRUE)
+  # a tenth of the cases of the first 20 onset days are recorded for a wrong
+  # day until the report of day 45, which also removes records which should
+  # not be there (8 for every 100 cases) and adds cases which were missing
+  correction <- list(time_reported = 45, onset_times = 1:20, wrong = 0.08,
+                     missing = 0.03, misdated = 0.1)
   changes <- list(
+    early = list(first_report = 25),
+    early_cfr = list(first_report = 25, cfr = f_step(15, 0.6, 0.3)),
+    early_recording = list(first_report = 25,
+                           recording = f_delay_step(15, c(25, 12), c(12, 7))),
+    corrected = list(first_report = 25, correction = correction),
+    corrected_cfr = list(first_report = 25, correction = correction,
+                         cfr = f_step(15, 0.6, 0.3)),
+    corrected_dropped = list(first_report = 25, correction = correction,
+                             fit_uncorrected = FALSE),
     base = list(),
     cfr_fall = list(cfr = f_step(33, 0.5, 0.25)),
     cfr_rise = list(cfr = f_step(33, 0.25, 0.5)),
@@ -131,12 +157,14 @@ simulate_deaths_dataset <- function(scenario, replicate) {
   reporting <- settings$reporting(days)
   recording <- settings$recording(days)
   sim <- incidenceinflation::simulate_cases_deaths(
-    cases_all[41:(n_days + 40)], days, reporting, settings$cfr(days), recording,
+    cases_all[41:(n_days + 40)], settings$first_report:n_days, reporting,
+    settings$cfr(days), recording,
     fatal_reporting_parameters = if(settings$fatal_ratio != 1)
       list(mean = reporting$mean * settings$fatal_ratio,
            sd = reporting$sd * settings$fatal_ratio),
     death_from = settings$death_from,
-    dated_by_death = settings$dated, wrong = settings$wrong)
+    dated_by_death = settings$dated, wrong = settings$wrong,
+    correction = settings$correction)
   is_from_onset <- settings$death_from == "onset"
   c(sim, list(
     cases_before = cases_all[1:40], serial = serial, n_days = n_days,
@@ -171,7 +199,18 @@ fit_deaths_chain <- function(dataset, chain, niterations,
                              progress_dir = "outputs/deaths_simulation/progress") {
   dir.create(progress_dir, recursive = TRUE, showWarnings = FALSE)
   set.seed(100 * dataset$replicate + chain)
+  # reports made before a report which corrected the records of some onset
+  # days are a separate series for those days, or are left out
   snapshots <- dataset$snapshots
+  uncorrected <- NULL
+  correction <- dataset$settings$correction
+  if(!is.null(correction)) {
+    parts <- incidenceinflation::split_corrected_reports(
+      snapshots, correction$time_reported, correction$onset_times)
+    snapshots <- parts$corrected
+    if(dataset$settings$fit_uncorrected)
+      uncorrected <- parts$uncorrected
+  }
   largest <- snapshots %>%
     dplyr::group_by(.data$time_onset) %>%
     dplyr::summarise(cases_true = max(.data$cases_reported))
@@ -182,7 +221,11 @@ fit_deaths_chain <- function(dataset, chain, niterations,
       .data$cases_true * (1 + inflation * exp(-days_before_end / 4)) +
         5 * (days_before_end < 5)))
   f_largest_fall <- function(column) {
-    falls <- snapshots %>%
+    # a fall across the correction is not one the model has to explain
+    falls <- dplyr::bind_rows(
+      snapshots,
+      if(!is.null(uncorrected))
+        dplyr::mutate(uncorrected, time_onset = .data$time_onset + 1e6)) %>%
       dplyr::group_by(.data$time_onset) %>%
       dplyr::arrange(.data$time_reported, .by_group = TRUE) %>%
       dplyr::summarise(fall = max(c(0, -diff(.data[[column]]))))
@@ -230,9 +273,10 @@ fit_deaths_chain <- function(dataset, chain, niterations,
       progress_file = file.path(progress_dir, sprintf(
         "%s_%d_%d.txt", dataset$scenario, dataset$replicate, chain)),
       progress_every = 10,
-      deaths = list(snapshot = snapshots %>%
-                      dplyr::select("time_onset", "time_reported", "deaths_reported"),
-                    settings = settings)),
+      deaths = c(list(snapshot = snapshots %>%
+                        dplyr::select("time_onset", "time_reported", "deaths_reported"),
+                      settings = settings),
+                 if(!is.null(uncorrected)) list(uncorrected = uncorrected))),
     error = function(e) list(error = conditionMessage(e)))
   out <- list(scenario = dataset$scenario, replicate = dataset$replicate,
               chain = chain, niterations = niterations,
@@ -241,7 +285,8 @@ fit_deaths_chain <- function(dataset, chain, niterations,
   warmup <- niterations / 2
   for(name in intersect(names(fit), c(
     "cases", "Rt", "reporting_days", "deaths", "deaths_parameters",
-    "Rt_changepoints", "reporting_changepoints", "revisions", "reporting_effects")))
+    "Rt_changepoints", "reporting_changepoints", "revisions", "reporting_effects",
+    "deaths_uncorrected")))
     out[[name]] <- fit[[name]] %>%
     dplyr::filter(.data$iteration > warmup) %>%
     dplyr::mutate(chain = chain)

@@ -624,6 +624,26 @@ The analysis therefore starts at the onset day of 11 May, not at the day of
 the first report as in the companion note. Cases with earlier onset (40 in
 the latest report) are supplied as known to the renewal equation, as there.
 
+\paragraph{Cases added long after onset.} Following an onset day for months
+shows something a shorter series does not: now and then a case is added to
+an onset day long after every other case of that day was reported. For
+example the count for onset day 14 May stood at 7 from the report of 6
+September and rose to 8 on 13 September, four months after onset. Under a
+gamma reporting delay with a mean of about a week this has a probability
+too small to compute, and with starting values of that kind the fit cannot
+begin. The existing model has an option for this, which is now allowed for
+alongside deaths: a share $\omega$ of cases, fatal or not, have a reporting
+delay which is exponential with mean $m$ in place of the gamma, so that
+\[
+S^{C,N}(t\given t')=(1-\omega)\,S_{\mathrm{gamma}}(t'-t)+\omega\,e^{-(t'-t)/m},
+\]
+with $\omega\sim\betad(1,19)$ and $m\sim$ gamma with mean 40 and sd 30 days
+for this outbreak. $\omega$ and $m$ are the same for all onset days and are
+updated by a random walk given the paths, like the day-of-week multipliers.
+The delay to a death being recorded has no such tail: where deaths are
+recorded slowly the model has to say so through $(\mu^{d},\sigma^{d})$ of
+that segment.
+
 \subsection{A report which corrects many records}\label{sec:correction}
 
 The wrong records of \S\ref{sec:wrong} are few and are removed one at a
@@ -933,10 +953,13 @@ being recorded constant, and with each changing before the first report:
 are the values for the early onset days recovered?
 \item a report which corrects the records of early onset days by removing
 some, adding some and moving some between onset days
-(\S\ref{sec:correction}), fitted with the two series, and fitted as if
-there had been no correction: are the cases, $c_t$ and $\phi$ of the
-corrected onset days recovered in the first case, and how wrong are they in
-the second?
+(\S\ref{sec:correction}), with and without a change in $c_t$ among the
+corrected onset days, fitted with the two series, and fitted with the
+reports before the correction left out for those onset days: are the cases,
+$c_t$ and $\phi$ of the corrected onset days recovered, and what does the
+uncorrected series add? (Fitting as if there had been no correction is not
+an option: the falls are too large for the wrong records of
+\S\ref{sec:wrong}.)
 \item cases, $R_t$ and the reporting delay: are these estimated at least as
 well as by the model without deaths?
 \end{enumerate}
@@ -979,11 +1002,10 @@ extended to onset days before the first report. No results from it are
 reported.
 \item Onset days before the first report (\S\ref{sec:early}) need no change
 to the model: a fit starting 14 days before the first report runs. The two
-series of \S\ref{sec:correction} are \emph{proposed and not yet built}.
-\item To do: build \S\ref{sec:correction}; add its tests and those of a late
-first report to \S\ref{sec:tests}; run all the tests with more outbreaks and
-longer chains; then the fit with all 49 reports, from the onset day of 11
-May.
+series of \S\ref{sec:correction} and the heavier tail of the reporting
+delay of \S\ref{sec:early} are built and unit-tested, and the simulator can
+make a report which removes records, adds missing cases and moves cases
+between onset days.
 \end{itemize}
 
 \begin{table}[h]
