@@ -1,79 +1,156 @@
-# Tests of the joint model of cases and deaths (docs/bvd_deaths.tex) on
-# simulated data: one simulated outbreak for each replicate, reported in
-# several ways, each fitted by several chains.
+# Validation of the joint model of cases and deaths (docs/bvd_deaths.tex) on
+# simulated data. Each scenario is a way in which an outbreak and its reports
+# are simulated and a way in which the model is fitted. Some are cases in
+# which the model should do well; others are designed to cause it trouble.
 
-#' The ways in which a simulated outbreak is reported
+#' The scenarios of the validation
 #'
-#' @return a tibble with a row for each scenario: its name and the label used
-#' in figures
+#' @return a tibble with a row for each scenario: its name, the label used in
+#' figures, the group ("Should do well" or "Should struggle") and why
 deaths_scenarios <- function() {
-  dplyr::tibble(
-    scenario = c("base", "cfr", "sooner", "wrong", "dated", "dated_exact",
-                 "dated_ignored", "all"),
-    label = c("Nothing changes", "Case fatality\nratio halves",
-              "Fatal cases reported\ntwice as fast", "Wrong records",
-              "30% dated\nby death", "30% dated by death,\nexact form",
-              "30% dated by death,\nfitted as if none", "All together"))
+  dplyr::tribble(
+    ~scenario, ~label, ~group, ~why,
+    "base", "Nothing changes", "Should do well", "Nothing to find.",
+    "cfr_fall", "CFR halves", "Should do well", "A large change with four weeks of later data.",
+    "cfr_rise", "CFR doubles", "Should do well", "As CFR halves, in the other direction.",
+    "cfr_low", "CFR 0.1", "Should do well", "Few deaths to inform the delay to a death being recorded.",
+    "cfr_high", "CFR 0.7", "Should do well", "Most cases die.",
+    "sooner", "Fatal cases reported\ntwice as fast", "Should do well", "The delay ratio for fatal cases is 0.5.",
+    "later", "Fatal cases reported\nhalf as fast again", "Should do well", "The delay ratio for fatal cases is 1.5.",
+    "wrong", "Wrong records", "Should do well", "Counts of cases and deaths sometimes fall.",
+    "recording_change", "Deaths recorded\nmore slowly later", "Should do well", "The delay to a death being recorded rises from 12 to 20 days.",
+    "reporting_change", "Cases reported\nfaster later", "Should do well", "The reporting delay falls from 8 to 5 days.",
+    "Rt_fall", "Rt falls from\n1.2 to 0.8", "Should do well", "Cases rise and then fall.",
+    "dated", "30% dated by death", "Should do well", "Fitted in the exact form with the right inputs.",
+    "dated_approximate", "30% dated by death,\napproximate form", "Should do well", "As the scenario before, fitted in the approximate form.",
+    "all", "All together", "Should do well", "CFR halves, fatal cases reported faster, wrong records and 30% dated by death.",
+    "cfr_late", "CFR halves ten\ndays before the end", "Should struggle", "Few deaths of the later cases have been recorded.",
+    "cfr_two", "CFR halves, then\ndoubles", "Should struggle", "Two changes, twenty days apart.",
+    "cfr_gradual", "CFR falls gradually", "Should struggle", "The model has steps, not slopes.",
+    "cfr_recording_together", "CFR halves as deaths\nare recorded more slowly", "Should struggle", "Both make recent deaths fewer, on the same day.",
+    "few_cases", "Eight cases a day", "Should struggle", "Little information.",
+    "dependent", "Death recorded only\nafter the case is reported", "Should struggle", "The two delays of a fatal case are not independent.",
+    "Rt_late", "Rt rises ten days\nbefore the end", "Should struggle", "The rise is among cases few of which have been reported.",
+    "dated_ignored", "30% dated by death,\nfitted as if none", "Should struggle", "The model is told nothing about them.",
+    "dated_fraction_low", "30% dated by death,\nfitted with 10%", "Should struggle", "Too small a fraction is supplied.",
+    "dated_fraction_high", "30% dated by death,\nfitted with 50%", "Should struggle", "Too large a fraction is supplied.",
+    "dated_lag_wrong", "30% dated by death,\nfitted with too long\na time to death", "Should struggle", "A time from onset to death of mean 12 days is supplied; it is 7.",
+    "dated_delay_wrong", "30% dated by death,\nfitted as reported\nlike other fatal cases", "Should struggle", "They are reported much sooner than the model is told.")
 }
 
-#' What each scenario changes from the base case
+#' How each scenario is simulated and fitted
 #'
 #' @param scenario the name of a scenario
-#' @return a named list which can contain: 'cfr' (a function of onset day),
-#' 'fatal_reporting', 'wrong' and 'dated' (as the arguments of
-#' incidenceinflation::simulate_cases_deaths), 'fit_dated' (FALSE if the
-#' model is fitted as if no cases were dated by death) and 'fit_exact' (TRUE
-#' if the exact form for cases dated by death is fitted)
+#' @return a named list of: 'n_days'; 'cases_mean' (cases a day at the start);
+#' functions of onset day 'Rt', 'cfr', 'reporting' and 'recording' (the last
+#' two returning a list of the mean and sd of the delay); 'fatal_ratio' (the
+#' ratio of the reporting delay of fatal cases to that of others);
+#' 'death_from', 'dated' and 'wrong' (as the arguments of
+#' incidenceinflation::simulate_cases_deaths); and 'fit_dated' (what the model
+#' is told about fatal cases dated by death: NULL for nothing)
 deaths_scenario_settings <- function(scenario) {
   f_step <- function(day, before, after) function(t) ifelse(t < day, before, after)
+  f_delay <- function(mean, sd) function(t) list(mean = mean + 0 * t, sd = sd + 0 * t)
+  f_delay_step <- function(day, before, after)
+    function(t) list(mean = ifelse(t < day, before[1], after[1]),
+                     sd = ifelse(t < day, before[2], after[2]))
   dated <- list(fraction = 0.3, mean = 7, sd = 4, reporting = list(mean = 2, sd = 1.5))
+  f_fit <- function(changes = list(), exact = TRUE) {
+    out <- utils::modifyList(dated, changes)
+    out["reporting"] <- list(if("reporting" %in% names(changes)) changes$reporting
+                             else dated$reporting)
+    c(out, list(exact = exact))
+  }
   wrong <- list(eta = 0.03, rho = 0.3, delta = 0.4)
-  list(
+  defaults <- list(
+    n_days = 60, cases_mean = 40, Rt = function(t) 1 + 0 * t,
+    cfr = function(t) 0.4 + 0 * t, reporting = f_delay(8, 6),
+    recording = f_delay(12, 7), fatal_ratio = 1, death_from = "onset",
+    dated = NULL, wrong = NULL, fit_dated = NULL)
+  changes <- list(
     base = list(),
-    cfr = list(cfr = f_step(33, 0.5, 0.25)),
-    sooner = list(fatal_reporting = list(mean = 4, sd = 3)),
+    cfr_fall = list(cfr = f_step(33, 0.5, 0.25)),
+    cfr_rise = list(cfr = f_step(33, 0.25, 0.5)),
+    cfr_low = list(cfr = function(t) 0.1 + 0 * t),
+    cfr_high = list(cfr = function(t) 0.7 + 0 * t),
+    sooner = list(fatal_ratio = 0.5),
+    later = list(fatal_ratio = 1.5),
     wrong = list(wrong = wrong),
-    dated = list(dated = dated),
-    dated_exact = list(dated = dated, fit_exact = TRUE),
-    dated_ignored = list(dated = dated, fit_dated = FALSE),
-    all = list(cfr = f_step(33, 0.5, 0.25), fatal_reporting = list(mean = 4, sd = 3),
-               wrong = wrong, dated = dated))[[scenario]]
+    recording_change = list(recording = f_delay_step(31, c(12, 7), c(20, 10))),
+    reporting_change = list(reporting = f_delay_step(31, c(8, 6), c(5, 4))),
+    Rt_fall = list(Rt = f_step(31, 1.2, 0.8), cases_mean = 20),
+    dated = list(dated = dated, fit_dated = f_fit()),
+    dated_approximate = list(dated = dated, fit_dated = f_fit(exact = FALSE)),
+    all = list(cfr = f_step(33, 0.5, 0.25), fatal_ratio = 0.5, wrong = wrong,
+               dated = dated, fit_dated = f_fit()),
+    cfr_late = list(cfr = f_step(51, 0.5, 0.25)),
+    cfr_two = list(cfr = function(t) ifelse(t < 21, 0.5, ifelse(t < 41, 0.25, 0.5))),
+    cfr_gradual = list(cfr = function(t) 0.5 - 0.25 * pmin(pmax((t - 15) / 30, 0), 1)),
+    cfr_recording_together = list(cfr = f_step(33, 0.5, 0.25),
+                                  recording = f_delay_step(33, c(12, 7), c(20, 10))),
+    few_cases = list(cases_mean = 8),
+    dependent = list(death_from = "report", recording = f_delay(6, 5)),
+    Rt_late = list(Rt = f_step(51, 1, 1.5)),
+    dated_ignored = list(dated = dated),
+    dated_fraction_low = list(dated = dated, fit_dated = f_fit(list(fraction = 0.1))),
+    dated_fraction_high = list(dated = dated, fit_dated = f_fit(list(fraction = 0.5))),
+    dated_lag_wrong = list(dated = dated, fit_dated = f_fit(list(mean = 12, sd = 6))),
+    dated_delay_wrong = list(dated = dated, fit_dated = f_fit(list(reporting = NULL))))
+  if(!scenario %in% names(changes))
+    stop(paste0("Unknown scenario: ", scenario, "."))
+  out <- defaults
+  for(name in names(changes[[scenario]]))
+    out[name] <- list(changes[[scenario]][[name]])
+  out
 }
 
 #' Simulates an outbreak and the reports of its cases and deaths
 #'
-#' The reporting delay has mean 8 and sd 6 days, and the delay from onset to a
-#' death being recorded mean 12 and sd 7 days. Replicates differ in the
-#' outbreak; the scenarios of a replicate share it.
+#' Replicates differ in the outbreak; scenarios with the same transmission
+#' share the outbreak of a replicate.
 #'
 #' @param scenario the name of a scenario
 #' @param replicate the number of the replicate, which sets the seed
-#' @param n_days the number of onset days
 #' @return a named list of 'snapshots' and 'truth' (see
 #' incidenceinflation::simulate_cases_deaths), 'cases_before', 'serial',
-#' 'n_days', 'scenario', 'replicate', 'settings' and 'true_delays'
-simulate_deaths_dataset <- function(scenario, replicate, n_days = 60) {
+#' 'n_days', 'scenario', 'replicate', 'settings' and 'truth_by_day' (a tibble
+#' of the true values for each onset day: Rt, cfr, the means of the reporting
+#' delay of other and of fatal cases, the mean and sd of the delay to a death
+#' being recorded, and the cases and fatal cases by true day of onset; the
+#' delay to a death being recorded is missing where it does not run from
+#' onset)
+simulate_deaths_dataset <- function(scenario, replicate) {
   settings <- deaths_scenario_settings(scenario)
+  n_days <- settings$n_days
   set.seed(replicate)
   serial <- list(mean = 5, sd = 3)
   cases_all <- incidenceinflation::true_cases(
-    n_days + 40, function(t) 1, kappa = 1000, serial,
-    initial_parameters = list(mean = 40, length = 10))
+    n_days + 40, function(t) settings$Rt(t - 40), kappa = 1000, serial,
+    initial_parameters = list(mean = settings$cases_mean, length = 10))
   days <- seq_len(n_days)
-  cfr <- if(is.null(settings$cfr)) rep(0.4, n_days) else settings$cfr(days)
+  reporting <- settings$reporting(days)
+  recording <- settings$recording(days)
   sim <- incidenceinflation::simulate_cases_deaths(
-    cases_all[41:(n_days + 40)], days, list(mean = 8, sd = 6), cfr,
-    list(mean = 12, sd = 7),
-    fatal_reporting_parameters = settings$fatal_reporting,
+    cases_all[41:(n_days + 40)], days, reporting, settings$cfr(days), recording,
+    fatal_reporting_parameters = if(settings$fatal_ratio != 1)
+      list(mean = reporting$mean * settings$fatal_ratio,
+           sd = reporting$sd * settings$fatal_ratio),
+    death_from = settings$death_from,
     dated_by_death = settings$dated, wrong = settings$wrong)
+  is_from_onset <- settings$death_from == "onset"
   c(sim, list(
     cases_before = cases_all[1:40], serial = serial, n_days = n_days,
     scenario = scenario, replicate = replicate, settings = settings,
-    true_delays = list(
-      reporting = 8,
-      reporting_fatal = if(is.null(settings$fatal_reporting)) 8
-      else settings$fatal_reporting$mean,
-      recording = 12, recording_sd = 7)))
+    truth_by_day = dplyr::tibble(
+      time_onset = days,
+      Rt = settings$Rt(days),
+      cfr = settings$cfr(days),
+      reporting_mean = reporting$mean,
+      reporting_fatal_mean = reporting$mean * settings$fatal_ratio,
+      recording_mean = if(is_from_onset) recording$mean else NA_real_,
+      recording_sd = if(is_from_onset) recording$sd else NA_real_,
+      cases_onset = sim$truth$cases_onset,
+      deaths_onset = sim$truth$deaths_onset)))
 }
 
 #' Fits the joint model of cases and deaths to a simulated dataset
@@ -126,10 +203,9 @@ fit_deaths_chain <- function(dataset, chain, niterations,
     initial_delay = list(list(mean = 14, sd = 8), list(mean = 8, sd = 5),
                          list(mean = 20, sd = 10))[[(chain - 1) %% 3 + 1]],
     delay_changepoints = list(min_length = 14, n_partition_moves = 20))
-  if(!is.null(dataset$settings$dated) && !identical(dataset$settings$fit_dated, FALSE))
-    settings$dated_by_death <- dataset$settings$dated
-  if(isTRUE(dataset$settings$fit_exact))
-    settings$dated_by_death$exact <- TRUE
+  # what the model is told about fatal cases dated by death, which need not
+  # be what was simulated
+  settings["dated_by_death"] <- list(dataset$settings$fit_dated)
 
   time_start <- Sys.time()
   fit <- tryCatch(
@@ -206,73 +282,117 @@ rhat_chains <- function(x, chain) {
   sqrt(((n - 1) / n * within + stats::var(means)) / within)
 }
 
-#' Estimates from the fits of one dataset beside the simulated truth
+#' Posterior median and 90% interval of a quantity for each onset day,
+#' beside its true value
+#'
+#' @param draws a tibble with columns time_onset and the quantity
+#' @param column the name of the quantity
+#' @param truth its true value on each onset day
+#' @return a tibble with a row for each onset day: time_onset, lo, mid, hi,
+#' truth and is_inside
+deaths_day_summary <- function(draws, column, truth) {
+  draws %>%
+    dplyr::group_by(.data$time_onset) %>%
+    dplyr::summarise(lo = stats::quantile(.data[[column]], 0.05),
+                     mid = stats::median(.data[[column]]),
+                     hi = stats::quantile(.data[[column]], 0.95)) %>%
+    dplyr::mutate(truth = truth[.data$time_onset],
+                  is_inside = .data$truth >= .data$lo & .data$truth <= .data$hi)
+}
+
+#' Measures of how well the fits of one dataset recover the simulated truth
+#'
+#' For each of the case fatality ratio, the two delays and Rt: the mean
+#' absolute error of the posterior median and the share of onset days on
+#' which the true value is inside the 90% interval. For cases and fatal
+#' cases by day of onset: the same over the latest 14 days and over earlier
+#' days. The first and last few onset days are left out for the quantities
+#' which are constant within segments.
+#'
+#' @inheritParams deaths_dataset_fits
+#' @return a tibble with one row; if the summary fails, the error is given
+summarise_deaths_fits <- function(dataset, fits) {
+  out <- dplyr::tibble(scenario = dataset$scenario, replicate = dataset$replicate)
+  tryCatch(
+    dplyr::bind_cols(out, deaths_fit_measures(dataset, fits)),
+    error = function(e) dplyr::mutate(out, chains = 0, error = conditionMessage(e)))
+}
+
+#' The measures of summarise_deaths_fits()
 #'
 #' @inheritParams deaths_dataset_fits
 #' @return a tibble with one row
-summarise_deaths_fits <- function(dataset, fits) {
+deaths_fit_measures <- function(dataset, fits) {
   fitted <- deaths_dataset_fits(dataset, fits)
-  out <- dplyr::tibble(scenario = dataset$scenario, replicate = dataset$replicate,
-                       chains = fitted$n_chains, error = fitted$errors)
+  out <- dplyr::tibble(chains = fitted$n_chains, error = fitted$errors)
   if(fitted$n_chains == 0)
     return(out)
-  f_interval <- function(x) sprintf("%.2f (%.2f-%.2f)", stats::median(x),
-                                    stats::quantile(x, 0.05), stats::quantile(x, 0.95))
-  truth <- dataset$truth
+  truth <- dataset$truth_by_day
   n_days <- dataset$n_days
-  early <- 5:25
-  late <- 40:55
+  days_middle <- 5:(n_days - 5)
+  days_recent <- (n_days - 13):n_days
   deaths <- fitted$draws("deaths")
   parameters <- fitted$draws("deaths_parameters")
-  cases <- fitted$draws("cases")
   revisions <- fitted$draws("revisions")
-  f_mean_over <- function(df, days, column) {
+  reporting <- fitted$draws("reporting_days")
+  f_measures <- function(summary, days, name) {
+    rows <- summary[summary$time_onset %in% days & !is.na(summary$truth), ]
+    stats::setNames(
+      list(if(nrow(rows) == 0) NA_real_ else mean(abs(rows$mid - rows$truth)),
+           if(nrow(rows) == 0) NA_real_ else mean(rows$is_inside)),
+      paste0(name, c("_error", "_coverage")))
+  }
+  cfr <- deaths_day_summary(deaths, "cfr", truth$cfr)
+  recording <- deaths_day_summary(deaths, "delay_mean", truth$recording_mean)
+  reporting_summary <- deaths_day_summary(reporting, "mean", truth$reporting_mean)
+  Rt <- deaths_day_summary(fitted$draws("Rt"), "Rt", truth$Rt)
+  cases <- deaths_day_summary(fitted$draws("cases"), "cases_true", truth$cases_onset)
+  fatal <- deaths_day_summary(deaths, "deaths_true", truth$deaths_onset)
+  f_chain_mean <- function(df, days, column) {
     df %>%
       dplyr::filter(.data$time_onset %in% days) %>%
       dplyr::group_by(.data$iteration, .data$chain) %>%
       dplyr::summarise(value = mean(.data[[column]]), .groups = "drop")
   }
-  draws_cfr_early <- f_mean_over(deaths, early, "cfr")
-  draws_cfr_late <- f_mean_over(deaths, late, "cfr")
-  draws_recording_mean <- f_mean_over(deaths, late, "delay_mean")
-  draws_recording_sd <- f_mean_over(deaths, late, "delay_sd")
-  draws_reporting_mean <- f_mean_over(fitted$draws("reporting_days"), 20:50, "mean")
-  draws_Rt_recent <- f_mean_over(fitted$draws("Rt"), (n_days - 13):n_days, "Rt")
-  draws_dated_share <- deaths %>%
-    dplyr::filter(.data$time_onset %in% 10:50) %>%
-    dplyr::group_by(.data$iteration, .data$chain) %>%
-    dplyr::summarise(value = sum(.data$dated_by_death) / sum(.data$deaths_recorded),
-                     .groups = "drop")
-  coverage <- deaths_cases_coverage(dataset, fits)
-  recent <- coverage$days_before_end < 14
-  dplyr::bind_cols(out, dplyr::tibble(
-    minutes = round(fitted$minutes, 1),
-    cfr_early = f_interval(draws_cfr_early$value),
-    cfr_late = f_interval(draws_cfr_late$value),
-    cfr_realised = sprintf(
-      "%.2f / %.2f",
-      sum(truth$deaths_onset[early]) / sum(truth$cases_onset[early]),
-      sum(truth$deaths_onset[late]) / sum(truth$cases_onset[late])),
-    p_cfr_change = round(mean(parameters$n_cfr_changes > 0), 2),
-    recording_mean = f_interval(draws_recording_mean$value),
-    recording_sd = f_interval(draws_recording_sd$value),
-    p_recording_change = round(mean(parameters$n_delay_changes > 0), 2),
-    reporting_mean = f_interval(draws_reporting_mean$value),
-    fatal_delay_ratio = f_interval(parameters$fatal_delay_ratio),
-    p_ratio_one = round(mean(parameters$fatal_delay_ratio == 1), 2),
-    eta = f_interval(revisions$eta),
-    rho = f_interval(revisions$rho),
-    wrong_dead = f_interval(parameters$wrong_dead),
-    dated_share = f_interval(draws_dated_share$value),
-    dated_share_truth = round(
-      sum(truth$n_dated_by_death[10:50]) / sum(truth$deaths_true[10:50]), 2),
-    Rt_recent = f_interval(draws_Rt_recent$value),
-    cases_recent_coverage = round(mean(coverage$is_inside[recent]), 2),
-    cases_recent_bias = round(mean((coverage$mid - coverage$truth)[recent]), 1),
-    cases_earlier_coverage = round(mean(coverage$is_inside[!recent]), 2),
-    rhat_cfr = round(rhat_chains(draws_cfr_late$value, draws_cfr_late$chain), 2),
-    rhat_recording = round(rhat_chains(draws_recording_mean$value, draws_recording_mean$chain), 2),
-    rhat_reporting = round(rhat_chains(draws_reporting_mean$value, draws_reporting_mean$chain), 2)))
+  draws_cfr <- f_chain_mean(deaths, 40:55, "cfr")
+  draws_recording <- f_chain_mean(deaths, 40:55, "delay_mean")
+  draws_reporting <- f_chain_mean(reporting, 20:50, "mean")
+  true_ratio <- truth$reporting_fatal_mean[1] / truth$reporting_mean[1]
+  n_true_changes <- sum(diff(truth$cfr) != 0)
+  dplyr::bind_cols(
+    out,
+    dplyr::tibble(minutes = fitted$minutes),
+    dplyr::as_tibble(c(
+      f_measures(cfr, days_middle, "cfr"),
+      f_measures(recording, days_middle, "recording"),
+      f_measures(reporting_summary, days_middle, "reporting"),
+      f_measures(Rt, days_recent, "Rt_recent"),
+      f_measures(Rt, 5:(n_days - 14), "Rt_earlier"),
+      f_measures(cases, days_recent, "cases_recent"),
+      f_measures(cases, 1:(n_days - 14), "cases_earlier"),
+      f_measures(fatal, days_recent, "fatal_recent"),
+      f_measures(fatal, 1:(n_days - 14), "fatal_earlier"))),
+    dplyr::tibble(
+      cases_mean = mean(truth$cases_onset),
+      cfr_changes_true = n_true_changes,
+      cfr_changes_median = stats::median(parameters$n_cfr_changes),
+      cfr_p_change = mean(parameters$n_cfr_changes > 0),
+      cfr_p_right_number = mean(parameters$n_cfr_changes == n_true_changes),
+      recording_p_change = mean(parameters$n_delay_changes > 0),
+      fatal_ratio_true = true_ratio,
+      fatal_ratio = stats::median(parameters$fatal_delay_ratio),
+      fatal_ratio_lo = stats::quantile(parameters$fatal_delay_ratio, 0.05),
+      fatal_ratio_hi = stats::quantile(parameters$fatal_delay_ratio, 0.95),
+      fatal_ratio_p_one = mean(parameters$fatal_delay_ratio == 1),
+      eta = stats::median(revisions$eta),
+      rho = stats::median(revisions$rho),
+      wrong_dead = stats::median(parameters$wrong_dead),
+      dated_share = sum(deaths$dated_by_death) / sum(deaths$deaths_recorded),
+      dated_share_true = sum(dataset$truth$n_dated_by_death) /
+        sum(dataset$truth$deaths_true),
+      rhat_cfr = rhat_chains(draws_cfr$value, draws_cfr$chain),
+      rhat_recording = rhat_chains(draws_recording$value, draws_recording$chain),
+      rhat_reporting = rhat_chains(draws_reporting$value, draws_reporting$chain)))
 }
 
 #' Whether the true cases of each onset day are inside the 90% interval
@@ -280,21 +400,15 @@ summarise_deaths_fits <- function(dataset, fits) {
 #' @inheritParams deaths_dataset_fits
 #' @return a tibble with a row for each onset day: scenario, replicate,
 #' time_onset, days_before_end, truth (cases by true day of onset), lo, mid,
-#' hi, is_inside and is_exact (the interval has no width and is at the truth)
+#' hi and is_inside; NULL if no chain was fitted
 deaths_cases_coverage <- function(dataset, fits) {
   fitted <- deaths_dataset_fits(dataset, fits)
   if(fitted$n_chains == 0)
     return(NULL)
-  fitted$draws("cases") %>%
-    dplyr::group_by(.data$time_onset) %>%
-    dplyr::summarise(lo = stats::quantile(.data$cases_true, 0.05),
-                     mid = stats::median(.data$cases_true),
-                     hi = stats::quantile(.data$cases_true, 0.95)) %>%
+  deaths_day_summary(fitted$draws("cases"), "cases_true",
+                     dataset$truth_by_day$cases_onset) %>%
     dplyr::mutate(scenario = dataset$scenario, replicate = dataset$replicate,
-                  days_before_end = dataset$n_days - .data$time_onset,
-                  truth = dataset$truth$cases_onset[.data$time_onset],
-                  is_inside = .data$truth >= .data$lo & .data$truth <= .data$hi,
-                  is_exact = .data$lo == .data$hi & .data$lo == .data$truth) %>%
+                  days_before_end = dataset$n_days - .data$time_onset) %>%
     dplyr::relocate("scenario", "replicate")
 }
 
@@ -315,6 +429,72 @@ summarise_deaths_coverage <- function(coverage) {
                      no_width = round(mean(.data$lo == .data$hi), 2),
                      mean_width = round(mean(.data$hi - .data$lo), 1),
                      .groups = "drop")
+}
+
+#' The measures of each scenario, averaged over its replicates
+#'
+#' @param summary rows of results of summarise_deaths_fits()
+#' @return a tibble with a row for each scenario, in the order of
+#' deaths_scenarios(), with its group and the number of datasets fitted
+summarise_deaths_scenarios <- function(summary) {
+  scenarios <- deaths_scenarios()
+  is_fitted <- !is.na(summary$chains) & summary$chains > 0
+  summary[is_fitted, ] %>%
+    dplyr::group_by(.data$scenario) %>%
+    dplyr::summarise(
+      datasets = dplyr::n(),
+      dplyr::across(dplyr::where(is.numeric) & !dplyr::any_of(c("replicate", "chains")),
+                    ~round(mean(., na.rm = TRUE), 3)),
+      .groups = "drop") %>%
+    dplyr::right_join(scenarios[, c("scenario", "group")], by = "scenario") %>%
+    dplyr::arrange(match(.data$scenario, scenarios$scenario)) %>%
+    dplyr::relocate("group", "scenario")
+}
+
+#' The main measures of every dataset, by scenario
+#'
+#' Each point is one simulated dataset. Coverage is the share of onset days on
+#' which the true value is inside the 90% interval, which should be about 0.9
+#' (the dashed line).
+#'
+#' @param summary rows of results of summarise_deaths_fits()
+#' @return a ggplot
+plot_deaths_validation <- function(summary) {
+  scenarios <- deaths_scenarios()
+  measures <- c(cfr_coverage = "Case fatality ratio:\ncoverage",
+                cfr_error = "Case fatality ratio:\nerror of median",
+                recording_coverage = "Delay to death\nrecorded: coverage",
+                reporting_coverage = "Reporting delay:\ncoverage",
+                Rt_recent_coverage = "Rt, latest 14 days:\ncoverage",
+                cases_recent_coverage = "Cases, latest 14\ndays: coverage",
+                cases_earlier_coverage = "Cases, earlier\ndays: coverage",
+                fatal_recent_coverage = "Fatal cases, latest\n14 days: coverage")
+  df <- summary %>%
+    dplyr::filter(!is.na(.data$chains), .data$chains > 0) %>%
+    dplyr::select("scenario", "replicate", dplyr::all_of(names(measures))) %>%
+    tidyr::pivot_longer(dplyr::all_of(names(measures)), names_to = "measure") %>%
+    dplyr::left_join(scenarios, by = "scenario") %>%
+    dplyr::mutate(
+      measure = factor(measures[.data$measure], levels = measures),
+      label = factor(gsub("\n", " ", .data$label),
+                     levels = rev(gsub("\n", " ", scenarios$label))),
+      group = factor(.data$group, levels = c("Should do well", "Should struggle")))
+  targets_df <- dplyr::tibble(
+    measure = factor(measures[grepl("coverage", names(measures))], levels = measures),
+    value = 0.9)
+  ggplot2::ggplot(df, ggplot2::aes(.data$value, .data$label, colour = .data$group)) +
+    ggplot2::geom_vline(ggplot2::aes(xintercept = .data$value), data = targets_df,
+                        linetype = "dashed", colour = "grey40") +
+    ggplot2::geom_point(size = 1.2, alpha = 0.7) +
+    ggplot2::facet_grid(group ~ measure, scales = "free", space = "free_y") +
+    ggplot2::scale_colour_manual(values = c("Should do well" = "#4C72B0",
+                                            "Should struggle" = "#C44E52"),
+                                 guide = "none") +
+    ggplot2::labs(x = NULL, y = NULL) +
+    ggplot2::theme_bw(base_size = 8) +
+    ggplot2::theme(panel.grid.minor = ggplot2::element_blank(),
+                   strip.background = ggplot2::element_rect(fill = "grey93", colour = NA),
+                   axis.text.x = ggplot2::element_text(size = 6))
 }
 
 #' The simulated truth and the estimates for a set of scenarios of one
@@ -350,7 +530,7 @@ plot_deaths_simulation <- function(datasets, fits, scenarios, replicate = 1) {
     fitted <- deaths_dataset_fits(dataset, fits)
     if(fitted$n_chains == 0)
       next
-    truth <- dataset$truth
+    truth <- dataset$truth_by_day
     delays <- fitted$draws("reporting_days") %>%
       dplyr::left_join(
         fitted$draws("deaths_parameters")[, c("iteration", "chain", "fatal_delay_ratio")],
@@ -367,19 +547,19 @@ plot_deaths_simulation <- function(datasets, fits, scenarios, replicate = 1) {
       f_summary(fitted$draws("deaths"), .data$cfr, "Case fatality ratio",
                 quantities[5])) %>%
       dplyr::mutate(scenario = name)
-    days <- truth$time_onset
     f_truth <- function(value, series, quantity)
-      dplyr::tibble(time_onset = days, value = value, series = series,
+      dplyr::tibble(time_onset = truth$time_onset, value = value, series = series,
                     quantity = quantity)
     truths[[name]] <- dplyr::bind_rows(
       f_truth(truth$cases_onset, "Cases", quantities[1]),
       f_truth(truth$deaths_onset, "Fatal cases", quantities[2]),
-      f_truth(1, "Reproduction number", quantities[3]),
-      f_truth(dataset$true_delays$reporting, "Onset to case reported", quantities[4]),
-      f_truth(dataset$true_delays$reporting_fatal,
-              "Onset to case reported, fatal cases", quantities[4]),
-      f_truth(dataset$true_delays$recording, "Onset to death recorded", quantities[4]),
+      f_truth(truth$Rt, "Reproduction number", quantities[3]),
+      f_truth(truth$reporting_mean, "Onset to case reported", quantities[4]),
+      f_truth(truth$reporting_fatal_mean, "Onset to case reported, fatal cases",
+              quantities[4]),
+      f_truth(truth$recording_mean, "Onset to death recorded", quantities[4]),
       f_truth(truth$cfr, "Case fatality ratio", quantities[5])) %>%
+      dplyr::filter(!is.na(.data$value)) %>%
       dplyr::mutate(scenario = name)
     latest <- dataset$snapshots %>%
       dplyr::group_by(.data$time_onset) %>%
@@ -392,6 +572,7 @@ plot_deaths_simulation <- function(datasets, fits, scenarios, replicate = 1) {
                     series = "Deaths in the latest report", quantity = quantities[2])) %>%
       dplyr::mutate(scenario = name)
   }
+  scenarios <- intersect(scenarios, names(estimates))
   f_factors <- function(df) {
     df %>%
       dplyr::mutate(scenario = factor(labels[.data$scenario], levels = labels[scenarios]),
@@ -400,19 +581,19 @@ plot_deaths_simulation <- function(datasets, fits, scenarios, replicate = 1) {
   estimates <- f_factors(dplyr::bind_rows(estimates))
   truths <- f_factors(dplyr::bind_rows(truths))
   reported <- f_factors(dplyr::bind_rows(reported))
-  # the same vertical range for each quantity in every scenario
-  ranges <- dplyr::bind_rows(
-    dplyr::transmute(estimates, .data$quantity, y = .data$hi),
-    dplyr::transmute(estimates, .data$quantity, y = .data$lo),
-    dplyr::transmute(truths, .data$quantity, y = .data$value)) %>%
-    dplyr::group_by(.data$quantity) %>%
-    dplyr::summarise(lo = min(.data$y), hi = max(.data$y)) %>%
-    dplyr::mutate(lo = ifelse(.data$quantity == quantities[3], 0.8, 0),
-                  hi = ifelse(.data$quantity == quantities[3], 1.2, .data$hi)) %>%
+  # the counts have their own range in each scenario; the other quantities
+  # have ranges which can be compared between scenarios
+  fixed <- dplyr::tibble(
+    quantity = factor(quantities[3:5], levels = quantities),
+    lo = c(0.5, 0, 0), hi = c(1.7, 25, 0.8)) %>%
     tidyr::pivot_longer(c("lo", "hi"), values_to = "y") %>%
     dplyr::select(-"name") %>%
     tidyr::crossing(scenario = factor(labels[scenarios], levels = labels[scenarios])) %>%
     dplyr::mutate(time_onset = 1)
+  zero <- tidyr::crossing(
+    quantity = factor(quantities[1:2], levels = quantities),
+    scenario = factor(labels[scenarios], levels = labels[scenarios])) %>%
+    dplyr::mutate(time_onset = 1, y = 0)
   colours <- c("Cases" = "#4C72B0", "Fatal cases" = "#C44E52",
                "Reproduction number" = "#333333",
                "Onset to case reported" = "#4C72B0",
@@ -422,7 +603,7 @@ plot_deaths_simulation <- function(datasets, fits, scenarios, replicate = 1) {
                "Deaths in the latest report" = "#111111")
   is_counts <- truths$quantity %in% quantities[1:2]
   ggplot2::ggplot(estimates, ggplot2::aes(.data$time_onset)) +
-    ggplot2::geom_blank(ggplot2::aes(y = .data$y), data = ranges) +
+    ggplot2::geom_blank(ggplot2::aes(y = .data$y), data = dplyr::bind_rows(fixed, zero)) +
     ggplot2::geom_ribbon(ggplot2::aes(ymin = .data$lo, ymax = .data$hi,
                                       fill = .data$series), alpha = 0.25) +
     ggplot2::geom_step(ggplot2::aes(y = .data$value, colour = .data$series),
@@ -448,4 +629,24 @@ plot_deaths_simulation <- function(datasets, fits, scenarios, replicate = 1) {
                    strip.background = ggplot2::element_rect(fill = "grey93", colour = NA),
                    legend.key.width = ggplot2::unit(0.8, "cm"),
                    legend.margin = ggplot2::margin(0, 0, 0, 0))
+}
+
+#' Writes the figures of estimates against the truth, a few scenarios to a page
+#'
+#' @inheritParams plot_deaths_simulation
+#' @param per_page the number of scenarios on each page
+#' @param prefix the start of the names of the files
+#' @return the paths of the files written
+write_deaths_simulation_pages <- function(datasets, fits, per_page = 4,
+                                          prefix = "outputs/deaths_validation_page_") {
+  scenarios <- deaths_scenarios()$scenario
+  pages <- split(scenarios, ceiling(seq_along(scenarios) / per_page))
+  purrr::imap_chr(pages, function(names_page, page) {
+    path <- paste0(prefix, page, ".png")
+    plot <- tryCatch(plot_deaths_simulation(datasets, fits, names_page),
+                     error = function(e) NULL)
+    if(is.null(plot))
+      plot <- ggplot2::ggplot() + ggplot2::labs(title = "No fits to show")
+    save_plot(plot, path, 11, 1.2 + 1.9 * length(names_page))
+  }) %>% unname()
 }

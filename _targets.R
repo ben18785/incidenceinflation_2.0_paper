@@ -603,7 +603,7 @@ list(
                 "outputs/changepoint_demonstrations.png", 14, 9))
   }, format = "file", deployment = "main"),
 
-  # ---- cases and deaths: tests on simulated data (docs/bvd_deaths.tex) -------
+  # ---- cases and deaths: validation on simulated data (docs/bvd_deaths.tex) ---
   tar_target(deaths_sim_grid,
              tidyr::expand_grid(scenario = deaths_scenarios()$scenario,
                                 replicate = seq_len(n_replicates_deaths))),
@@ -624,25 +624,23 @@ list(
                             fits = deaths_sim_fit),
              deployment = "main"),
   tar_target(file_deaths_sim, {
-    utils::write.csv(deaths_sim_summary, "outputs/deaths_simulation_summary.csv",
+    utils::write.csv(deaths_sim_summary, "outputs/deaths_validation_by_dataset.csv",
                      row.names = FALSE)
-    utils::write.csv(deaths_sim_coverage, "outputs/deaths_simulation_coverage.csv",
-                     row.names = FALSE)
+    utils::write.csv(summarise_deaths_scenarios(deaths_sim_summary),
+                     "outputs/deaths_validation_summary.csv", row.names = FALSE)
     utils::write.csv(summarise_deaths_coverage(deaths_sim_coverage),
-                     "outputs/deaths_simulation_coverage_summary.csv", row.names = FALSE)
-    c("outputs/deaths_simulation_summary.csv", "outputs/deaths_simulation_coverage.csv",
-      "outputs/deaths_simulation_coverage_summary.csv")
+                     "outputs/deaths_validation_coverage.csv", row.names = FALSE)
+    utils::write.csv(deaths_scenarios(), "outputs/deaths_validation_scenarios.csv",
+                     row.names = FALSE)
+    c("outputs/deaths_validation_by_dataset.csv", "outputs/deaths_validation_summary.csv",
+      "outputs/deaths_validation_coverage.csv", "outputs/deaths_validation_scenarios.csv")
   }, format = "file", deployment = "main"),
-  tar_target(figure_deaths_sim_1,
-             save_plot(plot_deaths_simulation(deaths_sim_dataset, deaths_sim_fit,
-                                              c("base", "cfr", "sooner")),
-                       "outputs/bvd_deaths_simulation_check_1.png", 11, 5.6),
+  tar_target(figure_deaths_sim_overview,
+             save_plot(plot_deaths_validation(deaths_sim_summary),
+                       "outputs/deaths_validation_overview.png", 12, 7),
              format = "file", deployment = "main"),
-  tar_target(figure_deaths_sim_2,
-             save_plot(plot_deaths_simulation(deaths_sim_dataset, deaths_sim_fit,
-                                              c("wrong", "dated", "dated_exact",
-                                                "dated_ignored", "all")),
-                       "outputs/bvd_deaths_simulation_check_2.png", 11, 8.8),
+  tar_target(figure_deaths_sim_pages,
+             write_deaths_simulation_pages(deaths_sim_dataset, deaths_sim_fit),
              format = "file", deployment = "main"),
 
   # ---- outputs ---------------------------------------------------------------
