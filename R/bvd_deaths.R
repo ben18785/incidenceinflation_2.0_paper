@@ -15,8 +15,8 @@
 #' The report of date_corrected corrected the records of onset days before
 #' date_onset_corrected (it removed many records, added some and changed
 #' which were shown as dead). For those onset days the reports made before it
-#' are returned separately, as 'uncorrected', to be fitted as a separate
-#' series.
+#' are returned separately, as 'uncorrected'. The main fits leave them out;
+#' one fit, as a check, uses them as a separate series.
 prepare_bvd_deaths_analysis <- function(snapshots, date_now,
                                         date_first = "2026-05-11",
                                         date_corrected = "2026-09-06",
@@ -65,19 +65,27 @@ prepare_bvd_deaths_analysis <- function(snapshots, date_now,
   analysis
 }
 
-#' What the model is told about fatal cases dated by death in each fit
+#' The fits made: what each is told about fatal cases dated by death, and
+#' whether it uses the reports made before the correction
 #'
 #' The reports do not say how many fatal cases are recorded for their day of
 #' death, nor how long after onset those deaths were. "none" takes there to be
-#' none. "a fifth" is a check of how much the results depend on this: a fifth
-#' of fatal cases, dying a mean of 7 days after onset (sd 4) and reported a
-#' mean of 2 days after death (sd 1.5). These values are illustrative: they
-#' are not estimates for this outbreak.
+#' none and is the main fit. "a fifth" is a check of how much the results
+#' depend on this: a fifth of fatal cases, dying a mean of 7 days after onset
+#' (sd 4) and reported a mean of 2 days after death (sd 1.5). These values are
+#' illustrative: they are not estimates for this outbreak.
+#'
+#' For the onset days which the correction changed, these two fits use only
+#' the reports from the correction on. "earlier reports" is a check of what
+#' the reports made before it add: as "none", with those reports as a
+#' separate series which informs only the delays and the wrong records.
 bvd_deaths_variants <- function() {
   list(
-    none = NULL,
-    `a fifth` = list(fraction = 0.2, mean = 7, sd = 4,
-                     reporting = list(mean = 2, sd = 1.5)))
+    none = list(dated_by_death = NULL, uncorrected = FALSE),
+    `a fifth` = list(dated_by_death = list(fraction = 0.2, mean = 7, sd = 4,
+                                           reporting = list(mean = 2, sd = 1.5)),
+                     uncorrected = FALSE),
+    `earlier reports` = list(dated_by_death = NULL, uncorrected = TRUE))
 }
 
 #' Runs one chain of the joint model of cases and deaths
@@ -85,8 +93,9 @@ bvd_deaths_variants <- function() {
 #' As fit_bvd_changepoint_chain (wrong records, an effect of the day of the
 #' week of each report, a negative binomial renewal model, earlier cases
 #' supplied as known), with the deaths shown in each report. The reports made
-#' before the correction, of the onset days it corrected, are a separate
-#' series which informs only the delays and the wrong records.
+#' before the correction, of the onset days it corrected, are left out unless
+#' the variant uses them, as a separate series which informs only the delays
+#' and the wrong records.
 fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws = 300,
                                  serial_parameters = list(mean = 15.3, sd = 9.3),
                                  progress_dir = "outputs/bvd_deaths/progress") {
@@ -104,7 +113,8 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
     dplyr::mutate(cases_true = ceiling(
       .data$cases_true * (1 + inflation * exp(-days_before_end / 4)) +
         5 * (days_before_end < 5)))
-  uncorrected <- analysis$uncorrected
+  options <- bvd_deaths_variants()[[variant]]
+  uncorrected <- if(options$uncorrected) analysis$uncorrected
   f_largest_fall <- function(column) {
     # a fall across the correction is not one the model has to explain
     falls <- dplyr::bind_rows(
@@ -138,7 +148,7 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
     initial_delay = list(list(mean = 14, sd = 8), list(mean = 8, sd = 5),
                          list(mean = 20, sd = 10))[[index]],
     delay_changepoints = bvd_delay_settings())
-  deaths_settings["dated_by_death"] <- list(bvd_deaths_variants()[[variant]])
+  deaths_settings["dated_by_death"] <- list(options$dated_by_death)
 
   time_start <- Sys.time()
   fit <- tryCatch(
@@ -315,7 +325,8 @@ plot_bvd_deaths <- function(by_day, analysis) {
   quantities <- c("Cases by day of onset", "Fatal cases by day of onset",
                   "Reproduction number", "Mean delay (days)", "Case fatality ratio")
   labels <- c(none = "No cases dated by death",
-              `a fifth` = "A fifth of fatal cases dated by death")
+              `a fifth` = "A fifth of fatal cases dated by death",
+              `earlier reports` = "With the reports before the correction")
   latest <- analysis$snapshots %>%
     dplyr::group_by(.data$time_onset) %>%
     dplyr::filter(.data$time_reported == max(.data$time_reported)) %>%
