@@ -26,6 +26,8 @@ n_iterations_bvd_cp <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_BVD_CP", "3000
 # tests of the joint model of cases and deaths on simulated data
 n_replicates_deaths <- as.integer(Sys.getenv("PIPELINE_REPLICATES_DEATHS", "1"))
 n_chains_deaths <- as.integer(Sys.getenv("PIPELINE_CHAINS_DEATHS", "2"))
+n_chains_bvd_deaths <- as.integer(Sys.getenv("PIPELINE_CHAINS_BVD_DEATHS", "3"))
+n_iterations_bvd_deaths <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_BVD_DEATHS", "1000"))
 n_iterations_deaths <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_DEATHS", "300"))
 
 list(
@@ -642,6 +644,35 @@ list(
   tar_target(figure_deaths_sim_pages,
              write_deaths_simulation_pages(deaths_sim_dataset, deaths_sim_fit),
              format = "file", deployment = "main"),
+
+  # ---- Bundibugyo virus disease: cases and deaths ------------------------------
+  # the joint model of cases and deaths fitted to all reports up to the latest,
+  # once taking no fatal cases to be dated by death and once taking a fifth to be
+  tar_target(bvd_deaths_analysis,
+             prepare_bvd_deaths_analysis(bvd_snapshots, max(bvd_dates_now))),
+  tar_target(bvd_deaths_variant, names(bvd_deaths_variants())),
+  tar_target(bvd_deaths_chain_index, seq_len(n_chains_bvd_deaths)),
+  tar_target(bvd_deaths_chain,
+             fit_bvd_deaths_chain(bvd_deaths_analysis, bvd_deaths_variant,
+                                  bvd_deaths_chain_index, n_iterations_bvd_deaths),
+             pattern = cross(bvd_deaths_variant, bvd_deaths_chain_index),
+             iteration = "list"),
+  tar_target(bvd_deaths_summary, summarise_bvd_deaths(bvd_deaths_chain),
+             deployment = "main"),
+  tar_target(bvd_deaths_days, bvd_deaths_by_day(bvd_deaths_chain),
+             deployment = "main"),
+  tar_target(files_bvd_deaths, {
+    utils::write.csv(bvd_deaths_runs(bvd_deaths_chain), "outputs/bvd_deaths_runs.csv",
+                     row.names = FALSE)
+    utils::write.csv(bvd_deaths_summary, "outputs/bvd_deaths_summary.csv",
+                     row.names = FALSE)
+    utils::write.csv(bvd_deaths_days, "outputs/bvd_deaths_by_day.csv",
+                     row.names = FALSE)
+    c("outputs/bvd_deaths_runs.csv", "outputs/bvd_deaths_summary.csv",
+      "outputs/bvd_deaths_by_day.csv",
+      save_plot(plot_bvd_deaths(bvd_deaths_days, bvd_deaths_analysis),
+                "outputs/bvd_deaths.png", 11, 11))
+  }, format = "file", deployment = "main"),
 
   # ---- outputs ---------------------------------------------------------------
   tar_target(file_scores, {

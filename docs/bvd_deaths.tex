@@ -84,6 +84,34 @@ falls between consecutive reports 41 times out of 2{,}129, and the death
 count 18 times, never by more than 2. On 11 of the 18 occasions the case
 count fell as well: a record which was removed had been shown as dead.
 
+\paragraph{Onset days before the first report.} The first report is that of
+12 July, and it already shows cases with onset from 20 April. For onset days
+from 11 May to 11 July it shows 1{,}778 cases, 465 of them dead; the latest
+report shows 2{,}220 cases and 961 dead for the same days. So more than half
+of the deaths among these cases were recorded while the reports were being
+made, and for the oldest of them this was two to four months after onset.
+(Before 11 May the latest report shows 40 cases in all.)
+
+\paragraph{The report of 6 September.} This report corrected the records of
+onset days before 28 June, most of them more than ten weeks old. Compared
+with the report of 5 September, which showed 1{,}613 cases and 639 dead for
+those 69 onset days:
+\begin{itemize}
+\item the case count fell for 33 onset days, by 137 in all and by up to 13
+for one day, and rose for 18 onset days, by 48 in all;
+\item the death count fell for 27 onset days, by 58 in all and by up to 7
+for one day, and rose for 18, by 31 in all;
+\item for 6 onset days the death count fell by more than the case count did.
+\end{itemize}
+So the correction did more than remove records. Records were also added,
+long after any case of those days would ordinarily be reported, and some
+records shown as dead either became alive or were replaced by others. The
+reports do not say what was done; moving cases from one onset day to
+another would produce all three. In every other report the case count of
+one of these onset days fell by at most 3 (once; otherwise at most 2) and
+the death count by at most 1. No onset day from 25 June onwards was
+affected.
+
 \section{Model}\label{sec:model}
 
 Throughout, $t$ is a day of onset and $t_1<t_2<\dots$ are the days of the
@@ -579,6 +607,90 @@ count with no fall in the case count (7 of the 18 falls) needs no further
 mechanism: it is a wrong record shown as dead being removed while a genuine
 case is added.
 
+\subsection{Onset days before the first report}\label{sec:early}
+
+Nothing in the model requires the first report which includes an onset day
+to be made on that day. For an onset day $t$ before the first report, $t_1$
+is the day of the first report and the equations of ``The first report''
+above apply as they stand: the cases and deaths it shows are those whose
+delays had elapsed by $t_1$. Such a day says little about the reporting
+delay of cases, since nearly all its cases are in the first report it
+appears in. It says more about deaths. The deaths recorded from one report
+to the next, through \eqref{eq:y}, show how long after onset deaths go on
+being recorded, and once that has stopped the share of cases shown as dead
+is the case fatality ratio for that day.
+
+The analysis therefore starts at the onset day of 11 May, not at the day of
+the first report as in the companion note. Cases with earlier onset (40 in
+the latest report) are supplied as known to the renewal equation, as there.
+
+\subsection{A report which corrects many records}\label{sec:correction}
+
+The wrong records of \S\ref{sec:wrong} are few and are removed one at a
+time. The report of 6 September is a different thing: for onset days before
+28 June it removed 137 records, added 48 and changed which records were
+shown as dead. Two inputs describe such a report: the day it was made,
+$t_c$, and the set $\mathcal{T}_c$ of onset days it corrected (here 6
+September, and the onset days before 28 June). Both are supplied, having
+been read from the data. They are not estimated.
+
+\paragraph{Two series for each corrected onset day.} For
+$t\in\mathcal{T}_c$ the reports are split into those made before $t_c$ and
+those made from $t_c$ on, and the two are modelled as two separate series
+of reports.
+\begin{itemize}
+\item \emph{The corrected series}: the reports of $t_c$ and later. These
+are modelled exactly as in the sections above, with $t_c$ as the first
+report of the onset day. The true cases $I(t)$ and fatal cases $F(t)$ are
+those of this series: they enter the renewal equation and \eqref{eq:cfr}.
+\item \emph{The uncorrected series}: the reports before $t_c$. These are
+modelled by the same equations, with the same delays, but with their own
+totals $I^{u}(t)$ and $F^{u}(t)$ in place of $I(t)$ and $F(t)$: the numbers
+of cases and of fatal cases which the uncorrected records would have come
+to. These totals are given flat priors,
+\[
+I^{u}(t)\sim\operatorname{uniform}\{0,\dots,I_{\max}\},\qquad
+F^{u}(t)\given I^{u}(t)\sim\operatorname{uniform}\{0,\dots,I^{u}(t)\},
+\]
+and enter neither the renewal equation nor \eqref{eq:cfr}.
+\end{itemize}
+The delays $S^{C,N}$, $S^{C,F}$ and $S^{D}$ of both series are those of
+onset day $t$, and both series have the wrong records of \S\ref{sec:wrong}
+with the same $\eta$, $\rho$ and $\delta$.
+
+\paragraph{What each series contributes.} The corrected series gives the
+true cases, the fatal cases and so the case fatality ratio of these onset
+days, from records which have been corrected. The uncorrected series gives
+only timing: how the counts of cases and of deaths rose from report to
+report, relative to totals $I^{u}(t)$ and $F^{u}(t)$ which are free. It
+therefore informs the delays, above all the delay to a death being
+recorded, and nothing else. Because $F^{u}(t)$ has a flat prior given
+$I^{u}(t)$, the share of uncorrected records shown as dead says nothing
+about $c_t$.
+
+\paragraph{What this assumes.}
+\begin{itemize}
+\item The uncorrected records of an onset day were reported, and their
+deaths recorded, with the delays of that onset day. If the correction moved
+cases between onset days a few days apart this is nearly true. A record
+which should not have been there at all is assumed to have behaved like the
+others.
+\item The two series are independent given the delays and the parameters of
+the wrong records. They are mostly the same cases, so this uses some of the
+timing of their deaths twice: whether a death had been recorded by $t_c$
+enters the corrected series through its first report, and the uncorrected
+series through the reports up to then. The information on the delay to a
+death being recorded for these onset days is overstated as a result. The
+case fatality ratio is not affected in this way, since only the corrected
+series informs it.
+\item Nothing is said about what the correction did. An alternative is to
+model it: so many wrong records removed, so many cases added, so many
+records changed from dead to alive, for each onset day. This needs five
+unobserved counts for each onset day which the data can barely tell apart
+(one more record removed and one more added leave the counts the same),
+so it is not what is proposed.
+\end{itemize}
+
 \subsection{Changes at unknown times}\label{sec:changes}
 
 Three quantities are piecewise constant in the onset day, each with its own
@@ -708,6 +820,12 @@ last kinds, the reports of day $t$ through $\tilde{f}_t$. The other updates
 are as above with $\tilde{F}(t)$ and the altered probabilities; for days
 long enough ago to be taken as fully reported, the true cases with onset on
 day $t$ are the latest reported count less $G(t)-F^{d}(t)$.
+\item \emph{Uncorrected series} (\S\ref{sec:correction}). $I^{u}(t)$,
+$F^{u}(t)$ and the paths of the uncorrected series are updated by steps 1
+to 3, with the flat priors in place of the renewal terms and
+\eqref{eq:cfr}. In steps 5, 6, 8, 9 and 11 the uncorrected series of a
+corrected onset day is one more series of reports with the delays of that
+day.
 \item \emph{$\nu$.} Given the paths, $\nu$ enters only through
 \eqref{eq:a} (and \eqref{eq:pi}, where cases dated by death have their own
 delay). From $\nu=0$, a value drawn from the normal part of the prior is
@@ -809,6 +927,16 @@ fraction, a wrong distribution of the time to death or a wrong delay from
 death to first appearing in a report: are $R_t$, $c_t$ and
 $\phi$ recovered with the right inputs, and how sensitive are they to wrong
 ones?
+\item a first report made some weeks after the first onset day analysed
+(\S\ref{sec:early}), with the case fatality ratio and the delay to a death
+being recorded constant, and with each changing before the first report:
+are the values for the early onset days recovered?
+\item a report which corrects the records of early onset days by removing
+some, adding some and moving some between onset days
+(\S\ref{sec:correction}), fitted with the two series, and fitted as if
+there had been no correction: are the cases, $c_t$ and $\phi$ of the
+corrected onset days recovered in the first case, and how wrong are they in
+the second?
 \item cases, $R_t$ and the reporting delay: are these estimated at least as
 well as by the model without deaths?
 \end{enumerate}
@@ -845,8 +973,17 @@ two chains of 300 iterations (the first 150 discarded). Table
 badly wrong, not the tests of \S\ref{sec:tests}: there is one outbreak, the
 chains are short, and in two variants the two chains had not yet agreed on
 the reporting delay.
-\item To do: the tests of \S\ref{sec:tests} with more outbreaks and longer
-chains, then the fit with all 49 reports.
+\item A larger run of the tests (26 variants, three outbreaks each) was
+started and then stopped part-way, so that the model could first be
+extended to onset days before the first report. No results from it are
+reported.
+\item Onset days before the first report (\S\ref{sec:early}) need no change
+to the model: a fit starting 14 days before the first report runs. The two
+series of \S\ref{sec:correction} are \emph{proposed and not yet built}.
+\item To do: build \S\ref{sec:correction}; add its tests and those of a late
+first report to \S\ref{sec:tests}; run all the tests with more outbreaks and
+longer chains; then the fit with all 49 reports, from the onset day of 11
+May.
 \end{itemize}
 
 \begin{table}[h]
