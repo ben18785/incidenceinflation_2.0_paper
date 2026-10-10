@@ -1018,8 +1018,9 @@ Each was fitted by two chains of 600 iterations, the first 300 discarded.
 Twenty variants are ones the model should handle and twelve are ones where
 it should struggle, either because the data say little or because the
 model is told something wrong. Figure \ref{fig:validation} shows every
-variant and outbreak; Figure \ref{fig:validationnew} shows the fits for the
-variants with a correcting report.
+variant and outbreak; Figures \ref{fig:pages} onwards show the fits to the
+first outbreak for every variant (Figure \ref{fig:validationnew} has those
+with a correcting report).
 
 \paragraph{Cautions.} Three outbreaks is few. The same three are used for
 every variant, so a miss which belongs to one outbreak appears in many rows
@@ -1141,15 +1142,58 @@ and the truth over onset days.}
 
 \begin{figure}[p]
 \centering
+\includegraphics[width=\textwidth]{deaths_validation_page_1.png}
+\caption{Fits to the first simulated outbreak, four variants to a page
+(variants 1 to 4). Points and dashed lines are the truth; solid lines are
+posterior medians and shaded bands 90\% intervals. First two columns: cases
+(blue) and fatal cases (red) by day of onset, with the cases and deaths in
+the latest report (black steps). Fourth column: mean delay from onset to a
+case being reported (blue; orange for fatal cases) and from onset to a
+death being recorded (red).}
+\label{fig:pages}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{deaths_validation_page_2.png}
+\caption{As Figure \ref{fig:pages}: variants 5 to 8.}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{deaths_validation_page_3.png}
+\caption{As Figure \ref{fig:pages}: variants 9 to 12.}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{deaths_validation_page_4.png}
+\caption{As Figure \ref{fig:pages}: variants 13 to 16. The last three rows are the variants with a late first report.}
+\end{figure}
+
+\begin{figure}[p]
+\centering
 \includegraphics[width=\textwidth]{deaths_validation_page_5.png}
-\caption{Fits to the first simulated outbreak for the variants with a
-correcting report, and for all features together. Points and dashed lines
-are the truth; solid lines are posterior medians and shaded bands 90\%
-intervals. First two columns: cases (blue) and fatal cases (red) by day of
-onset, with the cases and deaths in the latest report (black steps). Fourth
-column: mean delay from onset to a case being reported (blue; orange for
-fatal cases) and from onset to a death being recorded (red).}
+\caption{As Figure \ref{fig:pages}: variants 17 to 20. The first three rows are the variants with a correcting report.}
 \label{fig:validationnew}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{deaths_validation_page_6.png}
+\caption{As Figure \ref{fig:pages}: variants 21 to 24.}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{deaths_validation_page_7.png}
+\caption{As Figure \ref{fig:pages}: variants 25 to 28.}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{deaths_validation_page_8.png}
+\caption{As Figure \ref{fig:pages}: variants 29 to 32.}
 \end{figure}
 
 \end{document}
