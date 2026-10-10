@@ -278,10 +278,10 @@ summarise_bvd_deaths <- function(chains) {
 
 #' Which chains ran, how long they took and any errors
 bvd_deaths_runs <- function(chains) {
-  purrr::map_dfr(chains, function(chain) {
-    dplyr::tibble(variant = chain$variant, chain = chain$chain,
-                  niterations = chain$niterations, minutes = chain$minutes,
-                  error = if(is.null(chain$error)) "" else chain$error)
+  purrr::map_dfr(chains, function(fit) {
+    dplyr::tibble(variant = fit$variant, chain = fit$chain,
+                  niterations = fit$niterations, minutes = fit$minutes,
+                  error = if(is.null(fit$error)) "" else fit$error)
   })
 }
 

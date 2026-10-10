@@ -998,6 +998,8 @@ how many of each kind there are.
 repository (targets named \texttt{deaths\_sim}).
 \item The tests on simulated data have been run: \S\ref{sec:results}. They
 replace an earlier quick check of seven variants on one outbreak.
+\item A first fit to the outbreak has been run and has not converged:
+\S\ref{sec:fit}.
 \item Onset days before the first report (\S\ref{sec:early}) need no change
 to the model: a fit starting 14 days before the first report runs. Leaving
 out the reports made before a correction (\S\ref{sec:correction}) needs no
@@ -1194,6 +1196,133 @@ death being recorded (red).}
 \centering
 \includegraphics[width=\textwidth]{deaths_validation_page_8.png}
 \caption{As Figure \ref{fig:pages}: variants 29 to 32.}
+\end{figure}
+
+\clearpage
+\section{Fit to the outbreak: first run, not converged}\label{sec:fit}
+
+\paragraph{What was run.} The model was fitted to all reports up to 1
+October, for onset days from 11 May (144 onset days; 6{,}428 cases and
+2{,}821 deaths in the latest report). For the onset days from 11 May to 27
+June only the reports from 6 September on are used (\S\ref{sec:correction}).
+No fatal cases are taken to be dated by death. The heavier tail of the
+reporting delay is included (\S\ref{sec:early}), with wrong records,
+day-of-week effects and a negative binomial renewal model. Three chains of
+1{,}000 iterations were run from different starting values, the first 500
+discarded; each took about three hours.
+
+\paragraph{The chains do not agree, so these are not results.} Table
+\ref{tab:fit} gives each monitored quantity with its split $\hat R$ and the
+median of each chain, and Figure \ref{fig:fitchains} shows the chains
+separately. Split $\hat R$ is above 1.1 for 15 of the 18 quantities and
+above 2 for 7. The pooled estimates of Figure \ref{fig:fit} mix chains
+which are in different places, and its intervals should not be read as
+posterior intervals.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{p{6.3cm}lrrrr}
+\toprule
+Quantity & Median (90\% interval), pooled & $\hat R$ & Chain 1 & Chain 2 & Chain 3 \\
+\midrule
+Case fatality ratio, first onset day & 0.375 (0.328--0.430) & 1.14 & 0.364 & 0.369 & 0.392 \\
+Case fatality ratio, latest onset day & 0.526 (0.408--0.661) & 2.25 & 0.517 & 0.517 & 0.634 \\
+Changes in the case fatality ratio & 1 (1--3) & 1.34 & 1 & 1 & 2 \\
+Mean delay to death recorded, first onset day & 43.4 (31.5--76.8) & 2.34 & 39.4 & 40.2 & 67.9 \\
+Mean delay to death recorded, latest onset day & 26.8 (14.5--76.7) & 3.62 & 22.7 & 18.6 & 67.9 \\
+Changes in the delay to death recorded & 1 (0--3) & 1.67 & 2 & 2 & 0 \\
+Fatal cases, all onset days & 3{,}750 (3{,}472--4{,}518) & 3.99 & 3{,}527 & 3{,}750 & 4{,}394 \\
+Fatal cases, latest 14 onset days & 376 (273--486) & 1.91 & 336 & 364 & 450 \\
+Cases, all onset days & 7{,}256 (6{,}868--7{,}777) & 2.58 & 6{,}923 & 7{,}319 & 7{,}466 \\
+Cases, latest 14 onset days & 707 (624--801) & 1.27 & 672 & 718 & 728 \\
+Mean delay to case reported, first onset day & 8.63 (7.51--68.4) & 5.52 & 60.4 & 7.87 & 7.78 \\
+Mean delay to case reported, latest onset day & 7.60 (7.18--7.96) & 1.27 & 7.39 & 7.70 & 7.67 \\
+Reporting delay of fatal cases relative to others, $\nu$ & 1.00 (1.00--1.02) & 1.06 & 1.00 & 1.00 & 1.00 \\
+Share of cases reported with a long delay, $\omega$ & 0.179 (0.148--0.225) & 1.25 & 0.194 & 0.168 & 0.178 \\
+Mean of the long reporting delay, $m$ (days) & 68.8 (21.4--145) & 2.62 & 23.3 & 75.6 & 96.7 \\
+Wrong records per case and report, $\eta$ & 0.034 (0.028--0.040) & 1.00 & 0.033 & 0.034 & 0.034 \\
+Removal of wrong records per report, $\rho$ & 0.047 (0.033--0.065) & 1.48 & 0.057 & 0.043 & 0.043 \\
+Share of wrong records shown as dead, $\delta$ & 0.419 (0.318--0.532) & 1.00 & 0.408 & 0.422 & 0.419 \\
+\bottomrule
+\end{tabular}
+\caption{First fit to the outbreak: three chains of 1{,}000 iterations, the
+first 500 discarded. Pooled median and 90\% interval, split $\hat R$, and
+the median of each chain. $\nu$ is exactly 1 in 88\% of draws. The chains
+have not converged.}
+\label{tab:fit}
+\end{table}
+
+\paragraph{Where the chains agree.}
+\begin{itemize}
+\item The case fatality ratio rises at the end of May, from about 0.37
+(0.33--0.43) to 0.52 or more. A change is found in every draw of every
+chain.
+\item Fatal cases are reported no faster or slower than other cases.
+\item The reporting delay of recent onset days has a mean of 7.6 days.
+\item $\eta$ and $\delta$.
+\item The reproduction number falls from about 1.2 at the end of June to
+about 0.9 by 1 October. (Its values before June rest on very few earlier
+cases.)
+\end{itemize}
+
+\paragraph{Where they do not.}
+\begin{itemize}
+\item \emph{The delay to a death being recorded, and with it the case
+fatality ratio.} Chains 1 and 2 have a mean delay of about 40 days for
+onset days up to mid or late July and about 19 days after, with a case
+fatality ratio of 0.52. Chain 3 has no change in the delay, a mean of 68
+days throughout and a case fatality ratio of 0.57 rising to 0.63. Slower
+recording with more deaths still to come, and faster recording with fewer,
+fit the reports about equally well as far as these chains show: this is the
+confounding of \S\ref{sec:identifiability}, which the tests also showed
+(\S\ref{sec:results}). The total of fatal cases follows: 3{,}530, 3{,}750
+and 4{,}390 in the three chains, against 2{,}821 deaths in the latest
+report.
+\item \emph{The reporting delay before 28 June.} Chain 1 has a mean of 50
+to 60 days for these onset days and the others about 8. These are the
+corrected onset days, first used 71 or more days after onset, so the
+reports say almost nothing about their reporting delay
+(\S\ref{sec:correction}).
+\item \emph{The tail.} The mean of the long delay, $m$, is 23, 76 and 97
+days in the three chains.
+\end{itemize}
+
+\paragraph{Two things which look wrong.}
+\begin{itemize}
+\item The share of cases with a long reporting delay, $\omega$, is 0.18
+(0.15--0.23), against a prior with mean 0.05. The tail was meant for the
+occasional case added months late; a share of this size means it is
+standing in for something else, and it will affect the estimates of recent
+true cases.
+\item In every chain the fatal cases exceed the deaths in the latest report
+by a quarter or more, including for onset days in June and July. That may
+be so, but it rests on a delay to a death being recorded of 40 days or more
+which the chains do not agree on.
+\end{itemize}
+
+\paragraph{Next.} Longer chains, to see whether the two explanations are
+two modes or one slowly explored posterior; a look at what the tail is
+absorbing; and the two checks which are still running (a fifth of fatal
+cases dated by death; the reports made before 6 September as a separate
+series).
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.8\textwidth]{bvd_deaths_main_by_chain.png}
+\caption{First fit to the outbreak, each chain separately: posterior median
+and 90\% interval by day of onset. The reproduction number is shown from 1
+June. The chains have not converged.}
+\label{fig:fitchains}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.8\textwidth]{bvd_deaths_main.png}
+\caption{First fit to the outbreak, the three chains pooled. Grey bars are
+the cases and deaths in the latest report. Lines are posterior medians and
+bands 90\% intervals; since the chains have not converged the bands are not
+posterior intervals.}
+\label{fig:fit}
 \end{figure}
 
 \end{document}
