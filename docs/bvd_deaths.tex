@@ -624,6 +624,29 @@ The analysis therefore starts at the onset day of 11 May, not at the day of
 the first report as in the companion note. Cases with earlier onset (40 in
 the latest report) are supplied as known to the renewal equation, as there.
 
+\paragraph{The reporting delay of onset days first seen late.} An onset
+day first seen weeks after onset says almost nothing about the reporting
+delay: nearly all its cases are already in the first report which includes
+it. The model nonetheless gives every onset day a reporting delay, and if a
+change (\S\ref{sec:changes}) is placed among such days the delay of the
+segment before it is drawn almost from its prior. In a first fit to the
+outbreak one chain did this, giving the onset days before 28 June a mean
+reporting delay of 50 to 60 days where the others had 8.
+
+So no change in the reporting delay is allowed among these days. Take the
+onset days within 7 days of the first report as the first which inform the
+delay (about half of a day's cases are reported within a week). The first
+segment of the reporting delay must then run from the first onset day
+analysed to at least 14 days (the minimum length of any segment) after the
+first of those: here, to 18 July or later, the first report being that of
+12 July. The onset days of May and June then have the reporting delay of
+early July. This is an assumption, not an estimate: if cases with onset in
+May were reported more slowly than those of July, the model cannot see it.
+It applies to the delay from onset to a case being reported only. Changes
+in the case fatality ratio and in the delay to a death being recorded are
+allowed on any day, since deaths among the cases of an onset day go on
+being recorded for weeks after it is first seen.
+
 \paragraph{Cases added long after onset.} Following an onset day for months
 shows something a shorter series does not: now and then a case is added to
 an onset day long after every other case of that day was reported. For
@@ -1323,6 +1346,199 @@ the cases and deaths in the latest report. Lines are posterior medians and
 bands 90\% intervals; since the chains have not converged the bands are not
 posterior intervals.}
 \label{fig:fit}
+\end{figure}
+
+\section{Fits to earlier reports: second run, not converged}\label{sec:nowcast}
+
+\paragraph{What was run.} The model of \S\ref{sec:fit} was changed in one
+way: no change in the reporting delay is allowed before 19 July
+(\S\ref{sec:early}). It was fitted five times, each time to the reports up
+to a given date only: 1 August, 20 August, 5 September (the day before the
+correcting report), 15 September and 1 October. The estimates made at each
+earlier date can then be set against what the report of 1 October shows.
+Three chains of 1{,}000 iterations were run for each date, the first 500
+discarded. All three chains were started from the same plausible values,
+scaled by 1, 0.9 and 1.1: a case fatality ratio of 0.5, a mean delay to a
+death being recorded of 22 days and a mean reporting delay of 7.6 days.
+Chains started together cannot show a second mode which none of them
+finds, so agreement here is weaker evidence than agreement from spread
+starts.
+
+\paragraph{Convergence.} No date converged (Table~\ref{tab:nowcastrhat}).
+The reporting delay is now steady, at 7.6 to 8.4 days for every date, and
+its $\hat{R}$ is below 1.1 for three of the five dates. What does not
+converge is the pair which \S\ref{sec:identifiability} warns of: the case
+fatality ratio and the delay to a death being recorded. On the reports to 1
+October one chain has a mean delay of 117 days and a case fatality ratio of
+0.54 for the first onset days, the other two 36 to 39 days and 0.36 to
+0.37, although all three started together. All five dates are being rerun
+with 3{,}000 iterations. Table~\ref{tab:nowcastestimates} gives the estimates of
+every monitored quantity at each date and Table~\ref{tab:nowcastallrhat}
+their $\hat{R}$.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{lrrl}
+\toprule
+Reports to & $\hat{R}\ge 1.2$ (of 18) & Largest $\hat{R}$ & Quantity with the largest\\
+\midrule
+1 August & 2 & 2.2 & delay to death recorded, first onset day\\
+20 August & 9 & 2.0 & fatal cases, all onset days\\
+5 September & 10 & 1.6 & case fatality ratio, latest onset day\\
+15 September & 14 & 2.1 & delay to death recorded, latest onset day\\
+1 October & 6 & 8.3 & delay to death recorded, first onset day\\
+\bottomrule
+\end{tabular}
+\caption{Convergence of the fits to earlier reports: the number of the 18
+monitored quantities with $\hat{R}$ of 1.2 or more, and the largest.}
+\label{tab:nowcastrhat}
+\end{table}
+
+\paragraph{Estimates against the report of 1 October.}
+Figure~\ref{fig:nowcasts} and Table~\ref{tab:nowcast} compare, for onset
+days from 28 June, the estimate made at each date with the count in the
+report of 1 October. That report is not the truth: its counts for recent
+onset days, deaths above all, are still rising. Since the chains have not
+converged, the intervals are not posterior intervals.
+
+From the reports to 1 August the estimates for the latest week are good:
+458 cases (386 to 545) against 424 in the report of 1 October, where 87 had
+been reported, and 192 fatal cases (155 to 237) against 191, where 33 had
+been reported. For onset days one to four weeks back the cases are 10 to
+15\% too high. At the later dates the estimates are too high throughout.
+Cases are 10 to 40\% above the report of 1 October. The model puts 17 to
+26\% of cases in the long tail of the reporting delay, with a mean of 57 to
+95 days, and so expects many more late reports than arrived. Fatal cases
+estimated in September are 30 to 50\% above the report of 1 October even
+for onset days more than four weeks old. Those fits have a case fatality
+ratio near 0.6 and a mean delay to a death being recorded of 50 to 90 days
+(Figure~\ref{fig:nowcastparameters}): the reported deaths are read as a
+small part of a large total still to come.
+
+\begin{table}[h]
+\centering
+\begin{tabular}{llrrrr}
+\toprule
+Reports to & Days before & Reported then & Estimate (90\% interval) & 1 October & Days inside\\
+\midrule
+\multicolumn{6}{l}{\emph{Cases}}\\
+1 August & 0--6 & 87 & 458 (386--545) & 424 & 7 of 7\\
+ & 7--13 & 316 & 482 (445--527) & 414 & 3 of 7\\
+ & 14--27 & 634 & 753 (716--805) & 683 & 10 of 14\\
+20 August & 0--6 & 95 & 534 (452--622) & 417 & 5 of 7\\
+ & 7--13 & 361 & 591 (548--657) & 464 & 0 of 7\\
+ & 14--27 & 745 & 951 (898--1{,}048) & 801 & 2 of 14\\
+5 September & 0--6 & 106 & 493 (435--553) & 411 & 6 of 7\\
+ & 7--13 & 324 & 485 (456--519) & 419 & 3 of 7\\
+ & 14--27 & 822 & 945 (916--983) & 869 & 5 of 14\\
+15 September & 0--6 & 110 & 533 (470--614) & 376 & 3 of 7\\
+ & 7--13 & 300 & 488 (454--535) & 385 & 0 of 7\\
+ & 14--27 & 789 & 954 (914--1{,}037) & 838 & 3 of 14\\
+\midrule
+\multicolumn{6}{l}{\emph{Fatal cases}}\\
+1 August & 0--6 & 33 & 192 (155--237) & 191 & 7 of 7\\
+ & 7--13 & 93 & 183 (158--212) & 206 & 7 of 7\\
+ & 14--27 & 222 & 313 (285--351) & 306 & 13 of 14\\
+20 August & 0--6 & 31 & 231 (189--285) & 188 & 4 of 7\\
+ & 7--13 & 115 & 250 (219--293) & 205 & 4 of 7\\
+ & 14--27 & 265 & 410 (376--474) & 382 & 14 of 14\\
+5 September & 0--6 & 38 & 297 (252--346) & 194 & 3 of 7\\
+ & 7--13 & 131 & 296 (262--334) & 213 & 2 of 7\\
+ & 14--27 & 330 & 560 (510--623) & 387 & 1 of 14\\
+15 September & 0--6 & 39 & 339 (284--428) & 149 & 0 of 7\\
+ & 7--13 & 115 & 308 (266--379) & 166 & 0 of 7\\
+ & 14--27 & 369 & 610 (551--739) & 411 & 0 of 14\\
+\bottomrule
+\end{tabular}
+\caption{Estimates made from the reports up to each date against the
+report of 1 October: totals over onset days in bands of days before the
+date. ``Days inside'' is the number of onset days whose count in the report
+of 1 October is inside the 90\% interval for that day; every day outside
+is below it. Three chains of 1{,}000 iterations, not converged.}
+\label{tab:nowcast}
+\end{table}
+
+\begin{table}[p]
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tabular}{lrrrrr}
+\toprule
+Quantity & 1 August & 20 August & 5 September & 15 September & 1 October\\
+\midrule
+Case fatality ratio, first onset day & 0.402 (0.363--0.433) & 0.431 (0.385--0.470) & 0.471 (0.381--0.599) & 0.412 (0.351--0.486) & 0.382 (0.326--0.550) \\
+Case fatality ratio, latest onset day & 0.405 (0.376--0.449) & 0.433 (0.404--0.471) & 0.592 (0.550--0.666) & 0.633 (0.565--0.774) & 0.518 (0.425--0.552) \\
+Changes in the case fatality ratio & 0 (0--1) & 0 (0--1) & 1 (0--2) & 1 (1--2) & 1 (0--2) \\
+Changes in the delay to death recorded & 3 (2--3) & 1 (1--3) & 1 (1--2) & 2 (1--3) & 2 (1--3) \\
+Mean delay to death recorded, first onset day & 57.0 (38.3--75.2) & 57.7 (39.2--84.9) & 88.5 (66.4--148) & 75.3 (57.3--108) & 40.8 (32.4--125) \\
+Mean delay to death recorded, latest onset day & 15.8 (9.03--35.4) & 28.3 (17.6--50.0) & 60.9 (38.8--92.7) & 48.1 (24.7--73.3) & 20.6 (13.3--28.3) \\
+Mean delay to case reported, first onset day & 8.36 (7.64--9.02) & 7.97 (7.52--8.36) & 7.93 (7.53--8.85) & 7.77 (7.50--8.85) & 7.65 (7.41--7.91) \\
+Mean delay to case reported, latest onset day & 8.36 (7.64--9.02) & 8.01 (7.57--8.58) & 7.91 (7.48--8.85) & 7.77 (7.49--8.85) & 7.64 (7.39--7.89) \\
+Mean of the long reporting delay (days) & 66.1 (37.4--112) & 89.5 (61.0--143) & 56.6 (38.3--78.9) & 95.5 (67.3--159) & 70.7 (54.3--105) \\
+Reporting delay of fatal cases relative to others & 1.09 (1.00--1.40) & 1.00 (1.00--1.14) & 1.00 (0.806--1.00) & 1.00 (0.796--1.00) & 1.00 (1.00--1.03) \\
+Share of cases reported with a long delay & 0.165 (0.120--0.223) & 0.262 (0.228--0.320) & 0.204 (0.178--0.229) & 0.203 (0.173--0.268) & 0.166 (0.143--0.185) \\
+Cases, all onset days & 3{,}670 (3{,}500--3{,}897) & 5{,}392 (5{,}153--5{,}940) & 5{,}983 (5{,}838--6{,}181) & 6{,}846 (6{,}620--7{,}444) & 7{,}275 (7{,}123--7{,}512) \\
+Cases, latest 14 onset days & 941 (844--1{,}063) & 1{,}122 (1{,}021--1{,}259) & 976 (906--1{,}054) & 1{,}023 (936--1{,}132) & 711 (643--783) \\
+Fatal cases, all onset days & 1{,}487 (1{,}361--1{,}633) & 2{,}327 (2{,}176--2{,}693) & 3{,}486 (3{,}248--3{,}694) & 4{,}126 (3{,}791--4{,}895) & 3{,}733 (3{,}561--3{,}999) \\
+Fatal cases, latest 14 onset days & 375 (319--441) & 481 (420--569) & 590 (525--674) & 646 (558--801) & 365 (297--413) \\
+Removal of wrong records per report ($\rho$) & 0.047 (0.031--0.067) & 0.043 (0.030--0.059) & 0.039 (0.029--0.052) & 0.043 (0.029--0.064) & 0.044 (0.033--0.058) \\
+Share of wrong records shown as dead & 0.193 (0.097--0.331) & 0.226 (0.136--0.336) & 0.312 (0.206--0.422) & 0.360 (0.238--0.501) & 0.422 (0.326--0.533) \\
+Wrong records per case and report ($\eta$) & 0.050 (0.039--0.065) & 0.047 (0.038--0.057) & 0.042 (0.035--0.050) & 0.030 (0.024--0.037) & 0.034 (0.028--0.040) \\
+\bottomrule
+\end{tabular}}
+\caption{Estimates from the reports up to each date: median and 90\% interval, three chains of 1{,}000 iterations pooled. The chains have not converged (Table~\ref{tab:nowcastallrhat}), so the intervals are not posterior intervals.}
+\label{tab:nowcastestimates}
+\end{table}
+
+\begin{table}[p]
+\centering
+\small
+\begin{tabular}{lrrrrr}
+\toprule
+Quantity & 1 August & 20 August & 5 September & 15 September & 1 October\\
+\midrule
+Case fatality ratio, first onset day & 1.14 & 1.19 & \textbf{1.23} & \textbf{1.29} & \textbf{3.99} \\
+Case fatality ratio, latest onset day & 1.07 & \textbf{1.47} & \textbf{1.61} & \textbf{1.79} & \textbf{1.25} \\
+Changes in the case fatality ratio & 1.06 & 1.02 & \textbf{1.48} & \textbf{1.27} & \textbf{1.87} \\
+Changes in the delay to death recorded & 1.05 & \textbf{1.28} & 1.03 & \textbf{1.27} & 1.17 \\
+Mean delay to death recorded, first onset day & \textbf{2.18} & \textbf{1.52} & \textbf{1.58} & \textbf{1.77} & \textbf{8.30} \\
+Mean delay to death recorded, latest onset day & \textbf{1.21} & \textbf{1.63} & \textbf{1.52} & \textbf{2.10} & \textbf{1.31} \\
+Mean delay to case reported, first onset day & 1.06 & 1.03 & \textbf{1.21} & \textbf{1.29} & 1.03 \\
+Mean delay to case reported, latest onset day & 1.06 & 1.03 & \textbf{1.21} & \textbf{1.30} & 1.03 \\
+Mean of the long reporting delay (days) & 1.08 & \textbf{1.39} & 1.08 & \textbf{1.42} & 1.13 \\
+Reporting delay of fatal cases relative to others & 1.11 & 1.09 & \textbf{1.33} & \textbf{1.35} & 1.04 \\
+Share of cases reported with a long delay & 1.09 & \textbf{1.26} & 1.03 & \textbf{1.39} & 1.03 \\
+Cases, all onset days & 1.07 & \textbf{1.37} & 1.05 & \textbf{1.48} & 1.11 \\
+Cases, latest 14 onset days & 1.01 & 1.12 & 1.00 & 1.15 & 1.03 \\
+Fatal cases, all onset days & 1.13 & \textbf{1.96} & \textbf{1.40} & \textbf{2.03} & \textbf{1.69} \\
+Fatal cases, latest 14 onset days & 1.04 & \textbf{1.32} & \textbf{1.24} & \textbf{1.48} & 1.13 \\
+Removal of wrong records per report ($\rho$) & 1.05 & 1.02 & 1.02 & 1.02 & 1.03 \\
+Share of wrong records shown as dead & 1.02 & 1.01 & 1.01 & 1.01 & 1.00 \\
+Wrong records per case and report ($\eta$) & 1.00 & 1.01 & 1.01 & 1.01 & 1.01 \\
+\bottomrule
+\end{tabular}
+\caption{Split $\hat{R}$ of each quantity for the fits to the reports up to each date; values of 1.2 or more in bold.}
+\label{tab:nowcastallrhat}
+\end{table}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{bvd_nowcast_1000/bvd_nowcasts.png}
+\caption{Cases and fatal cases by day of onset, for the latest 42 onset
+days at each date. Grey bars: the report of that date. Line and band: the
+estimate from the reports up to that date (median and 90\% interval, three
+chains pooled). Red points: the report of 1 October. Three chains of
+1{,}000 iterations, not converged.}
+\label{fig:nowcasts}
+\end{figure}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=0.8\textwidth]{bvd_nowcast_1000/bvd_nowcast_parameters.png}
+\caption{Estimates from the reports up to each date: the case fatality
+ratio, the mean delays and the reproduction number by day of onset (median
+and 90\% interval, three chains pooled). Three chains of 1{,}000
+iterations, not converged.}
+\label{fig:nowcastparameters}
 \end{figure}
 
 \end{document}

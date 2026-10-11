@@ -17,11 +17,21 @@
 #' which were shown as dead). For those onset days the reports made before it
 #' are returned separately, as 'uncorrected'. The main fits leave them out;
 #' one fit, as a check, uses them as a separate series.
+#'
+#' Onset days more than days_observed before the first report say almost
+#' nothing about the reporting delay, since nearly all their cases are in the
+#' first report which includes them. No change in the reporting delay is
+#' allowed until delay_min_length days after the first onset day which is
+#' within days_observed of the first report, so that those early days share
+#' the delay of the first onset days which do inform it.
+#' 'reporting_first_length' is the resulting minimum number of onset days in
+#' the first segment of the reporting delay.
 prepare_bvd_deaths_analysis <- function(snapshots, date_now,
                                         date_first = "2026-05-11",
                                         date_corrected = "2026-09-06",
                                         date_onset_corrected = "2026-06-28",
-                                        serial_max = 40) {
+                                        serial_max = 40, days_observed = 7,
+                                        delay_min_length = bvd_delay_settings()$min_length) {
   date_now <- as.Date(date_now)
   analysis <- prepare_bvd_analysis(snapshots, date_now, date_earliest = date_first,
                                    Rt_piece_width = 1)
@@ -50,6 +60,10 @@ prepare_bvd_deaths_analysis <- function(snapshots, date_now,
   if(any(all_reports$deaths_reported > all_reports$cases_reported))
     stop("Some reports show more deaths than cases.")
   f_time <- function(date) as.integer(as.Date(date) - date_start) + 1L
+  date_observed <- min(snapshots$date_reported) - days_observed
+  analysis$date_observed <- date_observed
+  analysis$reporting_first_length <- max(
+    delay_min_length, f_time(date_observed) - 1L + delay_min_length)
   analysis$all_reports <- all_reports
   analysis$snapshots <- all_reports
   analysis$uncorrected <- NULL
@@ -88,6 +102,39 @@ bvd_deaths_variants <- function() {
     `earlier reports` = list(dated_by_death = NULL, uncorrected = TRUE))
 }
 
+#' Starting values of a chain
+#'
+#' "spread" starts the three chains far apart. "close" starts them near the
+#' values on which two chains of a first fit to the reports up to 1 October
+#' 2026 agreed, differing between chains by a tenth: the chains then say
+#' nothing about whether there is another mode elsewhere.
+#'
+#' @return a list: the multiple of the reported cases added for the latest
+#'   onset day and the days over which this falls off, and starting values of
+#'   the parameters
+bvd_deaths_starts <- function(starts, chain) {
+  index <- (chain - 1) %% 3 + 1
+  if(starts == "spread")
+    return(list(
+      inflation = c(2, 1, 3.5)[index], inflation_days = 4,
+      cfr = c(0.5, 0.25, 0.7)[index],
+      delay = list(list(mean = 14, sd = 8), list(mean = 8, sd = 5),
+                   list(mean = 20, sd = 10))[[index]],
+      reporting = list(list(mean = 7, sd = 4), list(mean = 4, sd = 2.5),
+                       list(mean = 11, sd = 7))[[index]],
+      overdispersion = c(10, 3, 30)[index],
+      tail = list(weight = c(0.02, 0.05, 0.01)[index], mean = c(40, 25, 60)[index]),
+      eta = NULL, rho = NULL))
+  scale <- c(1, 0.9, 1.1)[index]
+  list(inflation = 4 * scale, inflation_days = 5,
+       cfr = 0.5 * scale,
+       delay = list(mean = 22 * scale, sd = 35 * scale),
+       reporting = list(mean = 7.6 * scale, sd = 5.4 * scale),
+       overdispersion = 30 * scale,
+       tail = list(weight = 0.17 * scale, mean = 40 * scale),
+       eta = 0.034 * scale, rho = 0.05 * scale)
+}
+
 #' Runs one chain of the joint model of cases and deaths
 #'
 #' As fit_bvd_changepoint_chain (wrong records, an effect of the day of the
@@ -97,6 +144,7 @@ bvd_deaths_variants <- function() {
 #' the variant uses them, as a separate series which informs only the delays
 #' and the wrong records.
 fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws = 300,
+                                 starts = "spread",
                                  serial_parameters = list(mean = 15.3, sd = 9.3),
                                  progress_dir = "outputs/bvd_deaths/progress") {
   dir.create(progress_dir, recursive = TRUE, showWarnings = FALSE)
@@ -107,12 +155,19 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
     dplyr::group_by(.data$time_onset) %>%
     dplyr::summarise(cases_true = max(.data$cases_reported))
   days_before_end <- max(snapshots$time_onset) - largest_reported$time_onset
-  index <- (chain - 1) %% 3 + 1
-  inflation <- c(2, 1, 3.5)[index]
+  start <- bvd_deaths_starts(starts, chain)
+  # the latest few onset days show few cases yet: start them no lower than
+  # half the level of two to four weeks before
+  level <- stats::median(largest_reported$cases_true[days_before_end %in% 14:27])
   initial_cases_true <- largest_reported %>%
     dplyr::mutate(cases_true = ceiling(
-      .data$cases_true * (1 + inflation * exp(-days_before_end / 4)) +
+      .data$cases_true * (1 + start$inflation *
+                            exp(-days_before_end / start$inflation_days)) +
         5 * (days_before_end < 5)))
+  if(starts == "close")
+    initial_cases_true$cases_true <- pmax(
+      initial_cases_true$cases_true,
+      ceiling(0.5 * level * (days_before_end < 5)))
   options <- bvd_deaths_variants()[[variant]]
   uncorrected <- if(options$uncorrected) analysis$uncorrected
   f_largest_fall <- function(column) {
@@ -142,11 +197,11 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
     reporting_effects = list(tail_weight_alpha = 1, tail_weight_beta = 19,
                              tail_mean_mu = 40, tail_mean_sigma = 30),
     Rt_changepoints = list(),
-    reporting_changepoints = bvd_delay_settings())
+    reporting_changepoints = c(
+      bvd_delay_settings(), list(first_length = analysis$reporting_first_length)))
   deaths_settings <- list(
-    initial_cfr = c(0.5, 0.25, 0.7)[index],
-    initial_delay = list(list(mean = 14, sd = 8), list(mean = 8, sd = 5),
-                         list(mean = 20, sd = 10))[[index]],
+    initial_cfr = start$cfr,
+    initial_delay = start$delay,
     delay_changepoints = bvd_delay_settings())
   deaths_settings["dated_by_death"] <- list(options$dated_by_death)
 
@@ -160,19 +215,18 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
       priors = priors,
       serial_parameters = serial_parameters,
       initial_cases_true = initial_cases_true,
-      initial_reporting_parameters = list(
-        list(mean = 7, sd = 4), list(mean = 4, sd = 2.5),
-        list(mean = 11, sd = 7))[[index]],
+      initial_reporting_parameters = start$reporting,
       initial_Rt = dplyr::tibble(Rt_index = 1, Rt = 1),
       reporting_metropolis_parameters = list(mean_step = 0.3, sd_step = 0.25),
       print_to_screen = FALSE,
-      initial_overdispersion = c(10, 3, 30)[index],
+      initial_overdispersion = start$overdispersion,
       is_negative_binomial = TRUE,
       overdispersion_metropolis_sd = 8,
       initial_revision_parameters = list(
-        eta = settings$initial_revisions$eta, rho = settings$initial_revisions$rho,
+        eta = if(is.null(start$eta)) settings$initial_revisions$eta else start$eta,
+        rho = if(is.null(start$rho)) settings$initial_revisions$rho else start$rho,
         weekday = TRUE, weekday_first = analysis$weekday_first,
-        tail = list(weight = c(0.02, 0.05, 0.01)[index], mean = c(40, 25, 60)[index])),
+        tail = start$tail),
       revision_metropolis_parameters = settings$revision_metropolis,
       cases_before = analysis$cases_before,
       n_parameter_steps = 5,
@@ -185,7 +239,7 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
                  if(!is.null(uncorrected)) list(uncorrected = uncorrected))),
     error = function(e) list(error = conditionMessage(e)))
   out <- list(variant = variant, chain = chain, analysis = analysis,
-              niterations = niterations,
+              niterations = niterations, starts = starts,
               minutes = as.numeric(Sys.time() - time_start, units = "mins"),
               max_erroneous = max_erroneous, serial_parameters = serial_parameters,
               error = fit$error)
@@ -366,6 +420,196 @@ plot_bvd_deaths <- function(by_day, analysis) {
     ggplot2::scale_fill_manual(values = colours, guide = "none") +
     ggplot2::expand_limits(y = 0) +
     ggplot2::labs(x = "Date of onset", y = NULL) +
+    ggplot2::theme_bw() +
+    ggplot2::theme(strip.placement = "outside",
+                   strip.background = ggplot2::element_blank(),
+                   legend.position = "bottom", panel.grid.minor = ggplot2::element_blank())
+}
+
+
+# ---- fits to the reports up to earlier dates ---------------------------------
+
+#' The dates taken in turn as the date of the latest report
+#'
+#' The last is the latest report. 5 September is the day before the report
+#' which corrected many records.
+bvd_nowcast_dates <- function() {
+  as.Date(c("2026-08-01", "2026-08-20", "2026-09-05", "2026-09-15", "2026-10-01"))
+}
+
+#' The chains of each date, as a list named by date
+bvd_nowcast_by_date <- function(chains) {
+  dates <- purrr::map_chr(chains, ~as.character(.$analysis$date_now))
+  split(chains, dates)
+}
+
+#' Which chains ran, how long they took and any errors, by date
+bvd_nowcast_runs <- function(chains) {
+  purrr::imap_dfr(bvd_nowcast_by_date(chains), function(fits, date) {
+    dplyr::mutate(bvd_deaths_runs(fits), date_now = date, .before = 1)
+  })
+}
+
+#' Summary of each monitored quantity, by date
+bvd_nowcast_summary <- function(chains) {
+  purrr::imap_dfr(bvd_nowcast_by_date(chains), function(fits, date) {
+    fits <- purrr::keep(fits, ~is.null(.$error))
+    if(length(fits) == 0)
+      return(NULL)
+    monitored <- bvd_deaths_monitored(fits, fits[[1]]$variant)
+    by_chain <- monitored %>%
+      dplyr::group_by(.data$quantity, .data$chain) %>%
+      dplyr::summarise(median = stats::median(.data$value), .groups = "drop") %>%
+      tidyr::pivot_wider(names_from = "chain", values_from = "median",
+                         names_prefix = "chain_")
+    summarise_bvd_deaths(fits) %>%
+      dplyr::left_join(by_chain, by = "quantity") %>%
+      dplyr::mutate(date_now = date, .before = 1)
+  })
+}
+
+#' Estimates by onset day, by date, with the counts then and in the latest report
+#'
+#' @param snapshots the cases and deaths shown in every report
+#' @return a row for each date, onset day and series ("Cases", "Fatal
+#'   cases", the delays, the case fatality ratio and the reproduction number)
+#'   with the 90% interval and median; for cases and fatal cases also the
+#'   count in the report of that date ('reported_then') and in the latest
+#'   report of all ('reported_latest')
+bvd_nowcast_by_day <- function(chains, snapshots) {
+  latest <- snapshots %>%
+    dplyr::filter(.data$date_reported == max(.data$date_reported)) %>%
+    dplyr::select(date = "date_onset", Cases = "cases_reported",
+                  `Fatal cases` = "deaths_reported") %>%
+    tidyr::pivot_longer(c("Cases", "Fatal cases"), names_to = "series",
+                        values_to = "reported_latest")
+  purrr::imap_dfr(bvd_nowcast_by_date(chains), function(fits, now) {
+    fits <- purrr::keep(fits, ~is.null(.$error))
+    if(length(fits) == 0)
+      return(NULL)
+    then <- snapshots %>%
+      dplyr::filter(.data$date_reported <= as.Date(now)) %>%
+      dplyr::filter(.data$date_reported == max(.data$date_reported)) %>%
+      dplyr::select(date = "date_onset", Cases = "cases_reported",
+                    `Fatal cases` = "deaths_reported") %>%
+      tidyr::pivot_longer(c("Cases", "Fatal cases"), names_to = "series",
+                          values_to = "reported_then")
+    bvd_deaths_by_day(fits) %>%
+      dplyr::left_join(then, by = c("date", "series")) %>%
+      dplyr::left_join(latest, by = c("date", "series")) %>%
+      dplyr::mutate(date_now = as.Date(now), .before = 1)
+  })
+}
+
+#' How the estimates of each date compare with the latest report
+#'
+#' For onset days not corrected by the report of date_onset_corrected, in
+#' bands of days before the date: the total in the report of that date, the
+#' estimated total (median and 90% interval over draws) and the total in the
+#' latest report; and the share of onset days whose count in the latest
+#' report is inside the 90% interval for that day. The latest report is not
+#' the truth: its counts for recent onset days, deaths above all, are still
+#' rising.
+bvd_nowcast_comparison <- function(chains, snapshots,
+                                   date_onset_corrected = "2026-06-28") {
+  by_day <- bvd_nowcast_by_day(chains, snapshots) %>%
+    dplyr::filter(.data$series %in% c("Cases", "Fatal cases"),
+                  .data$date >= as.Date(date_onset_corrected))
+  f_band <- function(days) {
+    cut(days, c(-1, 6, 13, 27, Inf),
+        labels = c("0-6", "7-13", "14-27", "28 or more"))
+  }
+  covered <- by_day %>%
+    dplyr::mutate(band = f_band(as.integer(.data$date_now - .data$date))) %>%
+    dplyr::group_by(.data$date_now, .data$series, .data$band) %>%
+    dplyr::summarise(
+      n_days = dplyr::n(),
+      days_inside = mean(.data$reported_latest >= .data$lo &
+                           .data$reported_latest <= .data$hi),
+      days_below = mean(.data$reported_latest < .data$lo),
+      reported_then = sum(.data$reported_then, na.rm = TRUE),
+      reported_latest = sum(.data$reported_latest), .groups = "drop") %>%
+    dplyr::relocate("days_inside", "days_below", .after = "reported_latest")
+  totals <- purrr::imap_dfr(bvd_nowcast_by_date(chains), function(fits, now) {
+    fits <- purrr::keep(fits, ~is.null(.$error))
+    if(length(fits) == 0)
+      return(NULL)
+    dates <- fits[[1]]$analysis$dates
+    f <- function(name, column, series) {
+      purrr::map_dfr(fits, name) %>%
+        dplyr::left_join(dplyr::select(dates, "time_onset", "date"), by = "time_onset") %>%
+        dplyr::filter(.data$date >= as.Date(date_onset_corrected)) %>%
+        dplyr::mutate(band = f_band(as.integer(as.Date(now) - .data$date))) %>%
+        dplyr::group_by(.data$chain, .data$iteration, .data$band) %>%
+        dplyr::summarise(total = sum(.data[[column]]), .groups = "drop") %>%
+        dplyr::group_by(.data$band) %>%
+        dplyr::summarise(estimate = stats::median(.data$total),
+                         lo = stats::quantile(.data$total, 0.05),
+                         hi = stats::quantile(.data$total, 0.95), .groups = "drop") %>%
+        dplyr::mutate(series = series, date_now = as.Date(now))
+    }
+    dplyr::bind_rows(f("cases", "cases_true", "Cases"),
+                     f("deaths", "deaths_true", "Fatal cases"))
+  })
+  dplyr::left_join(covered, totals, by = c("date_now", "series", "band")) %>%
+    dplyr::relocate("estimate", "lo", "hi", .after = "reported_then")
+}
+
+#' Estimated cases and fatal cases at each date against the latest report
+plot_bvd_nowcasts <- function(by_day, days_shown = 42) {
+  shown <- by_day %>%
+    dplyr::filter(.data$series %in% c("Cases", "Fatal cases"),
+                  .data$date > .data$date_now - days_shown) %>%
+    dplyr::mutate(
+      label = factor(format(.data$date_now, "Reports to %e %B"),
+                     levels = unique(format(sort(.data$date_now), "Reports to %e %B"))),
+      series = factor(.data$series, levels = c("Cases", "Fatal cases"),
+                      labels = c("Cases by day of onset", "Fatal cases by day of onset")))
+  ggplot2::ggplot(shown, ggplot2::aes(x = .data$date)) +
+    ggplot2::geom_col(ggplot2::aes(y = .data$reported_then, fill = "In the report of that date"),
+                      width = 1) +
+    ggplot2::geom_ribbon(ggplot2::aes(ymin = .data$lo, ymax = .data$hi),
+                         fill = "#4C72B0", alpha = 0.3) +
+    ggplot2::geom_line(ggplot2::aes(y = .data$mid, colour = "Estimate at that date")) +
+    ggplot2::geom_point(ggplot2::aes(y = .data$reported_latest,
+                                     colour = "In the report of 1 October"), size = 0.8) +
+    ggplot2::facet_grid(.data$series ~ .data$label, scales = "free", switch = "y") +
+    ggplot2::scale_fill_manual(values = c("In the report of that date" = "grey80"),
+                               name = NULL) +
+    ggplot2::scale_colour_manual(values = c("Estimate at that date" = "#4C72B0",
+                                            "In the report of 1 October" = "#C44E52"),
+                                 name = NULL) +
+    ggplot2::labs(x = "Date of onset", y = NULL) +
+    ggplot2::theme_bw() +
+    ggplot2::theme(strip.placement = "outside",
+                   strip.background = ggplot2::element_blank(),
+                   legend.position = "bottom", panel.grid.minor = ggplot2::element_blank(),
+                   axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
+}
+
+#' The case fatality ratio and the delays by onset day, as estimated at each date
+plot_bvd_nowcast_parameters <- function(by_day) {
+  shown <- by_day %>%
+    dplyr::filter(.data$series %in% c("Case fatality ratio", "Onset to death recorded",
+                                      "Onset to case reported", "Reproduction number"),
+                  !(.data$series == "Reproduction number" &
+                      .data$date < as.Date("2026-06-01"))) %>%
+    dplyr::mutate(
+      now = factor(format(.data$date_now, "%e %B"),
+                   levels = unique(format(sort(.data$date_now), "%e %B"))),
+      series = factor(.data$series, levels = c(
+        "Case fatality ratio", "Onset to death recorded", "Onset to case reported",
+        "Reproduction number"), labels = c(
+          "Case fatality ratio", "Mean delay, onset to\ndeath recorded (days)",
+          "Mean delay, onset to\ncase reported (days)", "Reproduction number")))
+  ggplot2::ggplot(shown, ggplot2::aes(x = .data$date, colour = .data$now, fill = .data$now)) +
+    ggplot2::geom_ribbon(ggplot2::aes(ymin = .data$lo, ymax = .data$hi), alpha = 0.12,
+                         colour = NA) +
+    ggplot2::geom_line(ggplot2::aes(y = .data$mid)) +
+    ggplot2::facet_wrap(~.data$series, scales = "free_y", ncol = 1,
+                        strip.position = "left") +
+    ggplot2::expand_limits(y = 0) +
+    ggplot2::labs(x = "Date of onset", y = NULL, colour = "Reports to", fill = "Reports to") +
     ggplot2::theme_bw() +
     ggplot2::theme(strip.placement = "outside",
                    strip.background = ggplot2::element_blank(),

@@ -648,6 +648,35 @@ list(
   # ---- Bundibugyo virus disease: cases and deaths ------------------------------
   # the joint model of cases and deaths fitted to all reports up to the latest,
   # once taking no fatal cases to be dated by death and once taking a fifth to be
+  # the same fit to the reports up to each of several dates, with the chains
+  # started close together: do the estimates made at earlier dates agree with
+  # what the latest report shows?
+  tar_target(bvd_nowcast_date, bvd_nowcast_dates()),
+  tar_target(bvd_nowcast_analysis,
+             prepare_bvd_deaths_analysis(bvd_snapshots, bvd_nowcast_date),
+             pattern = map(bvd_nowcast_date), iteration = "list"),
+  tar_target(bvd_nowcast_chain,
+             fit_bvd_deaths_chain(bvd_nowcast_analysis, "none", bvd_deaths_chain_index,
+                                  n_iterations_bvd_deaths, starts = "close"),
+             pattern = cross(bvd_nowcast_analysis, bvd_deaths_chain_index),
+             iteration = "list"),
+  tar_target(bvd_nowcast_days, bvd_nowcast_by_day(bvd_nowcast_chain, bvd_snapshots),
+             deployment = "main"),
+  tar_target(files_bvd_nowcast, {
+    utils::write.csv(bvd_nowcast_runs(bvd_nowcast_chain), "outputs/bvd_nowcast_runs.csv",
+                     row.names = FALSE)
+    utils::write.csv(bvd_nowcast_summary(bvd_nowcast_chain),
+                     "outputs/bvd_nowcast_summary.csv", row.names = FALSE)
+    utils::write.csv(bvd_nowcast_days, "outputs/bvd_nowcast_by_day.csv", row.names = FALSE)
+    utils::write.csv(bvd_nowcast_comparison(bvd_nowcast_chain, bvd_snapshots),
+                     "outputs/bvd_nowcast_comparison.csv", row.names = FALSE)
+    c("outputs/bvd_nowcast_runs.csv", "outputs/bvd_nowcast_summary.csv",
+      "outputs/bvd_nowcast_by_day.csv", "outputs/bvd_nowcast_comparison.csv",
+      save_plot(plot_bvd_nowcasts(bvd_nowcast_days), "outputs/bvd_nowcasts.png", 13, 6),
+      save_plot(plot_bvd_nowcast_parameters(bvd_nowcast_days),
+                "outputs/bvd_nowcast_parameters.png", 8, 10))
+  }, format = "file", deployment = "main"),
+
   tar_target(bvd_deaths_analysis,
              prepare_bvd_deaths_analysis(bvd_snapshots, max(bvd_dates_now))),
   tar_target(bvd_deaths_variant, names(bvd_deaths_variants())),
