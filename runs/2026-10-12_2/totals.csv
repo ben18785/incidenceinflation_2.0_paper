@@ -1,0 +1,7 @@
+"experiment","model","date_now","count","onset_days","median","lo","hi","rhat","recorded_05Sep","recorded_15Sep","recorded_01Oct"
+"check","deaths, no tail, drift",2026-09-05,"deaths","all",2442.5,2381.9,2523.1,1.38928625666673,2111,2407,2502
+"check","deaths, no tail, drift",2026-09-05,"deaths","latest 28",809.5,748.3,864.5,1.33330027389078,499,720,794
+"check","deaths, no tail, drift",2026-09-05,"deaths","latest 14",422.5,368.25,464.85,1.35400860276534,169,344,407
+"check_fixed","fixed cases, drift",2026-09-05,"deaths","all",3406,3329.75,3469.4,2.37921292881788,2111,2407,2502
+"check_fixed","fixed cases, drift",2026-09-05,"deaths","latest 28",1183,1114.9,1216.4,3.45303505642072,499,720,794
+"check_fixed","fixed cases, drift",2026-09-05,"deaths","latest 14",644.5,593.65,678,2.82485221316916,169,344,407

@@ -1,0 +1,5 @@
+"experiment","model","date_now","chain","niterations","minutes","error"
+"check","deaths, no tail, drift",2026-09-05,1,20,1,""
+"check","deaths, no tail, drift",2026-09-05,2,20,1,""
+"check_fixed","fixed cases, drift",2026-09-05,1,10,2,""
+"check_fixed","fixed cases, drift",2026-09-05,2,10,1,""
