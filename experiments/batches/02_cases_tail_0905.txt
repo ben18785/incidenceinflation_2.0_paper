@@ -1,0 +1,4 @@
+# Reports to 5 September: cases alone with the heavier tail of the delay left
+# out or held tight.
+cases_no_tail_0905
+cases_tight_tail_0905
