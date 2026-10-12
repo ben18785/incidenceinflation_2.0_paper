@@ -160,7 +160,9 @@ bvd_deaths_starts <- function(starts, chain) {
 fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws = 300,
                                  starts = "spread",
                                  serial_parameters = list(mean = 15.3, sd = 9.3),
-                                 progress_dir = "outputs/bvd_deaths/progress") {
+                                 progress_dir = "outputs/bvd_deaths/progress",
+                                 tail = TRUE, tail_prior = NULL,
+                                 delay_settings = NULL) {
   dir.create(progress_dir, recursive = TRUE, showWarnings = FALSE)
   set.seed(1000 * chain + as.integer(analysis$date_now) %% 1000)
   settings <- fit_settings()
@@ -208,15 +210,21 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
     max_erroneous = max_erroneous,
     # a small share of cases are reported with a long delay: a few cases are
     # added to an onset day months after it
-    reporting_effects = list(tail_weight_alpha = 1, tail_weight_beta = 19,
-                             tail_mean_mu = 40, tail_mean_sigma = 30),
+    reporting_effects = utils::modifyList(
+      list(tail_weight_alpha = 1, tail_weight_beta = 19,
+           tail_mean_mu = 40, tail_mean_sigma = 30),
+      if(is.null(tail_prior)) list() else tail_prior[names(tail_prior) != "label"]),
     Rt_changepoints = list(),
     reporting_changepoints = c(
       bvd_delay_settings(), list(first_length = analysis$reporting_first_length)))
+  # settings of the changes in the delay to a death being recorded which
+  # replace the usual ones (see bvd_delay_settings_given)
   deaths_settings <- list(
     initial_cfr = start$cfr,
     initial_delay = start$delay,
-    delay_changepoints = bvd_delay_settings())
+    delay_changepoints = utils::modifyList(
+      bvd_delay_settings(),
+      bvd_delay_settings_given(delay_settings, dplyr::n_distinct(snapshots$time_onset))))
   deaths_settings["dated_by_death"] <- list(options$dated_by_death)
 
   time_start <- Sys.time()
@@ -236,11 +244,11 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
       initial_overdispersion = start$overdispersion,
       is_negative_binomial = TRUE,
       overdispersion_metropolis_sd = 8,
-      initial_revision_parameters = list(
-        eta = if(is.null(start$eta)) settings$initial_revisions$eta else start$eta,
-        rho = if(is.null(start$rho)) settings$initial_revisions$rho else start$rho,
-        weekday = TRUE, weekday_first = analysis$weekday_first,
-        tail = start$tail),
+      initial_revision_parameters = c(
+        list(eta = if(is.null(start$eta)) settings$initial_revisions$eta else start$eta,
+             rho = if(is.null(start$rho)) settings$initial_revisions$rho else start$rho,
+             weekday = TRUE, weekday_first = analysis$weekday_first),
+        if(tail) list(tail = start$tail)),
       revision_metropolis_parameters = settings$revision_metropolis,
       cases_before = analysis$cases_before,
       n_parameter_steps = 5,

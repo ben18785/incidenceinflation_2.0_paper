@@ -94,8 +94,15 @@ run_bvd_experiment_chain <- function(experiment, chain, snapshots) {
                               starts = experiment$starts)
   } else {
     fit <- fit_bvd_deaths_chain(analysis, experiment$variant, chain,
-                                experiment$iterations, starts = experiment$starts)
-    fit$model <- "joint"
+                                experiment$iterations, starts = experiment$starts,
+                                tail = experiment$tail,
+                                tail_prior = experiment$tail_prior,
+                                delay_settings = experiment$delay)
+    fit$model <- paste0(
+      "joint", ifelse(experiment$tail, "", ", no tail"),
+      if(!is.null(experiment$tail_prior)) paste0(", ", experiment$tail_prior$label),
+      if(!is.null(experiment$delay)) paste0(", ", experiment$delay$label))
+    fit$date_now <- analysis$date_now
     fit
   }
   fit$experiment <- experiment$name
@@ -122,9 +129,10 @@ bvd_experiment_runs <- function(chains) {
 #' interval, split R-hat and the median of each chain
 bvd_experiment_summary <- function(chains) {
   purrr::map_dfr(bvd_experiment_groups(chains), function(fits) {
-    monitored <- if(fits[[1]]$model == "joint")
+    monitored <- if(sub(",.*", "", fits[[1]]$model) == "joint")
       bvd_deaths_monitored(fits, fits[[1]]$variant)
     else bvd_part_monitored(fits)
+    monitored <- dplyr::filter(monitored, !is.na(.data$value))
     by_chain <- monitored %>%
       dplyr::group_by(.data$quantity, .data$chain) %>%
       dplyr::summarise(median = stats::median(.data$value), .groups = "drop") %>%
@@ -177,11 +185,23 @@ bvd_experiment_days <- function(fits) {
 #'   estimate (median, 90% interval, split R-hat) and the counts recorded
 bvd_experiment_totals <- function(chains, snapshots_all,
                                   dates_later = as.Date("2026-09-15")) {
-  purrr::map_dfr(bvd_experiment_groups(chains), function(fits) {
+  kind <- function(fits) sub(",.*", "", fits[[1]]$model)
+  groups <- bvd_experiment_groups(chains)
+  # the joint model estimates the cases as well as the fatal cases
+  wanted <- purrr::map_dfr(groups, function(fits)
+    dplyr::tibble(experiment = fits[[1]]$experiment,
+                  column = c(if(kind(fits) %in% c("cases", "joint")) "cases_reported",
+                             if(kind(fits) != "cases") "deaths_reported")))
+  purrr::pmap_dfr(wanted, function(experiment, column) {
+    fits <- groups[[experiment]]
     days <- bvd_experiment_days(fits)
+    if(kind(fits) == "joint" && column == "cases_reported")
+      days <- purrr::map_dfr(fits, "cases") %>%
+        dplyr::transmute(.data$chain, .data$iteration, .data$time_onset,
+                         count = .data$cases_true) %>%
+        dplyr::left_join(dplyr::distinct(days, .data$time_onset, .data$date),
+                         by = "time_onset")
     date_now <- as.Date(fits[[1]]$date_now)
-    column <- if(sub(",.*", "", fits[[1]]$model) == "cases") "cases_reported"
-    else "deaths_reported"
     dates_reported <- sort(unique(c(
       date_now, dates_later[dates_later > date_now], max(snapshots_all$date_reported))))
     purrr::map_dfr(c(`all` = Inf, `latest 28` = 28, `latest 14` = 14), function(n_days) {

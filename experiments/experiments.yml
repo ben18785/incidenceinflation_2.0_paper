@@ -9,8 +9,9 @@
 #   date        the latest report used
 #   chains      number of chains (one job each)
 #   iterations  iterations of each chain
-#   tail        whether the delay has the heavier (exponential) tail
-#               (cases and deaths only)
+#   tail        whether the delay to a case being reported (with deaths alone,
+#               to a death being recorded) has the heavier, exponential tail
+#               (not with fixed cases)
 #   delay       settings of the changes in the delay to a death being recorded,
 #               with a label for tables (deaths and fixed cases only)
 #   onset_from  earlier onset days are left out (cases and deaths only)
@@ -64,6 +65,21 @@ experiments:
   cases_tight_tail_0905: {model: cases, tail_prior: *tight_tail, iterations: 1000}
   cases_no_tail_0915: {model: cases, date: 2026-09-15, tail: false, iterations: 1000}
   cases_tight_tail_0915: {model: cases, date: 2026-09-15, tail_prior: *tight_tail, iterations: 1000}
+
+  # cases and deaths together
+  joint_1001: {model: joint, date: 2026-10-01}
+  joint_no_tail_0905: {model: joint, tail: false}
+  joint_no_tail_0915: {model: joint, date: 2026-09-15, tail: false}
+  joint_no_tail_1001: {model: joint, date: 2026-10-01, tail: false}
+  joint_tight_tail_0905: {model: joint, tail_prior: *tight_tail}
+  joint_tight_tail_0915: {model: joint, date: 2026-09-15, tail_prior: *tight_tail}
+  joint_tight_tail_1001: {model: joint, date: 2026-10-01, tail_prior: *tight_tail}
+  joint_no_tail_drift_0905: {model: joint, tail: false, delay: *drift}
+  joint_no_tail_drift_0915: {model: joint, date: 2026-09-15, tail: false, delay: *drift}
+  joint_no_tail_drift_1001: {model: joint, date: 2026-10-01, tail: false, delay: *drift}
+  joint_tight_tail_drift_0905: {model: joint, tail_prior: *tight_tail, delay: *drift}
+  joint_tight_tail_drift_0915: {model: joint, date: 2026-09-15, tail_prior: *tight_tail, delay: *drift}
+  joint_tight_tail_drift_1001: {model: joint, date: 2026-10-01, tail_prior: *tight_tail, delay: *drift}
 
   # the same from starting values spread far apart
   fixed_spread_0905: {model: fixed cases, starts: spread}
