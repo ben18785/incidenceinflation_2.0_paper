@@ -1,0 +1,7 @@
+"experiment","model","date_now","count","onset_days","median","lo","hi","rhat","recorded_15Sep","recorded_01Oct"
+"cases_no_tail_0915","cases, no tail",2026-09-15,"cases","all",6097,6025.95,6178,1.00806046908336,5619,6044
+"cases_no_tail_0915","cases, no tail",2026-09-15,"cases","latest 28",1677,1605.95,1758,1.00802701414855,1199,1599
+"cases_no_tail_0915","cases, no tail",2026-09-15,"cases","latest 14",857,789.95,933,1.00778555577029,410,761
+"cases_tight_tail_0915","cases, tight tail",2026-09-15,"cases","all",6721,6546.95,6875.05,1.03742352218244,5619,6044
+"cases_tight_tail_0915","cases, tight tail",2026-09-15,"cases","latest 28",1861,1781,1953.05,1.01158097487541,1199,1599
+"cases_tight_tail_0915","cases, tight tail",2026-09-15,"cases","latest 14",965,894,1044,1.0045830925882,410,761
