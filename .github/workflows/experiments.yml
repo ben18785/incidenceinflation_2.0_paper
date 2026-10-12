@@ -19,18 +19,6 @@ permissions:
 env:
   # the version of the model the chains use
   PACKAGE: github::ben18785/incidenceinflation_2.0@deaths
-  R_PACKAGES: |
-    any::targets
-    any::tarchetypes
-    any::dplyr
-    any::tidyr
-    any::purrr
-    any::ggplot2
-    any::rlang
-    any::yaml
-    any::patchwork
-    any::ggh4x
-    any::matrixStats
 
 jobs:
   plan:
@@ -79,8 +67,19 @@ jobs:
           use-public-rspm: true
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          dependencies: '"hard"'
           packages: |
-            ${{ env.R_PACKAGES }}
+            any::targets
+            any::tarchetypes
+            any::dplyr
+            any::tidyr
+            any::purrr
+            any::ggplot2
+            any::rlang
+            any::yaml
+            any::patchwork
+            any::ggh4x
+            any::matrixStats
             ${{ env.PACKAGE }}
       - name: Restore the data
         env:
@@ -112,8 +111,19 @@ jobs:
           use-public-rspm: true
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          dependencies: '"hard"'
           packages: |
-            ${{ env.R_PACKAGES }}
+            any::targets
+            any::tarchetypes
+            any::dplyr
+            any::tidyr
+            any::purrr
+            any::ggplot2
+            any::rlang
+            any::yaml
+            any::patchwork
+            any::ggh4x
+            any::matrixStats
             ${{ env.PACKAGE }}
       - name: Restore the data
         env:
