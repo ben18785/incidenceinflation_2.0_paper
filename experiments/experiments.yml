@@ -1,0 +1,47 @@
+# Experiments with the model of the Bundibugyo virus disease outbreak.
+#
+# Each experiment has:
+#   model       cases | deaths | fixed cases | joint
+#                 cases, deaths: that series alone
+#                 fixed cases:   deaths given the true cases, which are held at
+#                                the posterior median of the model of cases alone
+#                 joint:         cases and deaths together
+#   date        the latest report used
+#   chains      number of chains (one job each)
+#   iterations  iterations of each chain
+#   tail        whether the delay has the heavier (exponential) tail
+#               (cases and deaths only)
+#   delay       settings of the changes in the delay to a death being recorded,
+#               with a label for tables (deaths and fixed cases only)
+#   onset_from  earlier onset days are left out (cases and deaths only)
+#
+# To run experiments, list their names in experiments/run.txt and push.
+
+defaults:
+  chains: 4
+  iterations: 600
+  date: 2026-09-05
+
+delays:
+  seven_day: &seven_day {min_length: 7, label: "7-day segments"}
+  more_changes: &more_changes {changes_expected: 4, label: "more changes"}
+  seven_day_more: &seven_day_more {min_length: 7, changes_expected: 4, label: "7-day segments, more changes"}
+  drift: &drift {drift: 7, spread_sd: 0.25, mean_step: 0.12, sd_step: 0.12, n_segment_steps: 2, label: "drift"}
+
+experiments:
+  # reports to 5 September, deaths alone with no heavier tail
+  deaths_0905: {model: deaths, tail: false}
+  deaths_seven_day_0905: {model: deaths, tail: false, delay: *seven_day}
+  deaths_more_changes_0905: {model: deaths, tail: false, delay: *more_changes}
+  deaths_drift_0905: {model: deaths, tail: false, delay: *drift}
+
+  # reports to 5 September, deaths given the cases
+  fixed_0905: {model: fixed cases}
+  fixed_seven_day_0905: {model: fixed cases, delay: *seven_day}
+  fixed_more_changes_0905: {model: fixed cases, delay: *more_changes}
+  fixed_seven_day_more_0905: {model: fixed cases, delay: *seven_day_more}
+  fixed_drift_0905: {model: fixed cases, delay: *drift}
+
+  # short runs to check that the workflow works
+  check: {model: deaths, tail: false, delay: *drift, chains: 2, iterations: 20}
+  check_fixed: {model: fixed cases, delay: *drift, chains: 2, iterations: 10}

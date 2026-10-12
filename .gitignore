@@ -11,3 +11,7 @@ data/raw/
 # progress of chains while they run
 outputs/deaths_simulation/progress/
 outputs/bvd_deaths/progress/
+_targets_experiments/
+chains/
+results/
+outputs/bvd_experiments/

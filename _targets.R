@@ -28,6 +28,9 @@ n_replicates_deaths <- as.integer(Sys.getenv("PIPELINE_REPLICATES_DEATHS", "1"))
 n_chains_deaths <- as.integer(Sys.getenv("PIPELINE_CHAINS_DEATHS", "2"))
 n_chains_bvd_deaths <- as.integer(Sys.getenv("PIPELINE_CHAINS_BVD_DEATHS", "3"))
 n_iterations_bvd_deaths <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_BVD_DEATHS", "1000"))
+n_chains_bvd_forms <- as.integer(Sys.getenv("PIPELINE_CHAINS_BVD_FORMS", "4"))
+n_iterations_bvd_forms <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_BVD_FORMS", "1500"))
+n_iterations_bvd_trials <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_BVD_TRIALS", "800"))
 n_iterations_deaths <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_DEATHS", "300"))
 
 list(
@@ -676,6 +679,148 @@ list(
       save_plot(plot_bvd_nowcast_parameters(bvd_nowcast_days),
                 "outputs/bvd_nowcast_parameters.png", 8, 10))
   }, format = "file", deployment = "main"),
+
+  # parts of the joint model fitted on their own: cases alone, deaths alone,
+  # and the joint model with the true cases fixed at their posterior medians
+  # from the model of cases alone
+  tar_target(bvd_part_date, bvd_part_dates()),
+  tar_target(bvd_part_analysis,
+             prepare_bvd_deaths_analysis(bvd_snapshots, bvd_part_date),
+             pattern = map(bvd_part_date), iteration = "list"),
+  # The first three sets of chains were run before the options for the
+  # second two were added to the functions which fit them. Their defaults
+  # give the same fits, so these are not run again when those functions
+  # change (cue "never"); delete the targets to rerun them.
+  tar_target(bvd_part_cases_chain,
+             fit_bvd_single_chain(bvd_part_analysis, bvd_snapshots, "cases",
+                                  bvd_deaths_chain_index, n_iterations_bvd_deaths),
+             pattern = cross(bvd_part_analysis, bvd_deaths_chain_index),
+             iteration = "list", cue = tar_cue(mode = "never")),
+  tar_target(bvd_part_deaths_chain,
+             fit_bvd_single_chain(bvd_part_analysis, bvd_snapshots, "deaths",
+                                  bvd_deaths_chain_index, n_iterations_bvd_deaths),
+             pattern = cross(bvd_part_analysis, bvd_deaths_chain_index),
+             iteration = "list", cue = tar_cue(mode = "never")),
+  tar_target(bvd_part_fixed_chain,
+             fit_bvd_fixed_cases_chain(
+               bvd_part_analysis,
+               bvd_cases_median(bvd_part_cases_chain, bvd_part_analysis$date_now),
+               bvd_deaths_chain_index, n_iterations_bvd_deaths),
+             pattern = cross(bvd_part_analysis, bvd_deaths_chain_index),
+             iteration = "list", cue = tar_cue(mode = "never")),
+  # deaths alone with no heavier tail of the delay
+  tar_target(bvd_part_deaths_no_tail_chain,
+             fit_bvd_single_chain(bvd_part_analysis, bvd_snapshots, "deaths",
+                                  bvd_deaths_chain_index, n_iterations_bvd_deaths,
+                                  tail = FALSE),
+             pattern = cross(bvd_part_analysis, bvd_deaths_chain_index),
+             iteration = "list", cue = tar_cue(mode = "never")),
+  # cases fixed, with no change in the delay to a death being recorded among
+  # the onset days corrected by a later report
+  tar_target(bvd_part_fixed_rule_chain,
+             fit_bvd_fixed_cases_chain(
+               bvd_part_analysis,
+               bvd_cases_median(bvd_part_cases_chain, bvd_part_analysis$date_now),
+               bvd_deaths_chain_index, n_iterations_bvd_deaths,
+               delay_first_length = bvd_delay_first_length(bvd_part_analysis)),
+             pattern = cross(bvd_part_analysis, bvd_deaths_chain_index),
+             iteration = "list", cue = tar_cue(mode = "never")),
+  tar_target(files_bvd_parts, {
+    chains <- c(bvd_part_cases_chain, bvd_part_deaths_chain, bvd_part_fixed_chain,
+                bvd_part_deaths_no_tail_chain, bvd_part_fixed_rule_chain)
+    by_day <- bvd_part_by_day(chains)
+    utils::write.csv(bvd_part_runs(chains), "outputs/bvd_part_runs.csv",
+                     row.names = FALSE)
+    utils::write.csv(bvd_part_summary(chains), "outputs/bvd_part_summary.csv",
+                     row.names = FALSE)
+    utils::write.csv(by_day, "outputs/bvd_part_by_day.csv", row.names = FALSE)
+    c("outputs/bvd_part_runs.csv", "outputs/bvd_part_summary.csv",
+      "outputs/bvd_part_by_day.csv",
+      save_plot(plot_bvd_parts(by_day), "outputs/bvd_parts.png", 16, 8))
+  }, format = "file", deployment = "main"),
+
+  # forms of the delay to a death being recorded, in the model of deaths
+  # alone: the early onset days left out, a heavier tail with a tight prior,
+  # and a log-normal delay; with the model of no tail and of cases alone for
+  # the reports to 5 September
+  tar_target(bvd_form_date, bvd_form_dates()),
+  tar_target(bvd_form_analysis,
+             prepare_bvd_deaths_analysis(bvd_snapshots, bvd_form_date),
+             pattern = map(bvd_form_date), iteration = "list"),
+  tar_target(bvd_form_analysis_first,
+             prepare_bvd_deaths_analysis(bvd_snapshots, min(bvd_form_dates()))),
+  tar_target(bvd_form_chain_index, seq_len(n_chains_bvd_forms)),
+  tar_target(bvd_form_lognormal_chain,
+             fit_bvd_single_chain(bvd_form_analysis, bvd_snapshots, "deaths",
+                                  bvd_form_chain_index, n_iterations_bvd_forms,
+                                  tail = FALSE, family = "lognormal"),
+             pattern = cross(bvd_form_analysis, bvd_form_chain_index),
+             iteration = "list"),
+  tar_target(bvd_form_from_june_chain,
+             fit_bvd_single_chain(bvd_form_analysis, bvd_snapshots, "deaths",
+                                  bvd_form_chain_index, n_iterations_bvd_forms,
+                                  tail = FALSE, onset_from = bvd_form_onset_from()),
+             pattern = cross(bvd_form_analysis, bvd_form_chain_index),
+             iteration = "list"),
+  tar_target(bvd_form_tail_chain,
+             fit_bvd_single_chain(bvd_form_analysis, bvd_snapshots, "deaths",
+                                  bvd_form_chain_index, n_iterations_bvd_forms,
+                                  tail_prior = bvd_form_tail_prior()),
+             pattern = cross(bvd_form_analysis, bvd_form_chain_index),
+             iteration = "list"),
+  # the early onset days left out and the heavier tail with a tight prior
+  tar_target(bvd_form_tail_from_june_chain,
+             fit_bvd_single_chain(bvd_form_analysis, bvd_snapshots, "deaths",
+                                  bvd_form_chain_index, n_iterations_bvd_forms,
+                                  tail_prior = bvd_form_tail_prior(),
+                                  onset_from = bvd_form_onset_from()),
+             pattern = cross(bvd_form_analysis, bvd_form_chain_index),
+             iteration = "list"),
+  tar_target(bvd_form_base_chain,
+             fit_bvd_single_chain(bvd_form_analysis_first, bvd_snapshots, "deaths",
+                                  bvd_form_chain_index, n_iterations_bvd_forms,
+                                  tail = FALSE),
+             pattern = map(bvd_form_chain_index), iteration = "list"),
+  tar_target(bvd_form_cases_chain,
+             fit_bvd_single_chain(bvd_form_analysis_first, bvd_snapshots, "cases",
+                                  bvd_form_chain_index, n_iterations_bvd_forms),
+             pattern = map(bvd_form_chain_index), iteration = "list",
+             cue = tar_cue(mode = "never")),
+
+  # reports to 5 September: settings which let the delay to a death being
+  # recorded change more readily, in the model of deaths alone and with the
+  # cases fixed (shorter chains)
+  tar_target(bvd_delay_trial, bvd_delay_trials(), iteration = "list"),
+  tar_target(bvd_trial_deaths_chain,
+             fit_bvd_single_chain(bvd_form_analysis_first, bvd_snapshots, "deaths",
+                                  bvd_form_chain_index, n_iterations_bvd_trials,
+                                  tail = FALSE, delay_settings = bvd_delay_trial),
+             pattern = cross(bvd_delay_trial, bvd_form_chain_index),
+             iteration = "list"),
+  tar_target(bvd_trial_cases_fixed,
+             bvd_cases_median(bvd_form_cases_chain, bvd_form_analysis_first$date_now)),
+  tar_target(bvd_trial_fixed_base_chain,
+             fit_bvd_fixed_cases_chain(bvd_form_analysis_first, bvd_trial_cases_fixed,
+                                       bvd_form_chain_index, n_iterations_bvd_trials),
+             pattern = map(bvd_form_chain_index), iteration = "list"),
+  tar_target(bvd_trial_fixed_chain,
+             fit_bvd_fixed_cases_chain(bvd_form_analysis_first, bvd_trial_cases_fixed,
+                                       bvd_form_chain_index, n_iterations_bvd_trials,
+                                       delay_settings = bvd_delay_trial),
+             pattern = cross(bvd_delay_trial, bvd_form_chain_index),
+             iteration = "list"),
+
+  # the same with a delay to a death being recorded which drifts
+  tar_target(bvd_drift_deaths_chain,
+             fit_bvd_single_chain(bvd_form_analysis_first, bvd_snapshots, "deaths",
+                                  bvd_form_chain_index, n_iterations_bvd_trials,
+                                  tail = FALSE, delay_settings = bvd_delay_drift()),
+             pattern = map(bvd_form_chain_index), iteration = "list"),
+  tar_target(bvd_drift_fixed_chain,
+             fit_bvd_fixed_cases_chain(bvd_form_analysis_first, bvd_trial_cases_fixed,
+                                       bvd_form_chain_index, n_iterations_bvd_trials,
+                                       delay_settings = bvd_delay_drift()),
+             pattern = map(bvd_form_chain_index), iteration = "list"),
 
   tar_target(bvd_deaths_analysis,
              prepare_bvd_deaths_analysis(bvd_snapshots, max(bvd_dates_now))),

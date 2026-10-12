@@ -1371,8 +1371,10 @@ converge is the pair which \S\ref{sec:identifiability} warns of: the case
 fatality ratio and the delay to a death being recorded. On the reports to 1
 October one chain has a mean delay of 117 days and a case fatality ratio of
 0.54 for the first onset days, the other two 36 to 39 days and 0.36 to
-0.37, although all three started together. All five dates are being rerun
-with 3{,}000 iterations. Table~\ref{tab:nowcastestimates} gives the estimates of
+0.37, although all three started together. A rerun of all five dates with
+3{,}000 iterations was stopped before it finished; instead the parts of the
+model were fitted on their own (\S\ref{sec:parts}).
+Table~\ref{tab:nowcastestimates} gives the estimates of
 every monitored quantity at each date and Table~\ref{tab:nowcastallrhat}
 their $\hat{R}$.
 
@@ -1539,6 +1541,128 @@ ratio, the mean delays and the reproduction number by day of onset (median
 and 90\% interval, three chains pooled). Three chains of 1{,}000
 iterations, not converged.}
 \label{fig:nowcastparameters}
+\end{figure}
+
+\section{Fits of the parts of the model}\label{sec:parts}
+
+\paragraph{Why.} The joint fits of \S\ref{sec:nowcast} do not converge. To
+find which part of the model is responsible, simpler models were fitted to
+the reports up to 15 September (the date which converged worst) and up to 1
+October.
+
+\paragraph{What was run.} Five fits for each date, each of three chains of
+1{,}000 iterations with the first 500 discarded, from spread starts.
+\begin{itemize}
+\item \emph{Cases alone.} The model for a single series, fitted to the
+table of cases: a renewal model for true cases, the reporting delay with
+its long tail and changes, and wrong records. Deaths are not used.
+\item \emph{Deaths alone.} The same model for a single series, fitted to the
+table of deaths. Fatal cases have their own renewal model, the delay is
+that from onset to the death being recorded, and there is no case fatality
+ratio. The delay has the prior which the joint model gives the delay to
+death recorded (\S\ref{sec:changes}): the mean and standard deviation of
+each segment are log-normal about a centre common to the segments, with a
+spread which has a half-normal prior of standard deviation 0.5; the centre
+of the means has a gamma prior of mean 14 and standard deviation 10 days,
+and the centre of the standard deviations one of mean 8 and standard
+deviation 8 days.
+\item \emph{Deaths alone, no tail.} As deaths alone, without the long tail
+on the delay.
+\item \emph{Cases fixed.} The joint model, with true cases held at the
+posterior median from cases alone for the same date, raised to the most
+ever reported for the day where the median is below it (9 to 16 cases in
+more than 6{,}000). All other parameters are sampled as in the joint model.
+\item \emph{Cases fixed, delay rule.} As cases fixed, with the rule of
+\S\ref{sec:early} applied also to the delay to death recorded: no change
+in that delay is allowed before 12 July, which is 14 days after the last
+of the onset days for which only the reports from 6 September are used.
+\end{itemize}
+
+\paragraph{Results.} Table~\ref{tab:parts} and Figure~\ref{fig:parts}.
+\begin{itemize}
+\item \emph{The cases converge.} Cases alone has $\hat{R}$ of at most 1.02
+and 1.05. It gives 6{,}230 cases (6{,}160 to 6{,}310) from the reports to 15
+September and 6{,}900 (6{,}830 to 6{,}980) from those to 1 October, a mean
+reporting delay of 7.3 and 7.2 days and no change in it. The joint fits
+gave 6{,}850 and 7{,}280 cases.
+\item \emph{For deaths alone the long tail makes a second mode.} With the
+tail, on the reports to 15 September one chain has 3{,}310 fatal cases and
+two have about 5{,}400, with 63\% of deaths in a tail of mean 145 days.
+Without the tail all three chains have 2{,}990 to 3{,}090 fatal cases and a
+mean delay of 20 days for the first onset days and 15 days for the latest.
+The largest $\hat{R}$ falls from 4.9 to 1.41 (15 September) and from 1.9
+to 1.33 (1 October); those which remain at 1.2 or more are of the mean and
+standard deviation of the delay and, on 15 September, of fatal cases (1.26).
+\item \emph{With cases fixed, the reports to 1 October converge without the
+delay rule.} The largest $\hat{R}$ is 1.20. The case fatality ratio is 0.37
+(0.33 to 0.42) for the first onset days and 0.53 (0.43 to 0.55) for the
+latest, there are 3{,}570 fatal cases (3{,}470 to 3{,}670) against 2{,}821
+recorded, and the mean delay to death recorded is 45 days for the first
+onset days and 23 days for the latest.
+\item \emph{The delay rule does not give convergence.} On the reports to 15
+September it removes the chain with 4{,}310 fatal cases and a delay of 93
+to 134 days, but the three chains still differ in the delay for the first
+onset days (36, 43 and 52 days) and in fatal cases (3{,}340 to 3{,}580). On
+the reports to 1 October it is worse than no rule: one chain has a delay of
+63 days for the first onset days and 3{,}715 fatal cases, the other two 32
+to 34 days and 3{,}420 to 3{,}490. Since the fit without the rule agreed at
+41 to 46 days from the same data, 1{,}000 iterations from three starts is
+not enough to tell a converged fit from a lucky one.
+\item \emph{The delay to death recorded is very dispersed in the joint
+model.} With cases fixed its standard deviation is larger than its mean in
+every chain (for the first onset days, means of 32 to 63 days with standard
+deviations of 54 to 119 days), which is a gamma distribution with shape
+below 1: most deaths recorded soon and a few very late. Within a chain the
+mean and standard deviation move together (correlation up to 0.96). In
+deaths alone without the tail the standard deviation is 13 to 16 days for a
+mean of 15 to 20. The delay in the joint model is therefore doing the work
+of a long tail, and its prior does not prevent this: the centre of the
+standard deviations has a prior of mean 8 days and is estimated at 31
+to 50 days.
+\item \emph{Deaths alone and cases fixed disagree.} From the reports to 15
+September deaths alone without the tail gives about 3{,}030 fatal cases and
+cases fixed about 3{,}440; from those to 1 October 3{,}300 and 3{,}490 to
+3{,}570. The difference goes with the more dispersed delay in the joint
+model and is not yet explained.
+\end{itemize}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}llllll@{}}
+\toprule
+Fit & Fatal cases & Case fatality ratio, & \multicolumn{2}{l}{Mean delay to death recorded (days)} & Largest \\
+ & & latest onset day & first onset day & latest onset day & $\hat{R}$ \\
+\midrule
+\multicolumn{6}{@{}l}{\emph{Reports to 15 September}}\\
+Deaths alone & 3{,}310 / 5{,}370 / 5{,}400 & -- & 22 / 11 / 11 & 17 / 11 / 11 & \textbf{4.94} \\
+Deaths alone, no tail & 3{,}040 / 3{,}090 / 2{,}990 & -- & 20 / 21 / 19 & 15 / 16 / 14 & \textbf{1.41} \\
+Cases fixed & 3{,}590 / 4{,}310 / 3{,}510 & 0.59 / 0.71 / 0.58 & 73 / 134 / 64 & 27 / 92 / 29 & \textbf{4.52} \\
+Cases fixed, delay rule & 3{,}340 / 3{,}420 / 3{,}580 & 0.56 / 0.56 / 0.60 & 36 / 43 / 52 & 24 / 23 / 31 & \textbf{3.70} \\
+\multicolumn{6}{@{}l}{\emph{Reports to 1 October}}\\
+Deaths alone & 3{,}270 / 3{,}370 / 3{,}240 & -- & 21 / 21 / 21 & 20 / 23 / 18 & \textbf{1.90} \\
+Deaths alone, no tail & 3{,}270 / 3{,}370 / 3{,}290 & -- & 20 / 20 / 19 & 19 / 23 / 20 & \textbf{1.33} \\
+Cases fixed & 3{,}580 / 3{,}570 / 3{,}560 & 0.53 / 0.53 / 0.52 & 45 / 46 / 41 & 22 / 21 / 25 & \textbf{1.20} \\
+Cases fixed, delay rule & 3{,}490 / 3{,}420 / 3{,}720 & 0.52 / 0.50 / 0.55 & 34 / 32 / 63 & 21 / 16 / 30 & \textbf{6.47} \\
+\bottomrule
+\end{tabular}
+\caption{Fits of the parts of the model: the median in each of the three
+chains, and the largest split $\hat{R}$ over the monitored quantities (12
+for deaths alone, 16 for cases fixed); values of 1.2 or more in bold. Three
+chains of 1{,}000 iterations. Cases alone, not shown, has a largest
+$\hat{R}$ of 1.02 and 1.05.}
+\label{tab:parts}
+\end{table}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{bvd_parts_second/bvd_parts.png}
+\caption{Fits of the parts of the model, by chain (median and 90\%
+interval). Top: fatal cases by day of onset, with the deaths recorded in
+the report of that date as grey bars. Middle: the mean delay from onset to
+the death being recorded. Bottom: the case fatality ratio, which deaths
+alone does not have. Three chains of 1{,}000 iterations.}
+\label{fig:parts}
 \end{figure}
 
 \end{document}

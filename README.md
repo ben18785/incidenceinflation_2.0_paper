@@ -98,3 +98,32 @@ outbreaks, default 1), `PIPELINE_CHAINS_DEATHS` (2) and
 written to `outputs/deaths_simulation/progress/<scenario>_<replicate>_<chain>.txt`.
 The simulated data and fits are kept in the targets store; the summary, the
 coverage of true cases by onset day and the figures are written to `outputs/`.
+
+## Experiments on GitHub Actions
+
+Fits of the outbreak model which take too long for one machine run on GitHub
+Actions, one chain per job (`.github/workflows/experiments.yml`).
+
+- `experiments/experiments.yml` lists the experiments: the reports used, the
+  part of the model fitted, the settings of the delay, and the number and
+  length of the chains. Add an entry to add an experiment.
+- `experiments/run.txt` names the experiments to run. Pushing a change to it
+  starts them; the workflow can also be started by hand from the Actions tab
+  with a list of names.
+- Results go to the branch `experiment-results`, in a folder for each run:
+  `README.md` (the tables), csv files, a plot of the delays, and each chain.
+  The same summary is shown on the page of the run.
+- The chains are targets of `_targets_experiments.R`, so the same experiments
+  run on one machine with
+  `BVD_EXPERIMENTS=name1,name2 PIPELINE_WORKERS=8 Rscript -e 'targets::tar_make(script = "_targets_experiments.R", store = "_targets_experiments")'`.
+- The version of the model used is the `PACKAGE` line of the workflow.
+- A chain is stopped after six hours.
+
+The situation report tables are not tracked. `data/bvd_data.tar.gz.enc` holds
+them encrypted (with the cases from the model of cases alone which the
+experiments with the cases fixed need); the passphrase is the repository
+secret `BVD_DATA_KEY` and, on a machine which has the data, the file
+`~/.bvd_data_key`. After adding reports run
+`Rscript scripts/export_bvd_cases_median.R` (if the fits of cases alone have
+changed) and `scripts/encrypt_bvd_data.sh`, and commit the file. To restore
+the tables on another machine run `scripts/decrypt_bvd_data.sh`.

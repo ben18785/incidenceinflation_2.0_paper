@@ -1,0 +1,165 @@
+# Runs the experiments named in experiments/run.txt (or given when started by
+# hand), one chain per job, and writes their results to the branch
+# experiment-results.
+name: experiments
+
+on:
+  workflow_dispatch:
+    inputs:
+      experiments:
+        description: "Names of experiments, separated by commas (default: those of experiments/run.txt)"
+        required: false
+  push:
+    paths:
+      - experiments/run.txt
+
+permissions:
+  contents: write
+
+env:
+  # the version of the model the chains use
+  PACKAGE: github::ben18785/incidenceinflation_2.0@deaths
+  R_PACKAGES: |
+    any::targets
+    any::tarchetypes
+    any::dplyr
+    any::tidyr
+    any::purrr
+    any::ggplot2
+    any::rlang
+    any::yaml
+    any::patchwork
+    any::ggh4x
+    any::matrixStats
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      count: ${{ steps.plan.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        env:
+          WANTED: ${{ inputs.experiments }}
+        run: |
+          if [ -z "$WANTED" ]; then
+            WANTED=$(grep -v '^[[:space:]]*#' experiments/run.txt | grep -v '^[[:space:]]*$' | paste -sd, -)
+          fi
+          echo "Experiments: $WANTED"
+          matrix=$(yq -o=json 'explode(.)' experiments/experiments.yml | jq -c --arg wanted "$WANTED" '
+            (.defaults.chains // 4) as $default
+            | . as $file
+            | [ $wanted | split(",")[] | gsub("^\\s+|\\s+$"; "") | select(length > 0) ] as $names
+            | [ $names[] as $name
+                | ($file.experiments[$name] // error("No experiment called " + $name)) as $experiment
+                | range(1; ($experiment.chains // $default) + 1)
+                | {experiment: $name, chain: .} ]
+            | {include: .}')
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "count=$(echo "$matrix" | jq '.include | length')" >> "$GITHUB_OUTPUT"
+          echo "$matrix" | jq .
+
+  chain:
+    needs: plan
+    if: needs.plan.outputs.count != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    name: ${{ matrix.experiment }} ${{ matrix.chain }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            ${{ env.R_PACKAGES }}
+            ${{ env.PACKAGE }}
+      - name: Restore the data
+        env:
+          BVD_DATA_KEY: ${{ secrets.BVD_DATA_KEY }}
+        run: |
+          printf '%s' "$BVD_DATA_KEY" > "$RUNNER_TEMP/bvd_data_key"
+          BVD_DATA_KEY_FILE="$RUNNER_TEMP/bvd_data_key" scripts/decrypt_bvd_data.sh
+          rm "$RUNNER_TEMP/bvd_data_key"
+      - name: Run the chain
+        run: |
+          (while sleep 600; do tail -qn 1 outputs/bvd_deaths/progress/*.txt 2>/dev/null; done) &
+          Rscript scripts/run_experiment_chain.R "${{ matrix.experiment }}" "${{ matrix.chain }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: chain-${{ matrix.experiment }}-${{ matrix.chain }}
+          path: chains/*.rds
+          retention-days: 30
+
+  collect:
+    needs: [plan, chain]
+    if: always() && needs.plan.outputs.count != '0' && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          packages: |
+            ${{ env.R_PACKAGES }}
+            ${{ env.PACKAGE }}
+      - name: Restore the data
+        env:
+          BVD_DATA_KEY: ${{ secrets.BVD_DATA_KEY }}
+        run: |
+          printf '%s' "$BVD_DATA_KEY" > "$RUNNER_TEMP/bvd_data_key"
+          BVD_DATA_KEY_FILE="$RUNNER_TEMP/bvd_data_key" scripts/decrypt_bvd_data.sh
+          rm "$RUNNER_TEMP/bvd_data_key"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: chain-*
+          path: chains
+          merge-multiple: true
+      - name: Summarise
+        run: |
+          Rscript scripts/collect_experiments.R chains results
+          dir="runs/$(date -u +%Y-%m-%d)_${GITHUB_RUN_NUMBER}"
+          echo "RESULTS_DIR=$dir" >> "$GITHUB_ENV"
+          {
+            echo "Commit ${GITHUB_SHA} of ${GITHUB_REF_NAME}; model ${PACKAGE}; [files](https://github.com/${GITHUB_REPOSITORY}/tree/experiment-results/${dir})"
+            echo
+            cat results/summary.md
+            if [ -f results/delays.png ]; then
+              echo
+              echo "![Delay by onset day](https://raw.githubusercontent.com/${GITHUB_REPOSITORY}/experiment-results/${dir}/delays.png)"
+            fi
+          } > results/README.md
+          cat results/README.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Save to the branch experiment-results
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          url="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          if ! git clone --quiet --depth 1 --branch experiment-results "$url" "$RUNNER_TEMP/results"; then
+            mkdir "$RUNNER_TEMP/results"
+            git -C "$RUNNER_TEMP/results" init --quiet -b experiment-results
+            git -C "$RUNNER_TEMP/results" remote add origin "$url"
+          fi
+          mkdir -p "$RUNNER_TEMP/results/$(dirname "$RESULTS_DIR")"
+          cp -r results "$RUNNER_TEMP/results/$RESULTS_DIR"
+          cd "$RUNNER_TEMP/results"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit --quiet -m "Results of run ${GITHUB_RUN_NUMBER}"
+          for attempt in 1 2 3; do
+            git push --quiet origin experiment-results && break
+            git pull --quiet --rebase origin experiment-results
+          done
