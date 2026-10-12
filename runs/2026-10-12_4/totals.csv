@@ -1,0 +1,16 @@
+"experiment","model","date_now","count","onset_days","median","lo","hi","rhat","recorded_05Sep","recorded_15Sep","recorded_01Oct"
+"fixed_0905","fixed cases",2026-09-05,"deaths","all",4148.5,3850,4508.1,2.15092752996661,2111,2407,2502
+"fixed_0905","fixed cases",2026-09-05,"deaths","latest 28",1329.5,1188.95,1534,1.98212147721737,499,720,794
+"fixed_0905","fixed cases",2026-09-05,"deaths","latest 14",687,610,800,1.82563851313188,169,344,407
+"fixed_drift_0905","fixed cases, drift",2026-09-05,"deaths","all",4102,3855,4355.05,1.56559787271905,2111,2407,2502
+"fixed_drift_0905","fixed cases, drift",2026-09-05,"deaths","latest 28",1289,1204,1403,1.3588287559344,499,720,794
+"fixed_drift_0905","fixed cases, drift",2026-09-05,"deaths","latest 14",661,610.95,725,1.3091695488259,169,344,407
+"fixed_more_changes_0905","fixed cases, more changes",2026-09-05,"deaths","all",4286,3988.95,4583.05,1.77400160972929,2111,2407,2502
+"fixed_more_changes_0905","fixed cases, more changes",2026-09-05,"deaths","latest 28",1352,1236,1471,1.48620747375023,499,720,794
+"fixed_more_changes_0905","fixed cases, more changes",2026-09-05,"deaths","latest 14",695,633.95,770,1.38188026564842,169,344,407
+"fixed_seven_day_0905","fixed cases, 7-day segments",2026-09-05,"deaths","all",4273,4089.95,4730.15,1.689155998511,2111,2407,2502
+"fixed_seven_day_0905","fixed cases, 7-day segments",2026-09-05,"deaths","latest 28",1334,1257,1482.05,1.41008279928687,499,720,794
+"fixed_seven_day_0905","fixed cases, 7-day segments",2026-09-05,"deaths","latest 14",685.5,638,763.05,1.38101024853485,169,344,407
+"fixed_seven_day_more_0905","fixed cases, 7-day segments, more changes",2026-09-05,"deaths","all",4257,3964.9,4476,1.62524146342681,2111,2407,2502
+"fixed_seven_day_more_0905","fixed cases, 7-day segments, more changes",2026-09-05,"deaths","latest 28",1341,1218.95,1462.05,1.56395578668773,499,720,794
+"fixed_seven_day_more_0905","fixed cases, 7-day segments, more changes",2026-09-05,"deaths","latest 14",687,619.95,759,1.46381775407458,169,344,407
