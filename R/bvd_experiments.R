@@ -12,12 +12,13 @@
 #' @return a named list of experiments: name, model ("cases", "deaths",
 #'   "fixed cases" or "joint"), date (the latest report used), chains,
 #'   iterations, tail, family, delay (settings of the changes in the delay
-#'   to a death being recorded, or NULL), onset_from, variant (joint only)
+#'   to a death being recorded, or NULL), onset_from, variant (joint only),
+#'   starts (starting values: "near" one another or "spread" apart)
 bvd_experiments <- function(path = "experiments/experiments.yml") {
   file <- yaml::read_yaml(path)
   defaults <- utils::modifyList(
     list(chains = 4, iterations = 600, tail = TRUE, family = "gamma",
-         variant = "none"),
+         variant = "none", starts = "near"),
     if(is.null(file$defaults)) list() else file$defaults)
   experiments <- purrr::imap(file$experiments, function(experiment, name) {
     experiment <- utils::modifyList(defaults, experiment)
@@ -75,14 +76,16 @@ run_bvd_experiment_chain <- function(experiment, chain, snapshots) {
                          family = experiment$family,
                          onset_from = experiment$onset_from,
                          tail_prior = experiment$tail_prior,
-                         delay_settings = experiment$delay)
+                         delay_settings = experiment$delay,
+                         starts = experiment$starts)
   else if(experiment$model == "fixed cases")
     fit_bvd_fixed_cases_chain(analysis, bvd_cases_median_saved(experiment$date),
                               chain, experiment$iterations,
-                              delay_settings = experiment$delay)
+                              delay_settings = experiment$delay,
+                              starts = experiment$starts)
   else {
     fit <- fit_bvd_deaths_chain(analysis, experiment$variant, chain,
-                                experiment$iterations)
+                                experiment$iterations, starts = experiment$starts)
     fit$model <- "joint"
     fit
   }

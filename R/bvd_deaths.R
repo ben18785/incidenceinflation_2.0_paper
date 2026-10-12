@@ -107,7 +107,10 @@ bvd_deaths_variants <- function() {
 #' "spread" starts the three chains far apart. "close" starts them near the
 #' values on which two chains of a first fit to the reports up to 1 October
 #' 2026 agreed, differing between chains by a tenth: the chains then say
-#' nothing about whether there is another mode elsewhere.
+#' nothing about whether there is another mode elsewhere. "near" starts
+#' them near values which simple fits to the reports suggest (a delay to a
+#' death being recorded of mean 15 and sd 13 days, a case fatality ratio of
+#' 0.37), differing between chains by up to a tenth.
 #'
 #' @return a list: the multiple of the reported cases added for the latest
 #'   onset day and the days over which this falls off, and starting values of
@@ -125,6 +128,17 @@ bvd_deaths_starts <- function(starts, chain) {
       overdispersion = c(10, 3, 30)[index],
       tail = list(weight = c(0.02, 0.05, 0.01)[index], mean = c(40, 25, 60)[index]),
       eta = NULL, rho = NULL))
+  if(starts == "near") {
+    scale <- c(1, 0.9, 1.1, 0.95)[(chain - 1) %% 4 + 1]
+    return(list(
+      inflation = 2 * scale, inflation_days = 4,
+      cfr = 0.37 * scale,
+      delay = list(mean = 15 * scale, sd = 13 * scale),
+      reporting = list(mean = 7.6 * scale, sd = 5.4 * scale),
+      overdispersion = 30 * scale,
+      tail = list(weight = 0.1 * scale, mean = 40 * scale),
+      eta = NULL, rho = NULL))
+  }
   scale <- c(1, 0.9, 1.1)[index]
   list(inflation = 4 * scale, inflation_days = 5,
        cfr = 0.5 * scale,

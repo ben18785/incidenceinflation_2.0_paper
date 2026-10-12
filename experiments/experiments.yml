@@ -14,6 +14,8 @@
 #   delay       settings of the changes in the delay to a death being recorded,
 #               with a label for tables (deaths and fixed cases only)
 #   onset_from  earlier onset days are left out (cases and deaths only)
+#   starts      near (the default): chains start near one another, at values
+#               simple fits suggest; spread: chains start far apart
 #
 # To run experiments, list their names in experiments/run.txt and push.
 
@@ -41,6 +43,10 @@ experiments:
   fixed_more_changes_0905: {model: fixed cases, delay: *more_changes}
   fixed_seven_day_more_0905: {model: fixed cases, delay: *seven_day_more}
   fixed_drift_0905: {model: fixed cases, delay: *drift}
+
+  # the same from starting values spread far apart
+  fixed_spread_0905: {model: fixed cases, starts: spread}
+  fixed_drift_spread_0905: {model: fixed cases, delay: *drift, starts: spread}
 
   # short runs to check that the workflow works
   check: {model: deaths, tail: false, delay: *drift, chains: 2, iterations: 20}

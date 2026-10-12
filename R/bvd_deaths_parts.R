@@ -123,7 +123,8 @@ fit_bvd_single_chain <- function(analysis, snapshots_all, model, chain, niterati
                                  serial_parameters = list(mean = 15.3, sd = 9.3),
                                  progress_dir = "outputs/bvd_deaths/progress",
                                  onset_from = NULL, tail_prior = NULL,
-                                 family = "gamma", delay_settings = NULL) {
+                                 family = "gamma", delay_settings = NULL,
+                                 starts = "spread") {
   stopifnot(model %in% c("cases", "deaths"))
   old_options <- options(incidenceinflation.delay_family = family)
   on.exit(options(old_options), add = TRUE)
@@ -169,8 +170,8 @@ fit_bvd_single_chain <- function(analysis, snapshots_all, model, chain, niterati
     dplyr::group_by(.data$time_onset) %>%
     dplyr::summarise(cases_true = max(.data$cases_reported))
   days_before_end <- max(snapshots$time_onset) - largest_reported$time_onset
-  start <- bvd_deaths_starts("spread", chain)
-  if(chain > 3) {
+  start <- bvd_deaths_starts(starts, chain)
+  if(chain > 3 && starts == "spread") {
     # a fourth set of starting values: a long, dispersed delay
     start$inflation <- 1.5
     start$delay <- list(mean = 30, sd = 20)
@@ -282,7 +283,7 @@ bvd_cases_median <- function(chains, date_now) {
 #' fit is then labelled "fixed cases, delay rule").
 fit_bvd_fixed_cases_chain <- function(analysis, cases_fixed, chain, niterations,
                                       n_draws = 300, delay_first_length = NULL,
-                                      delay_settings = NULL,
+                                      delay_settings = NULL, starts = "spread",
                                       serial_parameters = list(mean = 15.3, sd = 9.3),
                                       progress_dir = "outputs/bvd_deaths/progress") {
   dir.create(progress_dir, recursive = TRUE, showWarnings = FALSE)
@@ -297,7 +298,7 @@ fit_bvd_fixed_cases_chain <- function(analysis, cases_fixed, chain, niterations,
     dplyr::arrange(.data$time_onset)
   cases_raised <- sum(pmax(0, most_reported$most - cases_fixed$cases_true))
   cases_fixed$cases_true <- pmax(cases_fixed$cases_true, most_reported$most)
-  start <- bvd_deaths_starts("spread", chain)
+  start <- bvd_deaths_starts(starts, chain)
   f_largest_fall <- function(column) {
     falls <- snapshots %>%
       dplyr::group_by(.data$time_onset) %>%
