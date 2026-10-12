@@ -14,10 +14,17 @@
 #   delay       settings of the changes in the delay to a death being recorded,
 #               with a label for tables (deaths and fixed cases only)
 #   onset_from  earlier onset days are left out (cases and deaths only)
+#   tail_prior  the prior on the heavier tail: a beta prior on its share
+#               (tail_weight_alpha, tail_weight_beta) and the mean and sd of
+#               the prior on its mean in days (tail_mean_mu, tail_mean_sigma),
+#               with a label (cases and deaths only)
+#   cases_from  fixed cases only: the cases are those of the fit of cases
+#               alone to the reports up to this date (default: 'date')
 #   starts      near (the default): chains start near one another, at values
 #               simple fits suggest; spread: chains start far apart
 #
-# To run experiments, list their names in experiments/run.txt and push.
+# To run experiments, list their names in a file of experiments/batches/ and
+# push: each push starts one run of the batch whose file it changed.
 
 defaults:
   chains: 4
@@ -29,6 +36,9 @@ delays:
   more_changes: &more_changes {changes_expected: 4, label: "more changes"}
   seven_day_more: &seven_day_more {min_length: 7, changes_expected: 4, label: "7-day segments, more changes"}
   drift: &drift {drift: 7, spread_sd: 0.25, mean_step: 0.12, sd_step: 0.12, n_segment_steps: 2, label: "drift"}
+
+tails:
+  tight: &tight_tail {tail_weight_alpha: 4, tail_weight_beta: 46, tail_mean_mu: 40, tail_mean_sigma: 5, label: "tight tail"}
 
 experiments:
   # reports to 5 September, deaths alone with no heavier tail
@@ -43,6 +53,17 @@ experiments:
   fixed_more_changes_0905: {model: fixed cases, delay: *more_changes}
   fixed_seven_day_more_0905: {model: fixed cases, delay: *seven_day_more}
   fixed_drift_0905: {model: fixed cases, delay: *drift}
+
+  # reports to 5 September, deaths given the cases of the fit of cases alone
+  # to the reports to 1 October (for the same onset days)
+  fixed_october_cases_0905: {model: fixed cases, cases_from: 2026-10-01}
+  fixed_october_cases_drift_0905: {model: fixed cases, cases_from: 2026-10-01, delay: *drift}
+
+  # cases alone with the heavier tail of the delay left out or held tight
+  cases_no_tail_0905: {model: cases, tail: false, iterations: 1000}
+  cases_tight_tail_0905: {model: cases, tail_prior: *tight_tail, iterations: 1000}
+  cases_no_tail_0915: {model: cases, date: 2026-09-15, tail: false, iterations: 1000}
+  cases_tight_tail_0915: {model: cases, date: 2026-09-15, tail_prior: *tight_tail, iterations: 1000}
 
   # the same from starting values spread far apart
   fixed_spread_0905: {model: fixed cases, starts: spread}

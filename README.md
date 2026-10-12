@@ -107,9 +107,11 @@ Actions, one chain per job (`.github/workflows/experiments.yml`).
 - `experiments/experiments.yml` lists the experiments: the reports used, the
   part of the model fitted, the settings of the delay, and the number and
   length of the chains. Add an entry to add an experiment.
-- `experiments/run.txt` names the experiments to run. Pushing a change to it
-  starts them; the workflow can also be started by hand from the Actions tab
-  with a list of names.
+- Each file of `experiments/batches/` is a batch: a list of names of
+  experiments. Pushing a change to a batch's file starts one run of that
+  batch, shown on the Actions tab under the message of the commit. Push the
+  batches one at a time to have a run for each. The workflow can also be
+  started by hand from the Actions tab (once it is on the default branch).
 - Results go to the branch `experiment-results`, in a folder for each run:
   `README.md` (the tables), csv files, a plot of the delays, and each chain.
   The same summary is shown on the page of the run.

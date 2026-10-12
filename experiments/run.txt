@@ -1,9 +1,0 @@
-# The experiments to run, one name per line (names are those of
-# experiments/experiments.yml). Pushing a change to this file starts them
-# on GitHub Actions; the results go to the branch experiment-results.
-fixed_0905
-fixed_seven_day_0905
-fixed_more_changes_0905
-fixed_seven_day_more_0905
-fixed_drift_0905
-# started again with the chains starting near one another

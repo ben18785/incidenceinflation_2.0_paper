@@ -13,7 +13,10 @@
 #'   "fixed cases" or "joint"), date (the latest report used), chains,
 #'   iterations, tail, family, delay (settings of the changes in the delay
 #'   to a death being recorded, or NULL), onset_from, variant (joint only),
-#'   starts (starting values: "near" one another or "spread" apart)
+#'   starts (starting values: "near" one another or "spread" apart),
+#'   cases_from (fixed cases only: the date of the fit of cases alone whose
+#'   cases are held fixed, if not 'date'), tail_prior (cases and deaths
+#'   only: the prior on the heavier tail, with a label)
 bvd_experiments <- function(path = "experiments/experiments.yml") {
   file <- yaml::read_yaml(path)
   defaults <- utils::modifyList(
@@ -78,12 +81,18 @@ run_bvd_experiment_chain <- function(experiment, chain, snapshots) {
                          tail_prior = experiment$tail_prior,
                          delay_settings = experiment$delay,
                          starts = experiment$starts)
-  else if(experiment$model == "fixed cases")
-    fit_bvd_fixed_cases_chain(analysis, bvd_cases_median_saved(experiment$date),
+  else if(experiment$model == "fixed cases") {
+    # the cases are those of the fit of cases alone to the reports up to
+    # 'cases_from' if given, for the onset days of this fit
+    cases_from <- if(is.null(experiment$cases_from)) experiment$date
+    else as.Date(experiment$cases_from)
+    cases_fixed <- bvd_cases_median_saved(cases_from) %>%
+      dplyr::filter(.data$time_onset %in% analysis$snapshots$time_onset)
+    fit_bvd_fixed_cases_chain(analysis, cases_fixed,
                               chain, experiment$iterations,
                               delay_settings = experiment$delay,
                               starts = experiment$starts)
-  else {
+  } else {
     fit <- fit_bvd_deaths_chain(analysis, experiment$variant, chain,
                                 experiment$iterations, starts = experiment$starts)
     fit$model <- "joint"

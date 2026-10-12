@@ -1,17 +1,22 @@
-# Runs the experiments named in experiments/run.txt (or given when started by
-# hand), one chain per job, and writes their results to the branch
-# experiment-results.
+# Runs a batch of experiments, one chain per job, and writes the results to
+# the branch experiment-results. A batch is a file of experiments/batches/
+# which lists names of experiments; a push which changes the file starts it.
+# Each chain may run for up to six hours.
 name: experiments
+run-name: ${{ inputs.batch || inputs.experiments || github.event.head_commit.message }}
 
 on:
   workflow_dispatch:
     inputs:
+      batch:
+        description: "A batch: the name of a file of experiments/batches/, without .txt"
+        required: false
       experiments:
-        description: "Names of experiments, separated by commas (default: those of experiments/run.txt)"
+        description: "Or names of experiments, separated by commas"
         required: false
   push:
     paths:
-      - experiments/run.txt
+      - experiments/batches/*.txt
 
 permissions:
   contents: write
@@ -25,16 +30,29 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
+      batch: ${{ steps.plan.outputs.batch }}
       count: ${{ steps.plan.outputs.count }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
       - id: plan
         env:
           WANTED: ${{ inputs.experiments }}
+          BATCH: ${{ inputs.batch }}
         run: |
-          if [ -z "$WANTED" ]; then
-            WANTED=$(grep -v '^[[:space:]]*#' experiments/run.txt | grep -v '^[[:space:]]*$' | paste -sd, -)
+          # the batches: the one asked for, or those whose files the push changed
+          if [ -n "$BATCH" ]; then
+            files="experiments/batches/$BATCH.txt"
+          elif [ -z "$WANTED" ]; then
+            files=$(git diff --name-only --diff-filter=AM HEAD^ HEAD -- 'experiments/batches/*.txt')
           fi
+          if [ -z "$WANTED" ]; then
+            WANTED=$(cat $files | grep -v '^[[:space:]]*#' | grep -v '^[[:space:]]*$' | paste -sd, -)
+            BATCH=$(for file in $files; do basename "$file" .txt; done | paste -sd+ -)
+          fi
+          echo "batch=${BATCH:-chosen}" >> "$GITHUB_OUTPUT"
+          echo "Batch: ${BATCH:-chosen}"
           echo "Experiments: $WANTED"
           matrix=$(yq -o=json 'explode(.)' experiments/experiments.yml | jq -c --arg wanted "$WANTED" '
             (.defaults.chains // 4) as $default
@@ -140,10 +158,10 @@ jobs:
       - name: Summarise
         run: |
           Rscript scripts/collect_experiments.R chains results
-          dir="runs/$(date -u +%Y-%m-%d)_${GITHUB_RUN_NUMBER}"
+          dir="runs/$(date -u +%Y-%m-%d)_${GITHUB_RUN_NUMBER}_${{ needs.plan.outputs.batch }}"
           echo "RESULTS_DIR=$dir" >> "$GITHUB_ENV"
           {
-            echo "Commit ${GITHUB_SHA} of ${GITHUB_REF_NAME}; model ${PACKAGE}; [files](https://github.com/${GITHUB_REPOSITORY}/tree/experiment-results/${dir})"
+            echo "Batch ${{ needs.plan.outputs.batch }}. Commit ${GITHUB_SHA} of ${GITHUB_REF_NAME}; model ${PACKAGE}; [files](https://github.com/${GITHUB_REPOSITORY}/tree/experiment-results/${dir})"
             echo
             cat results/summary.md
             if [ -f results/delays.png ]; then

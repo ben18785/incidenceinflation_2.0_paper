@@ -1,0 +1,5 @@
+# Reports to 5 September: deaths given the cases of the fit of cases alone to
+# the reports to 1 October. Does the model of deaths behave when the cases
+# are right?
+fixed_october_cases_0905
+fixed_october_cases_drift_0905
