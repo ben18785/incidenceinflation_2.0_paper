@@ -1,6 +1,8 @@
 # The experiments to run, one name per line (names are those of
 # experiments/experiments.yml). Pushing a change to this file starts them
 # on GitHub Actions; the results go to the branch experiment-results.
-check
-check_fixed
-# second check of the workflow
+fixed_0905
+fixed_seven_day_0905
+fixed_more_changes_0905
+fixed_seven_day_more_0905
+fixed_drift_0905
