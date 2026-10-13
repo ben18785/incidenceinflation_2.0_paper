@@ -1,0 +1,11 @@
+# The joint model with no tail, in which a death can bring about the report
+# of its case, run for 3000 iterations. The chains for the reports to 5
+# September, 15 September and 1 October carry on from the 800 iterations of
+# batch 6; those for 1 August and 20 August start afresh. Chains which have
+# not finished after 320 minutes stop, to be carried on by a later run.
+continue: 38405317660
+joint_no_tail_triggered_0801
+joint_no_tail_triggered_0820
+joint_no_tail_triggered_0905
+joint_no_tail_triggered_0915
+joint_no_tail_triggered_1001
