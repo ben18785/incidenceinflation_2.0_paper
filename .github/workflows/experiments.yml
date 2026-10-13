@@ -7,6 +7,9 @@
 # (or a run started by hand with that id) carries on the chains of that run
 # from where they stopped; with more iterations asked for in
 # experiments/experiments.yml, it lengthens chains which had finished.
+# A line
+#   package: <owner>/<repository>@<branch>
+# has the chains use that version of the model in place of the usual one.
 name: experiments
 run-name: ${{ inputs.batch || inputs.experiments || github.event.head_commit.message }}
 
@@ -30,10 +33,6 @@ permissions:
   contents: write
   actions: read
 
-env:
-  # the version of the model the chains use
-  PACKAGE: github::ben18785/incidenceinflation_2.0@deaths
-
 jobs:
   plan:
     runs-on: ubuntu-latest
@@ -42,6 +41,7 @@ jobs:
       batch: ${{ steps.plan.outputs.batch }}
       continue_from: ${{ steps.plan.outputs.continue_from }}
       time_limit: ${{ steps.plan.outputs.time_limit }}
+      package: ${{ steps.plan.outputs.package }}
       count: ${{ steps.plan.outputs.count }}
     steps:
       - uses: actions/checkout@v4
@@ -64,12 +64,15 @@ jobs:
               CONTINUE_FROM=$(cat $files | sed -n 's/^continue:[[:space:]]*\([0-9]*\).*/\1/p' | head -n 1)
             fi
             TIME_LIMIT=$(cat $files | sed -n 's/^time_limit:[[:space:]]*\([0-9.]*\).*/\1/p' | head -n 1)
-            WANTED=$(cat $files | grep -v '^[[:space:]]*#' | grep -v '^continue:' | grep -v '^time_limit:' | grep -v '^[[:space:]]*$' | paste -sd, -)
+            PACKAGE_GIVEN=$(cat $files | sed -n 's/^package:[[:space:]]*\([A-Za-z0-9_.\/@-]*\).*/\1/p' | head -n 1)
+            WANTED=$(cat $files | grep -v '^[[:space:]]*#' | grep -v '^continue:' | grep -v '^time_limit:' | grep -v '^package:' | grep -v '^[[:space:]]*$' | paste -sd, -)
             BATCH=$(for file in $files; do basename "$file" .txt; done | paste -sd+ -)
           fi
           echo "batch=${BATCH:-chosen}" >> "$GITHUB_OUTPUT"
           echo "continue_from=$CONTINUE_FROM" >> "$GITHUB_OUTPUT"
           echo "time_limit=${TIME_LIMIT:-320}" >> "$GITHUB_OUTPUT"
+          echo "package=github::${PACKAGE_GIVEN:-ben18785/incidenceinflation_2.0@deaths}" >> "$GITHUB_OUTPUT"
+          echo "Model: ${PACKAGE_GIVEN:-ben18785/incidenceinflation_2.0@deaths}"
           echo "Carrying on run: ${CONTINUE_FROM:-none}"
           echo "Batch: ${BATCH:-chosen}"
           echo "Experiments: $WANTED"
@@ -97,6 +100,7 @@ jobs:
       matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      PACKAGE: ${{ needs.plan.outputs.package }}
     steps:
       - uses: actions/checkout@v4
       - uses: r-lib/actions/setup-r@v2
@@ -117,7 +121,7 @@ jobs:
             any::patchwork
             any::ggh4x
             any::matrixStats
-            ${{ env.PACKAGE }}
+            ${{ needs.plan.outputs.package }}
       - name: Restore the data
         env:
           BVD_DATA_KEY: ${{ secrets.BVD_DATA_KEY }}
@@ -160,6 +164,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      PACKAGE: ${{ needs.plan.outputs.package }}
     steps:
       - uses: actions/checkout@v4
       - uses: r-lib/actions/setup-r@v2
@@ -180,7 +185,7 @@ jobs:
             any::patchwork
             any::ggh4x
             any::matrixStats
-            ${{ env.PACKAGE }}
+            ${{ needs.plan.outputs.package }}
       - name: Restore the data
         env:
           BVD_DATA_KEY: ${{ secrets.BVD_DATA_KEY }}

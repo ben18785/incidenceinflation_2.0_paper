@@ -1,0 +1,14 @@
+# The time from onset to death is supplied (gamma, mean 9.3 and sd 5.5 days),
+# a death is recorded after that time and then a delay which is estimated,
+# and the fraction of fatal cases counted on their day of death is estimated.
+# The joint model with no tail in the reporting delay, for the reports to 5
+# September, 15 September and 1 October, without and with a death which can
+# bring about the report of its case. Uses the branch of the model in which
+# this is built.
+package: ben18785/incidenceinflation_2.0@misdated
+joint_no_tail_misdated_0905
+joint_no_tail_misdated_0915
+joint_no_tail_misdated_1001
+joint_no_tail_misdated_triggered_0905
+joint_no_tail_misdated_triggered_0915
+joint_no_tail_misdated_triggered_1001

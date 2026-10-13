@@ -368,10 +368,10 @@ than those reported later, so the share shown as dead can start high, fall
 as other cases are reported, and rise again as the slower deaths are
 recorded.
 
-This cannot yet be combined with fatal cases dated by death
-(\S\ref{sec:dated}), and where it is used $\nu$ is held at zero: both let
-fatal cases be reported sooner than others, and the reports are unlikely to
-tell them apart.
+Where it is used $\nu$ is held at zero: both let fatal cases be reported
+sooner than others, and the reports are unlikely to tell them apart. It can
+be combined with fatal cases dated by death in the approximate form of
+\S\ref{sec:dated} (see \S\ref{sec:misdated}), but not in the exact form.
 
 \subsection{Deaths recorded for the day of death}\label{sec:dated}
 
@@ -620,6 +620,119 @@ number of such cases for each recent onset day is a further unobserved
 count. But the data say nothing about it, so estimates for recent
 days lean on the supplied $f_t$ and $h$. Fitting with a range of values for
 both is therefore part of any analysis which uses them.
+
+\subsection{A supplied time from onset to death, and the fraction dated by death estimated}\label{sec:misdated}
+
+In \S\ref{sec:dated} the fraction of fatal cases dated by death is supplied,
+because the reports cannot tell such a case from one dated by onset whose
+death happened to be recorded soon after onset: the delay $Y$ is free to put
+weight near zero. The fits of \S\ref{sec:triggered} do this, with a standard
+deviation of $Y$ about equal to its mean. But a death within a day or two of
+onset is rare. A review of Ebola virus disease gives a mean time from onset
+to death of 9.3 days (95\% interval 8.5 to 10.0) over 16 studies, and the
+standard deviations within those studies, pooled, are about 5.5 days; a
+gamma distribution with that mean and standard deviation gives a probability
+of 0.5\% to death within a day of onset and 3\% within two. In the reports,
+for onset days from 12 July to 5 September, 7.8\% of the deaths recorded by
+1 October were already shown one day after the day they are counted for, and
+14\% two days after. If the time from onset to death is held to what is
+known of it, those early deaths can only be of cases counted on their day of
+death, and their number says what fraction of fatal cases are.
+
+As an option, the time from onset to death is therefore supplied, and the
+fraction dated by death is estimated.
+
+\paragraph{The delay to a death being recorded.} A fatal case with onset on
+day $t$ dies on day $t+Z$, where $Z$ is a whole number of days with the
+distribution $h_z$ of \S\ref{sec:dated}: a gamma distribution with supplied
+mean and standard deviation (here 9.3 and 5.5 days), rounded up. The death
+is recorded after a further delay $U$ counted from the day of death, with a
+gamma distribution of mean $\mu^{d}$ and standard deviation $\sigma^{d}$.
+So $Y=Z+U$, and
+\[
+S^{D}(t\given t')=\sum_{z>t'-t}h_z+\sum_{z\le t'-t}h_z\,S^{U}(t+z\given t'),
+\]
+where $S^{U}(d\given t')$ is the probability that a death on day $d$ has not
+been recorded by day $t'$. The parameters $\phi=(\mu^{d},\sigma^{d})$ are
+now those of $U$, the delay from death, and it is these which are estimated
+and which change at unknown times; $h$ does not change. The day-of-week
+multipliers $\psi^{d}_w$ apply to the hazard of $Y$ as before. Nothing else
+in \eqref{eq:x} and \eqref{eq:y} changes: they use $S^{D}$ as it now is. A
+death cannot be shown on the day of onset, since $Z\ge1$.
+
+\paragraph{Fatal cases dated by death.} These are as in \S\ref{sec:dated},
+with two of the three inputs replaced. Their time from onset to death is the
+same $Z$ as for other fatal cases. And they first appear in a report, shown
+as dead, after the delay $U$ from their day of death, so that
+$S^{C,d}(t\given t')=S^{U}(t\given t')$ with the parameters of day $t$: the
+case enters the records when its death does. The delay from death to first
+appearing is then estimated with the delay to a death being recorded, of
+which it is the same thing.
+
+\paragraph{The fraction.} The fraction dated by death is a single value $f$
+for all onset days, with prior $f\sim\betad(1,1)$. Given how many of the
+fatal cases of each onset day are dated by death, \eqref{eq:dated} makes its
+conditional distribution a beta distribution, altered slightly by the cases
+of the start of the series ($G_0$, whose expected number is proportional to
+$f$); a value is drawn from a beta distribution matched to it and accepted
+with the Metropolis--Hastings probability. Which cases are dated by death is
+updated as in \S\ref{sec:fitting}.
+
+\paragraph{With a death which brings about the report.} The two can be used
+together in the approximate form. A fatal case recorded for day $t$ is dated
+by death with probability $\tilde{f}_t$, and is otherwise dated by onset and
+is one of those reported when their death is recorded with probability
+$\tau$. The probability that it has not been reported by $t'$ is
+\[
+\tilde{M}(t\given t')=(1-\tilde{f}_t)\,M(t\given t')+\tilde{f}_t\,S^{U}(t\given t'),
+\]
+which takes the place of $\tilde{S}^{C,F}$ in \eqref{eq:amix}. A fatal case
+new to the report of $t_j$ is shown as alive in it only if it is dated by
+onset, was reported through its own delay and its death has not been
+recorded, so the probability in \eqref{eq:xdated} that it is shown as dead
+becomes
+\[
+1-\frac{(1-\tilde{f}_t)\,\bigl[S^{C,F}(t\given t_{j-1})-S^{C,F}(t\given t_j)\bigr]\,S^{D}(t\given t_j)}
+       {\tilde{M}(t\given t_{j-1})-\tilde{M}(t\given t_j)}.
+\]
+With $\tau=0$ this is \eqref{eq:xdated}, and with $\tilde{f}_t=0$ it is the
+expression of \S\ref{sec:triggered}.
+
+\paragraph{Deaths recorded long after.} With the time to death held near
+nine days, a death first shown months after onset has to be explained by
+$U$, and a gamma distribution with a mean of a few days gives it a
+probability too small for the fit to begin (for example, a death added 122
+days after onset to an onset day in May). As an option, a share $\omega^{d}$
+of deaths are therefore recorded after an exponential delay from death with
+mean $m^{d}$ in place of the gamma one,
+\[
+S^{U}(d\given t')=(1-\omega^{d})\,S_{\mathrm{gamma}}(t'-d)+\omega^{d}\,e^{-(t'-d)/m^{d}},
+\]
+as for the reporting delay of cases in \S\ref{sec:early}. For this outbreak
+$\omega^{d}\sim\betad(1,9)$ and $m^{d}\sim$ gamma with mean 40 and sd 20
+days; both are the same for all onset days and are updated by a random walk
+given the paths. The priors on the centre of $(\mu^{d},\sigma^{d})$ are
+gamma with mean 4 and sd 4 days each.
+
+\paragraph{Onset days taken as fully reported.} For an onset day old enough
+that every case is taken to have been reported, the true cases with onset on
+it are the latest count less the cases dated by death which are in that
+count, plus $F^{d}(t)$. A case dated by death whose death has yet to be
+recorded is not in the count. In the approximate form the number in the
+count is not followed, and is taken to be at most the number of fatal cases
+which could have been shown as dead in the first report they were in.
+
+\paragraph{What this assumes.} The estimate of $f$ rests on the supplied
+distribution of the time from onset to death, and most of all on its
+standard deviation: a wider distribution allows more early deaths among
+cases dated by onset and so gives a smaller $f$. A rough fit to the share of
+deaths shown by each day after the day they are counted for gave $f$ of 0.40,
+0.33, 0.26 and 0.17 for standard deviations of 4.5, 5.5, 6.5 and 8 days.
+The review is mostly of Zaire ebolavirus; its two studies of Bundibugyo
+virus give means of 10.5 and 9.9 days. Times to death measured during an
+outbreak also miss the longest. The reports describe the curve as being by
+date of onset, so that some deaths are counted on the day of death is an
+inference from these early deaths, not something the reports say.
 
 \subsection{Wrong records}\label{sec:wrong}
 

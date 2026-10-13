@@ -229,7 +229,10 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
   if(!is.null(deaths_prior))
     deaths_settings <- utils::modifyList(
       deaths_settings, deaths_prior[names(deaths_prior) != "label"])
-  deaths_settings["dated_by_death"] <- list(options$dated_by_death)
+  # what the variant says of fatal cases dated by death, unless the
+  # settings given say something of their own
+  if(is.null(deaths_prior$dated_by_death))
+    deaths_settings["dated_by_death"] <- list(options$dated_by_death)
 
   time_start <- Sys.time()
   fit <- tryCatch(
@@ -317,6 +320,9 @@ bvd_deaths_monitored <- function(chains, variant, days_recent = 14) {
                   quantity = quantity)
   # only where a death can bring about the report of its case
   is_triggered <- "triggered" %in% names(parameters) && any(parameters$triggered > 0)
+  # only where some fatal cases are counted on their day of death
+  is_dated <- "dated_fraction" %in% names(parameters) &&
+    any(parameters$dated_fraction > 0)
   dplyr::bind_rows(
     f_days(cases, "cases_true", recent, sum, "Cases, latest 14 onset days"),
     f_days(cases, "cases_true", 1:day_last, sum, "Cases, all onset days"),
@@ -332,6 +338,12 @@ bvd_deaths_monitored <- function(chains, variant, days_recent = 14) {
     if(is_triggered)
       f_parameter(parameters, "triggered",
                   "Share of fatal cases reported when the death is recorded"),
+    if(is_dated)
+      f_parameter(parameters, "dated_fraction",
+                  "Fraction of fatal cases counted on their day of death"),
+    if(is_dated)
+      f_days(deaths, "dated_by_death", 1:day_last, sum,
+             "Fatal cases counted on their day of death, all days"),
     f_days(reporting, "mean", 1, mean, "Mean delay to case reported, first onset day"),
     f_days(reporting, "mean", day_last, mean,
            "Mean delay to case reported, latest onset day"),

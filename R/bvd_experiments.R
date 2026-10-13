@@ -169,7 +169,9 @@ bvd_experiment_summary <- function(chains) {
 
 #' Draws by onset day of the count an experiment estimates (cases for the
 #' model of cases alone, otherwise fatal cases) and of the delay to its
-#' being recorded
+#' being recorded. Where some fatal cases are counted on their day of death,
+#' the fatal cases are those the reports count for the day, to be compared
+#' with the reports.
 bvd_experiment_days <- function(fits) {
   single <- sub(",.*", "", fits[[1]]$model) %in% c("cases", "deaths")
   dates <- dplyr::select(fits[[1]]$analysis$dates, "time_onset", "date")
@@ -184,7 +186,9 @@ bvd_experiment_days <- function(fits) {
           by = c("iteration", "time_onset"))
     else
       dplyr::transmute(fit$deaths, .data$chain, .data$iteration, .data$time_onset,
-                       count = .data$deaths_true, .data$delay_mean, .data$delay_sd)
+                       count = if("deaths_recorded" %in% names(fit$deaths))
+                         .data$deaths_recorded else .data$deaths_true,
+                       .data$delay_mean, .data$delay_sd)
   }) %>%
     dplyr::left_join(dates, by = "time_onset") %>%
     dplyr::mutate(date = as.Date(.data$date))
@@ -211,7 +215,20 @@ bvd_experiment_totals <- function(chains, snapshots_all,
     fits <- groups[[experiment]]
     days <- bvd_experiment_days(fits)
     if(kind(fits) == "joint" && column == "cases_reported")
-      days <- purrr::map_dfr(fits, "cases") %>%
+      days <- purrr::map_dfr(fits, function(fit) {
+        # the cases the reports count for a day: those with onset on it, less
+        # its fatal cases counted on their day of death, plus those of
+        # earlier onset who died on it
+        moved <- if("deaths_recorded" %in% names(fit$deaths))
+          dplyr::transmute(fit$deaths, .data$iteration, .data$time_onset,
+                           moved = .data$deaths_recorded - .data$deaths_true)
+        else dplyr::tibble(iteration = integer(0), time_onset = integer(0),
+                           moved = numeric(0))
+        fit$cases %>%
+          dplyr::left_join(moved, by = c("iteration", "time_onset")) %>%
+          dplyr::mutate(cases_true = .data$cases_true +
+                          ifelse(is.na(.data$moved), 0, .data$moved))
+      }) %>%
         dplyr::transmute(.data$chain, .data$iteration, .data$time_onset,
                          count = .data$cases_true) %>%
         dplyr::left_join(dplyr::distinct(days, .data$time_onset, .data$date),

@@ -52,6 +52,31 @@ deaths_priors:
   # (uniform prior) are reported when their death is recorded, if not before.
   # Fatal cases are otherwise reported as others are.
   triggered: &triggered {triggered: {alpha: 1, beta: 1}, fatal_delay: false, label: "deaths bring reports"}
+  # the time from onset to death is supplied (gamma, mean 9.3 and sd 5.5
+  # days, from a review of Ebola virus disease), a death is recorded after
+  # that time and then a delay which is estimated, and a fraction of fatal
+  # cases (uniform prior) are counted on their day of death, not of onset.
+  # These are reported after the delay from death alone. A share of deaths
+  # are recorded after a long (exponential) delay from death, since deaths
+  # are still being added months after onset.
+  misdated: &misdated
+    onset_to_death: {mean: 9.3, sd: 5.5}
+    dated_by_death: {fraction: {alpha: 1, beta: 1, initial: 0.25}, n_moves: 1500}
+    initial_delay: {mean: 3, sd: 2.5}
+    delay_prior: {mean_mu: 4, mean_sigma: 4, sd_mu: 4, sd_sigma: 4}
+    recording_tail: {weight_alpha: 1, weight_beta: 9, mean_mu: 40, mean_sigma: 20}
+    fatal_delay: false
+    label: "counted on day of death"
+  # the same, and a death can also bring about the report of its case
+  misdated_triggered: &misdated_triggered
+    onset_to_death: {mean: 9.3, sd: 5.5}
+    dated_by_death: {fraction: {alpha: 1, beta: 1, initial: 0.25}, n_moves: 1500}
+    initial_delay: {mean: 3, sd: 2.5}
+    delay_prior: {mean_mu: 4, mean_sigma: 4, sd_mu: 4, sd_sigma: 4}
+    recording_tail: {weight_alpha: 1, weight_beta: 9, mean_mu: 40, mean_sigma: 20}
+    triggered: {alpha: 1, beta: 1}
+    fatal_delay: false
+    label: "counted on day of death, deaths bring reports"
 
 experiments:
   # reports to 5 September, deaths alone with no heavier tail
@@ -96,6 +121,16 @@ experiments:
   joint_no_tail_triggered_1001: {model: joint, date: 2026-10-01, tail: false, deaths_prior: *triggered, iterations: 3000}
   joint_no_tail_triggered_0801: {model: joint, date: 2026-08-01, tail: false, deaths_prior: *triggered, iterations: 3000}
   joint_no_tail_triggered_0820: {model: joint, date: 2026-08-20, tail: false, deaths_prior: *triggered, iterations: 3000}
+
+  # the time from onset to death supplied and the fraction of fatal cases
+  # counted on their day of death estimated, without and with a death which
+  # can bring about the report of its case
+  joint_no_tail_misdated_0905: {model: joint, tail: false, deaths_prior: *misdated, iterations: 1500}
+  joint_no_tail_misdated_0915: {model: joint, date: 2026-09-15, tail: false, deaths_prior: *misdated, iterations: 1500}
+  joint_no_tail_misdated_1001: {model: joint, date: 2026-10-01, tail: false, deaths_prior: *misdated, iterations: 1500}
+  joint_no_tail_misdated_triggered_0905: {model: joint, tail: false, deaths_prior: *misdated_triggered, iterations: 1500}
+  joint_no_tail_misdated_triggered_0915: {model: joint, date: 2026-09-15, tail: false, deaths_prior: *misdated_triggered, iterations: 1500}
+  joint_no_tail_misdated_triggered_1001: {model: joint, date: 2026-10-01, tail: false, deaths_prior: *misdated_triggered, iterations: 1500}
 
   # cases and deaths together
   joint_1001: {model: joint, date: 2026-10-01, iterations: 800}
