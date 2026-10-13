@@ -330,6 +330,49 @@ $[1-S^{C,F}(t\given t')]\,[1-S^{D}(t\given t')]$, the
 probability that both delays have elapsed.
 \end{itemize}
 
+\subsection{A death which brings about the report}\label{sec:triggered}
+
+The model above takes the two delays of a fatal case to be independent.
+Then, among the cases of an onset day which have been reported, the share
+shown as dead is the case fatality ratio times the probability that a death
+has been recorded, $c_t\,[1-S^{D}(t\given t')]$: it starts near zero and
+can only rise. The reports do not look like this. For onset days from 12
+July to 5 September, 43\% of the cases reported within a day of onset are
+already shown as dead; the share falls to 34\% at a week and then rises to
+46\% by two to three months. Many fatal cases, it seems, enter the records
+because they have died.
+
+As an option, a death can therefore bring about the report of its case. A
+proportion $\tau$ of fatal cases are reported when their death is recorded
+if they have not been reported by then: for such a case the time to being
+reported is $\min(X,Y)$, not $X$, and the case is shown as dead from $Y$.
+The other fatal cases are as before. A fatal case is not yet reported at
+$t'$ with probability
+\[
+M(t\given t')=S^{C,F}(t\given t')\,\bigl[(1-\tau)+\tau\,S^{D}(t\given t')\bigr],
+\]
+and this takes the place of $S^{C,F}$ in $p^{F}$ of \eqref{eq:a}. A fatal
+case new to the report of $t_j$ is shown as alive in it only if it was
+reported through its own delay and its death has not been recorded, which
+is so for both kinds of case. The probability in \eqref{eq:x} that it is
+shown as dead becomes
+\[
+1-\frac{\bigl[S^{C,F}(t\given t_{j-1})-S^{C,F}(t\given t_j)\bigr]\,S^{D}(t\given t_j)}
+       {M(t\given t_{j-1})-M(t\given t_j)}.
+\]
+Equation \eqref{eq:y} is unchanged, since a case shown as alive has yet to
+have its death recorded whichever kind it is. Nothing else in the model
+changes, and with $\tau=0$ it is the model above. The prior is
+$\tau\sim\betad(1,1)$. The cases reported early are now more often fatal
+than those reported later, so the share shown as dead can start high, fall
+as other cases are reported, and rise again as the slower deaths are
+recorded.
+
+This cannot yet be combined with fatal cases dated by death
+(\S\ref{sec:dated}), and where it is used $\nu$ is held at zero: both let
+fatal cases be reported sooner than others, and the reports are unlikely to
+tell them apart.
+
 \subsection{Deaths recorded for the day of death}\label{sec:dated}
 
 Some of those who died may be recorded for their day of death and not their
