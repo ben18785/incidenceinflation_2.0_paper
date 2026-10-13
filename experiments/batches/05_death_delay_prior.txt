@@ -1,0 +1,8 @@
+# Does the model of deaths behave when the delay to a death being recorded is
+# held near what the later reports show? Deaths given the October cases
+# (reports to 5 September) and the joint model with no tail; and deaths given
+# the October cases with the usual prior, reports to 15 September.
+fixed_october_cases_tight_delay_0905
+fixed_october_cases_tight_delay_drift_0905
+joint_no_tail_tight_delay_0905
+fixed_october_cases_0915
