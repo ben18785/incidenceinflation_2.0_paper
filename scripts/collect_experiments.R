@@ -10,7 +10,9 @@ snapshots <- build_bvd_snapshots(
   list.files("data/raw/Ebola CFR", pattern = "^Varified.*\\.csv$", full.names = TRUE))
 paths <- write_bvd_experiment_results(chains, snapshots, args[2])
 dir.create(file.path(args[2], "chains"), showWarnings = FALSE)
-for(fit in chains)
+for(fit in chains) {
+  fit$progress <- NULL
   saveRDS(fit, file.path(args[2], "chains", paste0(fit$experiment, "_", fit$chain, ".rds")),
           compress = "xz")
+}
 print(paths)

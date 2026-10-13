@@ -162,7 +162,8 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
                                  serial_parameters = list(mean = 15.3, sd = 9.3),
                                  progress_dir = "outputs/bvd_deaths/progress",
                                  tail = TRUE, tail_prior = NULL,
-                                 delay_settings = NULL, deaths_prior = NULL) {
+                                 delay_settings = NULL, deaths_prior = NULL,
+                                 resume = NULL, time_limit = NULL) {
   dir.create(progress_dir, recursive = TRUE, showWarnings = FALSE)
   set.seed(1000 * chain + as.integer(analysis$date_now) %% 1000)
   settings <- fit_settings()
@@ -232,8 +233,8 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
 
   time_start <- Sys.time()
   fit <- tryCatch(
-    incidenceinflation::mcmc_single(
-      niterations = niterations,
+    bvd_mcmc(
+      resume = resume, time_limit = time_limit, niterations = niterations,
       snapshot_with_Rt_index_df = snapshots %>%
         dplyr::select("time_onset", "time_reported", "cases_reported") %>%
         dplyr::mutate(Rt_index = 1),
@@ -264,14 +265,18 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
                  if(!is.null(uncorrected)) list(uncorrected = uncorrected))),
     error = function(e) list(error = conditionMessage(e)))
   out <- list(variant = variant, chain = chain, analysis = analysis,
-              niterations = niterations, starts = starts,
+              niterations = niterations, niterations_target = niterations,
+              starts = starts,
               minutes = as.numeric(Sys.time() - time_start, units = "mins"),
               max_erroneous = max_erroneous, serial_parameters = serial_parameters,
               error = fit$error)
   if(!is.null(fit$error))
     return(out)
-  warmup <- floor(niterations / 2)
-  kept <- unique(round(seq(warmup + 1, niterations, length.out = n_draws)))
+  out$niterations <- fit$iterations
+  out$minutes <- out$minutes + fit$minutes_before
+  out$progress <- bvd_progress(fit, out$minutes)
+  warmup <- floor(out$niterations / 2)
+  kept <- unique(round(seq(warmup + 1, out$niterations, length.out = n_draws)))
   for(name in intersect(names(fit), c(
     "cases", "Rt", "reporting_days", "overdispersion", "deaths", "deaths_parameters",
     "Rt_changepoints", "reporting_changepoints", "revisions", "reporting_effects",

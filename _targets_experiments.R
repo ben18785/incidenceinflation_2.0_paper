@@ -2,7 +2,9 @@
 # chain. On GitHub Actions each job makes one chain; on one machine
 #   targets::tar_make(script = "_targets_experiments.R", store = "_targets_experiments")
 # makes them all. BVD_EXPERIMENTS (names separated by commas) and BVD_CHAIN
-# choose which chains are in the pipeline.
+# choose which chains are in the pipeline. A chain stops after
+# BVD_TIME_LIMIT minutes if that is set, and is carried on from the file of
+# its progress in the folder BVD_RESUME_DIR (default states/) if there is one.
 
 library(targets)
 library(tarchetypes)
@@ -31,7 +33,9 @@ grid$settings <- experiments[grid$experiment]
 grid$chain_index <- grid$chain
 chains <- tar_map(
   values = grid[, c("id", "chain_index", "settings")], names = "id",
-  tar_target(chain, run_bvd_experiment_chain(settings, chain_index, bvd_snapshots)))
+  tar_target(chain, run_bvd_experiment_chain(
+    settings, chain_index, bvd_snapshots, resume = bvd_progress_saved(id),
+    time_limit = bvd_time_limit())))
 
 list(
   # the raw files are not tracked: scripts/decrypt_bvd_data.sh restores them

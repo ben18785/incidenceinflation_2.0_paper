@@ -119,7 +119,15 @@ Actions, one chain per job (`.github/workflows/experiments.yml`).
   run on one machine with
   `BVD_EXPERIMENTS=name1,name2 PIPELINE_WORKERS=8 Rscript -e 'targets::tar_make(script = "_targets_experiments.R", store = "_targets_experiments")'`.
 - The version of the model used is the `PACKAGE` line of the workflow.
-- A chain is stopped after six hours.
+- A chain which has not finished after 320 minutes stops and saves what is
+  needed to carry it on (GitHub ends a job at six hours). To carry the chains
+  of a run on, push a batch with the same experiments and a line
+  `continue: <id>`, where the id is the number in the address of that run.
+  Each chain then makes the draws it would have made had it not stopped. If
+  `iterations` in `experiments/experiments.yml` has been raised since, chains
+  which had finished are lengthened in the same way. What is saved for this
+  is kept by GitHub for 30 days. A line `time_limit: <minutes>` in a batch
+  changes the 320 minutes.
 
 The situation report tables are not tracked. `data/bvd_data.tar.gz.enc` holds
 them encrypted (with the cases from the model of cases alone which the

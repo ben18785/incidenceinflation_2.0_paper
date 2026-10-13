@@ -124,7 +124,8 @@ fit_bvd_single_chain <- function(analysis, snapshots_all, model, chain, niterati
                                  progress_dir = "outputs/bvd_deaths/progress",
                                  onset_from = NULL, tail_prior = NULL,
                                  family = "gamma", delay_settings = NULL,
-                                 starts = "spread") {
+                                 starts = "spread", resume = NULL,
+                                 time_limit = NULL) {
   stopifnot(model %in% c("cases", "deaths"))
   old_options <- options(incidenceinflation.delay_family = family)
   on.exit(options(old_options), add = TRUE)
@@ -212,8 +213,8 @@ fit_bvd_single_chain <- function(analysis, snapshots_all, model, chain, niterati
 
   time_start <- Sys.time()
   fit <- tryCatch(
-    incidenceinflation::mcmc_single(
-      niterations = niterations,
+    bvd_mcmc(
+      resume = resume, time_limit = time_limit, niterations = niterations,
       snapshot_with_Rt_index_df = dplyr::mutate(snapshots, Rt_index = 1),
       priors = priors,
       serial_parameters = serial_parameters,
@@ -240,12 +241,18 @@ fit_bvd_single_chain <- function(analysis, snapshots_all, model, chain, niterati
   out <- list(model = label, chain = chain, onset_from = onset_from, family = family,
               analysis = analysis,
               date_now = analysis$date_now, niterations = niterations,
+              niterations_target = niterations,
               minutes = as.numeric(Sys.time() - time_start, units = "mins"),
               max_erroneous = max_erroneous, error = fit$error)
   if(!is.null(fit$error))
     return(out)
-  warmup <- floor(niterations / 2)
-  kept <- unique(round(seq(warmup + 1, niterations, length.out = n_draws)))
+  # the chain may have stopped early, to be carried on: its draws so far are
+  # summarised as they stand
+  out$niterations <- fit$iterations
+  out$minutes <- out$minutes + fit$minutes_before
+  out$progress <- bvd_progress(fit, out$minutes)
+  warmup <- floor(out$niterations / 2)
+  kept <- unique(round(seq(warmup + 1, out$niterations, length.out = n_draws)))
   for(name in intersect(names(fit), c(
     "cases", "Rt", "reporting_days", "overdispersion", "Rt_changepoints",
     "reporting_changepoints", "revisions", "reporting_effects")))
@@ -284,7 +291,8 @@ bvd_cases_median <- function(chains, date_now) {
 fit_bvd_fixed_cases_chain <- function(analysis, cases_fixed, chain, niterations,
                                       n_draws = 300, delay_first_length = NULL,
                                       delay_settings = NULL, starts = "spread",
-                                      deaths_prior = NULL,
+                                      deaths_prior = NULL, resume = NULL,
+                                      time_limit = NULL,
                                       serial_parameters = list(mean = 15.3, sd = 9.3),
                                       progress_dir = "outputs/bvd_deaths/progress") {
   dir.create(progress_dir, recursive = TRUE, showWarnings = FALSE)
@@ -341,8 +349,8 @@ fit_bvd_fixed_cases_chain <- function(analysis, cases_fixed, chain, niterations,
 
   time_start <- Sys.time()
   fit <- tryCatch(
-    incidenceinflation::mcmc_single(
-      niterations = niterations,
+    bvd_mcmc(
+      resume = resume, time_limit = time_limit, niterations = niterations,
       snapshot_with_Rt_index_df = snapshots %>%
         dplyr::select("time_onset", "time_reported", "cases_reported") %>%
         dplyr::mutate(Rt_index = 1),
@@ -375,14 +383,17 @@ fit_bvd_fixed_cases_chain <- function(analysis, cases_fixed, chain, niterations,
   out <- list(model = label,
               delay_first_length = delay_first_length, variant = "none", chain = chain,
               analysis = analysis, date_now = analysis$date_now,
-              niterations = niterations,
+              niterations = niterations, niterations_target = niterations,
               minutes = as.numeric(Sys.time() - time_start, units = "mins"),
               max_erroneous = max_erroneous, cases_raised = cases_raised,
               cases_total = sum(cases_fixed$cases_true), error = fit$error)
   if(!is.null(fit$error))
     return(out)
-  warmup <- floor(niterations / 2)
-  kept <- unique(round(seq(warmup + 1, niterations, length.out = n_draws)))
+  out$niterations <- fit$iterations
+  out$minutes <- out$minutes + fit$minutes_before
+  out$progress <- bvd_progress(fit, out$minutes)
+  warmup <- floor(out$niterations / 2)
+  kept <- unique(round(seq(warmup + 1, out$niterations, length.out = n_draws)))
   for(name in intersect(names(fit), c(
     "cases", "Rt", "reporting_days", "overdispersion", "deaths", "deaths_parameters",
     "Rt_changepoints", "reporting_changepoints", "revisions", "reporting_effects")))

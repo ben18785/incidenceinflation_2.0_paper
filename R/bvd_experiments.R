@@ -68,10 +68,16 @@ bvd_cases_median_saved <- function(date_now, dir = "data/raw/bvd_derived") {
 
 #' Runs one chain of an experiment
 #'
+#' @param resume the 'progress' of an earlier run of the chain which stopped
+#'   early, to carry it on
+#' @param time_limit minutes after which the chain stops, to be carried on
 #' @return the fit of the chain, as fit_bvd_single_chain,
 #'   fit_bvd_fixed_cases_chain or fit_bvd_deaths_chain return it, with the
-#'   name of the experiment
-run_bvd_experiment_chain <- function(experiment, chain, snapshots) {
+#'   name of the experiment. 'niterations' is the iterations done so far,
+#'   'niterations_target' those asked for and 'progress' what is needed to
+#'   carry the chain on.
+run_bvd_experiment_chain <- function(experiment, chain, snapshots, resume = NULL,
+                                     time_limit = NULL) {
   analysis <- prepare_bvd_deaths_analysis(snapshots, experiment$date)
   fit <- if(experiment$model %in% c("cases", "deaths"))
     fit_bvd_single_chain(analysis, snapshots, experiment$model, chain,
@@ -80,7 +86,8 @@ run_bvd_experiment_chain <- function(experiment, chain, snapshots) {
                          onset_from = experiment$onset_from,
                          tail_prior = experiment$tail_prior,
                          delay_settings = experiment$delay,
-                         starts = experiment$starts)
+                         starts = experiment$starts,
+                         resume = resume, time_limit = time_limit)
   else if(experiment$model == "fixed cases") {
     # the cases are those of the fit of cases alone to the reports up to
     # 'cases_from' if given, for the onset days of this fit
@@ -92,14 +99,16 @@ run_bvd_experiment_chain <- function(experiment, chain, snapshots) {
                               chain, experiment$iterations,
                               delay_settings = experiment$delay,
                               starts = experiment$starts,
-                              deaths_prior = experiment$deaths_prior)
+                              deaths_prior = experiment$deaths_prior,
+                              resume = resume, time_limit = time_limit)
   } else {
     fit <- fit_bvd_deaths_chain(analysis, experiment$variant, chain,
                                 experiment$iterations, starts = experiment$starts,
                                 tail = experiment$tail,
                                 tail_prior = experiment$tail_prior,
                                 delay_settings = experiment$delay,
-                                deaths_prior = experiment$deaths_prior)
+                                deaths_prior = experiment$deaths_prior,
+                                resume = resume, time_limit = time_limit)
     fit$model <- paste0(
       "joint", ifelse(experiment$tail, "", ", no tail"),
       if(!is.null(experiment$tail_prior)) paste0(", ", experiment$tail_prior$label),
@@ -123,7 +132,10 @@ bvd_experiment_runs <- function(chains) {
   purrr::map_dfr(chains, function(fit) {
     dplyr::tibble(experiment = fit$experiment, model = fit$model,
                   date_now = fit$date_now, chain = fit$chain,
-                  niterations = fit$niterations, minutes = round(fit$minutes),
+                  niterations = fit$niterations,
+                  niterations_target = if(is.null(fit$niterations_target))
+                    fit$niterations else fit$niterations_target,
+                  minutes = round(fit$minutes),
                   error = if(is.null(fit$error)) "" else as.character(fit$error))
   })
 }
@@ -292,7 +304,9 @@ write_bvd_experiment_results <- function(chains, snapshots_all, dir) {
   utils::write.csv(runs, paths[1], row.names = FALSE)
   ran <- dplyr::filter(runs, .data$error == "") %>%
     dplyr::group_by(.data$experiment) %>%
-    dplyr::summarise(chains = dplyr::n(), iterations = dplyr::first(.data$niterations),
+    dplyr::summarise(chains = dplyr::n(),
+                     iterations = paste(unique(range(.data$niterations)), collapse = "-"),
+                     `asked for` = dplyr::first(.data$niterations_target),
                      minutes = round(mean(.data$minutes)), .groups = "drop")
   lines <- c("# Experiments", "", "## Chains run", "", bvd_markdown_table(ran))
   failed <- dplyr::filter(runs, .data$error != "")
@@ -339,4 +353,53 @@ write_bvd_experiment_results <- function(chains, snapshots_all, dir) {
   }
   writeLines(lines, paths[6])
   paths[file.exists(paths)]
+}
+
+#' Runs the sampler for a chain, or carries on a chain which stopped early
+#'
+#' @param resume the 'progress' of an earlier run of the same chain (all its
+#'   draws, the state of the sampler, the iterations done and the minutes
+#'   taken), or NULL to start the chain
+#' @param time_limit minutes after which sampling stops, or NULL
+#' @param niterations the iterations the chain is to have in all
+#' @param ... the other arguments of incidenceinflation::mcmc_single
+#' @return the draws of all iterations done so far, as mcmc_single returns
+#'   them, with 'state', 'iterations' (done so far) and 'minutes_before'
+#'   (taken by earlier runs)
+bvd_mcmc <- function(resume = NULL, time_limit = NULL, niterations, ...) {
+  done <- if(is.null(resume)) 0 else resume$iterations
+  minutes_before <- if(is.null(resume)) 0 else resume$minutes
+  if(done >= niterations)
+    return(c(resume$draws, list(state = resume$state, iterations = done,
+                                minutes_before = minutes_before)))
+  fit <- incidenceinflation::mcmc_single(
+    niterations = niterations - done, ..., return_state = TRUE,
+    resume_from = resume$state, time_limit = time_limit)
+  names_draws <- setdiff(names(fit), c("state", "iterations_done"))
+  draws <- lapply(stats::setNames(names_draws, names_draws), function(name)
+    dplyr::bind_rows(resume$draws[[name]], fit[[name]]))
+  c(draws, list(state = fit$state, iterations = fit$state$iterations,
+                minutes_before = minutes_before))
+}
+
+#' What is needed to carry a chain on: all its draws, the state of the
+#' sampler, the iterations done and the minutes taken
+bvd_progress <- function(fit, minutes) {
+  list(draws = fit[setdiff(names(fit), c("state", "iterations", "minutes_before"))],
+       state = fit$state, iterations = fit$iterations, minutes = minutes)
+}
+
+#' The minutes after which a chain stops to be carried on later, from the
+#' environment variable BVD_TIME_LIMIT (NULL if not set)
+bvd_time_limit <- function() {
+  value <- suppressWarnings(as.numeric(Sys.getenv("BVD_TIME_LIMIT", "")))
+  if(is.na(value)) NULL else value
+}
+
+#' The progress of an earlier run of a chain, if a file of it is in the
+#' folder named by the environment variable BVD_RESUME_DIR (default
+#' "states"), as scripts/run_experiment_chain.R saves it
+bvd_progress_saved <- function(id) {
+  path <- file.path(Sys.getenv("BVD_RESUME_DIR", "states"), paste0(id, ".rds"))
+  if(file.exists(path)) readRDS(path)$progress
 }

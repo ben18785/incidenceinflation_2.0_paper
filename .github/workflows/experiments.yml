@@ -1,7 +1,12 @@
 # Runs a batch of experiments, one chain per job, and writes the results to
 # the branch experiment-results. A batch is a file of experiments/batches/
 # which lists names of experiments; a push which changes the file starts it.
-# Each chain may run for up to six hours.
+# A chain which has not finished after about five and a half hours stops and
+# saves what is needed to carry it on. A batch whose file has a line
+#   continue: <id of an earlier run>
+# (or a run started by hand with that id) carries on the chains of that run
+# from where they stopped; with more iterations asked for in
+# experiments/experiments.yml, it lengthens chains which had finished.
 name: experiments
 run-name: ${{ inputs.batch || inputs.experiments || github.event.head_commit.message }}
 
@@ -14,12 +19,16 @@ on:
       experiments:
         description: "Or names of experiments, separated by commas"
         required: false
+      continue_from:
+        description: "The id of an earlier run whose chains are to be carried on (the number in its address)"
+        required: false
   push:
     paths:
       - experiments/batches/*.txt
 
 permissions:
   contents: write
+  actions: read
 
 env:
   # the version of the model the chains use
@@ -31,6 +40,8 @@ jobs:
     outputs:
       matrix: ${{ steps.plan.outputs.matrix }}
       batch: ${{ steps.plan.outputs.batch }}
+      continue_from: ${{ steps.plan.outputs.continue_from }}
+      time_limit: ${{ steps.plan.outputs.time_limit }}
       count: ${{ steps.plan.outputs.count }}
     steps:
       - uses: actions/checkout@v4
@@ -40,6 +51,7 @@ jobs:
         env:
           WANTED: ${{ inputs.experiments }}
           BATCH: ${{ inputs.batch }}
+          CONTINUE_FROM: ${{ inputs.continue_from }}
         run: |
           # the batches: the one asked for, or those whose files the push changed
           if [ -n "$BATCH" ]; then
@@ -48,10 +60,17 @@ jobs:
             files=$(git diff --name-only --diff-filter=AM HEAD^ HEAD -- 'experiments/batches/*.txt')
           fi
           if [ -z "$WANTED" ]; then
-            WANTED=$(cat $files | grep -v '^[[:space:]]*#' | grep -v '^[[:space:]]*$' | paste -sd, -)
+            if [ -z "$CONTINUE_FROM" ]; then
+              CONTINUE_FROM=$(cat $files | sed -n 's/^continue:[[:space:]]*\([0-9]*\).*/\1/p' | head -n 1)
+            fi
+            TIME_LIMIT=$(cat $files | sed -n 's/^time_limit:[[:space:]]*\([0-9.]*\).*/\1/p' | head -n 1)
+            WANTED=$(cat $files | grep -v '^[[:space:]]*#' | grep -v '^continue:' | grep -v '^time_limit:' | grep -v '^[[:space:]]*$' | paste -sd, -)
             BATCH=$(for file in $files; do basename "$file" .txt; done | paste -sd+ -)
           fi
           echo "batch=${BATCH:-chosen}" >> "$GITHUB_OUTPUT"
+          echo "continue_from=$CONTINUE_FROM" >> "$GITHUB_OUTPUT"
+          echo "time_limit=${TIME_LIMIT:-320}" >> "$GITHUB_OUTPUT"
+          echo "Carrying on run: ${CONTINUE_FROM:-none}"
           echo "Batch: ${BATCH:-chosen}"
           echo "Experiments: $WANTED"
           matrix=$(yq -o=json 'explode(.)' experiments/experiments.yml | jq -c --arg wanted "$WANTED" '
@@ -106,14 +125,33 @@ jobs:
           printf '%s' "$BVD_DATA_KEY" > "$RUNNER_TEMP/bvd_data_key"
           BVD_DATA_KEY_FILE="$RUNNER_TEMP/bvd_data_key" scripts/decrypt_bvd_data.sh
           rm "$RUNNER_TEMP/bvd_data_key"
+      - name: Fetch the chain to carry on
+        if: needs.plan.outputs.continue_from != ''
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: state-${{ matrix.experiment }}-${{ matrix.chain }}
+          path: states
+          run-id: ${{ needs.plan.outputs.continue_from }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Run the chain
+        env:
+          # minutes after which the chain stops, to be carried on by a later
+          # run: 320 unless the batch has a line 'time_limit: <minutes>'
+          BVD_TIME_LIMIT: ${{ needs.plan.outputs.time_limit }}
         run: |
+          ls -l states 2>/dev/null || echo "The chain starts afresh."
           (while sleep 600; do tail -qn 1 outputs/bvd_deaths/progress/*.txt 2>/dev/null; done) &
           Rscript scripts/run_experiment_chain.R "${{ matrix.experiment }}" "${{ matrix.chain }}"
       - uses: actions/upload-artifact@v4
         with:
           name: chain-${{ matrix.experiment }}-${{ matrix.chain }}
           path: chains/*.rds
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: state-${{ matrix.experiment }}-${{ matrix.chain }}
+          path: states/*.rds
           retention-days: 30
 
   collect:
