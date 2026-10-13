@@ -1,0 +1,13 @@
+# Does letting a death bring about the report of its case stop the deaths
+# overshooting? A share of fatal cases are reported when their death is
+# recorded, if not before, and fatal cases are otherwise reported as others
+# are. Deaths given the October cases (reports to 5 and 15 September, with
+# change points and with drift), deaths given the cases at 1 October, and the
+# joint model with no tail at each date.
+fixed_october_cases_triggered_0905
+fixed_october_cases_triggered_drift_0905
+fixed_october_cases_triggered_0915
+fixed_cases_triggered_1001
+joint_no_tail_triggered_0905
+joint_no_tail_triggered_0915
+joint_no_tail_triggered_1001

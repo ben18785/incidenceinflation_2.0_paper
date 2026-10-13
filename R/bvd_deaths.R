@@ -315,6 +315,8 @@ bvd_deaths_monitored <- function(chains, variant, days_recent = 14) {
   f_parameter <- function(df, column, quantity)
     dplyr::tibble(chain = df$chain, iteration = df$iteration, value = df[[column]],
                   quantity = quantity)
+  # only where a death can bring about the report of its case
+  is_triggered <- "triggered" %in% names(parameters) && any(parameters$triggered > 0)
   dplyr::bind_rows(
     f_days(cases, "cases_true", recent, sum, "Cases, latest 14 onset days"),
     f_days(cases, "cases_true", 1:day_last, sum, "Cases, all onset days"),
@@ -325,6 +327,11 @@ bvd_deaths_monitored <- function(chains, variant, days_recent = 14) {
     f_days(deaths, "delay_mean", 1, mean, "Mean delay to death recorded, first onset day"),
     f_days(deaths, "delay_mean", day_last, mean,
            "Mean delay to death recorded, latest onset day"),
+    f_days(deaths, "delay_sd", day_last, mean,
+           "Sd of delay to death recorded, latest onset day"),
+    if(is_triggered)
+      f_parameter(parameters, "triggered",
+                  "Share of fatal cases reported when the death is recorded"),
     f_days(reporting, "mean", 1, mean, "Mean delay to case reported, first onset day"),
     f_days(reporting, "mean", day_last, mean,
            "Mean delay to case reported, latest onset day"),

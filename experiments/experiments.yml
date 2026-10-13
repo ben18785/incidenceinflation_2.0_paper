@@ -48,6 +48,10 @@ deaths_priors:
   # the delay to a death being recorded held near what a simple fit to the
   # delays seen in the reports to 1 October gives (mean 14.6, sd 13.5 days)
   tight_delay: &tight_delay {delay_prior: {mean_mu: 14, mean_sigma: 3, sd_mu: 12, sd_sigma: 3}, label: "tight death delay"}
+  # a death can bring about the report of its case: a share of fatal cases
+  # (uniform prior) are reported when their death is recorded, if not before.
+  # Fatal cases are otherwise reported as others are.
+  triggered: &triggered {triggered: {alpha: 1, beta: 1}, fatal_delay: false, label: "deaths bring reports"}
 
 experiments:
   # reports to 5 September, deaths alone with no heavier tail
@@ -80,6 +84,15 @@ experiments:
   fixed_october_cases_tight_delay_0905: {model: fixed cases, cases_from: 2026-10-01, deaths_prior: *tight_delay}
   fixed_october_cases_tight_delay_drift_0905: {model: fixed cases, cases_from: 2026-10-01, deaths_prior: *tight_delay, delay: *drift}
   joint_no_tail_tight_delay_0905: {model: joint, tail: false, deaths_prior: *tight_delay, iterations: 800}
+
+  # a death can bring about the report of its case
+  fixed_october_cases_triggered_0905: {model: fixed cases, cases_from: 2026-10-01, deaths_prior: *triggered}
+  fixed_october_cases_triggered_drift_0905: {model: fixed cases, cases_from: 2026-10-01, deaths_prior: *triggered, delay: *drift}
+  fixed_october_cases_triggered_0915: {model: fixed cases, date: 2026-09-15, cases_from: 2026-10-01, deaths_prior: *triggered}
+  fixed_cases_triggered_1001: {model: fixed cases, date: 2026-10-01, deaths_prior: *triggered}
+  joint_no_tail_triggered_0905: {model: joint, tail: false, deaths_prior: *triggered, iterations: 800}
+  joint_no_tail_triggered_0915: {model: joint, date: 2026-09-15, tail: false, deaths_prior: *triggered, iterations: 800}
+  joint_no_tail_triggered_1001: {model: joint, date: 2026-10-01, tail: false, deaths_prior: *triggered, iterations: 800}
 
   # cases and deaths together
   joint_1001: {model: joint, date: 2026-10-01, iterations: 800}
