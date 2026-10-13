@@ -1,0 +1,3 @@
+"experiment","model","date_now","chain","niterations","niterations_target","minutes","error"
+"check_fixed","fixed cases, drift",2026-09-05,1,6,10,1,""
+"check_fixed","fixed cases, drift",2026-09-05,2,4,10,1,""

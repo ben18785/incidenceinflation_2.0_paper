@@ -1,0 +1,17 @@
+"experiment","model","date_now","n_chains","quantity","median","lo","hi","rhat","chain_1","chain_2"
+"check_fixed","fixed cases, drift",2026-09-05,2,"Case fatality ratio, first onset day",0.391674532155818,0.347438963509254,0.396605255386749,NA,0.35664557649415,0.394676567767329
+"check_fixed","fixed cases, drift",2026-09-05,2,"Case fatality ratio, latest onset day",0.456513624347488,0.45432290162697,0.492182048327056,NA,0.465363601171364,0.456347125003743
+"check_fixed","fixed cases, drift",2026-09-05,2,"Changes in the case fatality ratio",1,1,1.8,NA,1,1
+"check_fixed","fixed cases, drift",2026-09-05,2,"Changes in the delay to death recorded",15,15,15,NA,15,15
+"check_fixed","fixed cases, drift",2026-09-05,2,"Fatal cases, all onset days",3282,3245.2,3395.2,NA,3352,3261.5
+"check_fixed","fixed cases, drift",2026-09-05,2,"Fatal cases, latest 14 onset days",555,529.8,565.6,NA,537,562
+"check_fixed","fixed cases, drift",2026-09-05,2,"Mean delay to case reported, first onset day",8.42471331422731,7.14056884567273,8.80594949383818,NA,8.50099765756482,7.33541408289327
+"check_fixed","fixed cases, drift",2026-09-05,2,"Mean delay to case reported, latest onset day",8.50099765756482,7.14056884567273,9.15033561236091,NA,8.88218745290652,7.33541408289327
+"check_fixed","fixed cases, drift",2026-09-05,2,"Mean delay to death recorded, first onset day",14.5922454910896,8.9361171601613,18.609044495505,NA,18.609044495505,9.42846481648659
+"check_fixed","fixed cases, drift",2026-09-05,2,"Mean delay to death recorded, latest onset day",12.5230514744062,9.47343437950573,14.7078871976463,NA,14.576772971419,9.58840416835126
+"check_fixed","fixed cases, drift",2026-09-05,2,"Mean of the long reporting delay (days)",73.1050921441657,67.0041052515831,266.141845323747,NA,89.7439993869718,68.3377427322535
+"check_fixed","fixed cases, drift",2026-09-05,2,"Removal of wrong records per report (rho)",0.0854805508304406,0.0811685899521918,0.0984648708450624,NA,0.095026371580694,0.0847194629846455
+"check_fixed","fixed cases, drift",2026-09-05,2,"Reporting delay of fatal cases relative to others",0.912457446968402,0.841844868586726,0.98249148939368,NA,0.912457446968402,0.85325830075779
+"check_fixed","fixed cases, drift",2026-09-05,2,"Share of cases reported with a long delay",0.245599035542181,0.213503330527287,0.463535233288689,NA,0.228817973993843,0.430459501915345
+"check_fixed","fixed cases, drift",2026-09-05,2,"Share of wrong records shown as dead",0.442864534126021,0.376494236618001,0.5142038895466,NA,0.377847579814931,0.48758741631358
+"check_fixed","fixed cases, drift",2026-09-05,2,"Wrong records per case and report (eta)",0.0464844511181929,0.0455791752785301,0.0486826882759841,NA,0.0464844511181929,0.0475290377826818
