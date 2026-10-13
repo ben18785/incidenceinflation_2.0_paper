@@ -1,0 +1,4 @@
+# A check that the chains of an earlier run are carried on from where they
+# stopped.
+continue: 38374330740
+check_fixed
