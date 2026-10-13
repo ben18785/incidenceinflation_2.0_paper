@@ -32,6 +32,11 @@ n_chains_bvd_forms <- as.integer(Sys.getenv("PIPELINE_CHAINS_BVD_FORMS", "4"))
 n_iterations_bvd_forms <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_BVD_FORMS", "1500"))
 n_iterations_bvd_trials <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_BVD_TRIALS", "800"))
 n_iterations_deaths <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_DEATHS", "300"))
+# the same with the fraction of fatal cases counted on their day of death
+# estimated
+n_replicates_misdated <- as.integer(Sys.getenv("PIPELINE_REPLICATES_MISDATED", "3"))
+n_chains_misdated <- as.integer(Sys.getenv("PIPELINE_CHAINS_MISDATED", "3"))
+n_iterations_misdated <- as.integer(Sys.getenv("PIPELINE_ITERATIONS_MISDATED", "400"))
 
 list(
   # ---- simulated data -------------------------------------------------------
@@ -647,6 +652,39 @@ list(
   tar_target(figure_deaths_sim_pages,
              write_deaths_simulation_pages(deaths_sim_dataset, deaths_sim_fit),
              format = "file", deployment = "main"),
+
+  # ---- cases and deaths: the time from onset to death supplied and the -------
+  # fraction of fatal cases counted on their day of death estimated, on
+  # simulated data. Progress of each chain is written to
+  # outputs/misdated_simulation/progress/
+  tar_target(misdated_sim_grid,
+             tidyr::expand_grid(scenario = misdated_scenarios()$scenario,
+                                replicate = seq_len(n_replicates_misdated))),
+  tar_target(misdated_sim_dataset,
+             simulate_misdated_dataset(misdated_sim_grid$scenario,
+                                       misdated_sim_grid$replicate),
+             pattern = map(misdated_sim_grid), iteration = "list"),
+  tar_target(misdated_sim_chain, seq_len(n_chains_misdated)),
+  tar_target(misdated_sim_fit,
+             fit_misdated_chain(misdated_sim_dataset, misdated_sim_chain,
+                                n_iterations_misdated),
+             pattern = cross(misdated_sim_dataset, misdated_sim_chain),
+             iteration = "list"),
+  tar_target(misdated_sim_summary,
+             purrr::map_dfr(misdated_sim_dataset, summarise_misdated_fits,
+                            fits = misdated_sim_fit),
+             deployment = "main"),
+  tar_target(file_misdated_sim, {
+    utils::write.csv(misdated_sim_summary, "outputs/misdated_simulation_by_dataset.csv",
+                     row.names = FALSE)
+    utils::write.csv(summarise_misdated_scenarios(misdated_sim_summary),
+                     "outputs/misdated_simulation_summary.csv", row.names = FALSE)
+    utils::write.csv(misdated_scenarios(), "outputs/misdated_simulation_scenarios.csv",
+                     row.names = FALSE)
+    c("outputs/misdated_simulation_by_dataset.csv",
+      "outputs/misdated_simulation_summary.csv",
+      "outputs/misdated_simulation_scenarios.csv")
+  }, format = "file", deployment = "main"),
 
   # ---- Bundibugyo virus disease: cases and deaths ------------------------------
   # the joint model of cases and deaths fitted to all reports up to the latest,
