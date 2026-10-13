@@ -1,0 +1,10 @@
+# Cases and deaths together with no heavier tail of the delay to a case
+# being reported, at each date, with change points and with a drifting delay
+# to a death being recorded; and with the tail as it was, at 1 October.
+joint_no_tail_0905
+joint_no_tail_0915
+joint_no_tail_1001
+joint_no_tail_drift_0905
+joint_no_tail_drift_0915
+joint_no_tail_drift_1001
+joint_1001

@@ -19,6 +19,9 @@
 #               (tail_weight_alpha, tail_weight_beta) and the mean and sd of
 #               the prior on its mean in days (tail_mean_mu, tail_mean_sigma),
 #               with a label (cases and deaths only)
+#   deaths_prior  settings of the model of deaths which replace the usual ones,
+#               such as delay_prior (the prior on the mean and sd of the delay
+#               to a death being recorded), with a label (fixed cases and joint)
 #   cases_from  fixed cases only: the cases are those of the fit of cases
 #               alone to the reports up to this date (default: 'date')
 #   starts      near (the default): chains start near one another, at values
@@ -40,6 +43,11 @@ delays:
 
 tails:
   tight: &tight_tail {tail_weight_alpha: 4, tail_weight_beta: 46, tail_mean_mu: 40, tail_mean_sigma: 5, label: "tight tail"}
+
+deaths_priors:
+  # the delay to a death being recorded held near what a simple fit to the
+  # delays seen in the reports to 1 October gives (mean 14.6, sd 13.5 days)
+  tight_delay: &tight_delay {delay_prior: {mean_mu: 14, mean_sigma: 3, sd_mu: 12, sd_sigma: 3}, label: "tight death delay"}
 
 experiments:
   # reports to 5 September, deaths alone with no heavier tail
@@ -66,20 +74,27 @@ experiments:
   cases_no_tail_0915: {model: cases, date: 2026-09-15, tail: false, iterations: 1000}
   cases_tight_tail_0915: {model: cases, date: 2026-09-15, tail_prior: *tight_tail, iterations: 1000}
 
+  # deaths given the October cases, at later dates and with the delay to a
+  # death being recorded held near what the later reports show
+  fixed_october_cases_0915: {model: fixed cases, date: 2026-09-15, cases_from: 2026-10-01}
+  fixed_october_cases_tight_delay_0905: {model: fixed cases, cases_from: 2026-10-01, deaths_prior: *tight_delay}
+  fixed_october_cases_tight_delay_drift_0905: {model: fixed cases, cases_from: 2026-10-01, deaths_prior: *tight_delay, delay: *drift}
+  joint_no_tail_tight_delay_0905: {model: joint, tail: false, deaths_prior: *tight_delay, iterations: 800}
+
   # cases and deaths together
-  joint_1001: {model: joint, date: 2026-10-01}
-  joint_no_tail_0905: {model: joint, tail: false}
-  joint_no_tail_0915: {model: joint, date: 2026-09-15, tail: false}
-  joint_no_tail_1001: {model: joint, date: 2026-10-01, tail: false}
-  joint_tight_tail_0905: {model: joint, tail_prior: *tight_tail}
-  joint_tight_tail_0915: {model: joint, date: 2026-09-15, tail_prior: *tight_tail}
-  joint_tight_tail_1001: {model: joint, date: 2026-10-01, tail_prior: *tight_tail}
-  joint_no_tail_drift_0905: {model: joint, tail: false, delay: *drift}
-  joint_no_tail_drift_0915: {model: joint, date: 2026-09-15, tail: false, delay: *drift}
-  joint_no_tail_drift_1001: {model: joint, date: 2026-10-01, tail: false, delay: *drift}
-  joint_tight_tail_drift_0905: {model: joint, tail_prior: *tight_tail, delay: *drift}
-  joint_tight_tail_drift_0915: {model: joint, date: 2026-09-15, tail_prior: *tight_tail, delay: *drift}
-  joint_tight_tail_drift_1001: {model: joint, date: 2026-10-01, tail_prior: *tight_tail, delay: *drift}
+  joint_1001: {model: joint, date: 2026-10-01, iterations: 800}
+  joint_no_tail_0905: {model: joint, tail: false, iterations: 800}
+  joint_no_tail_0915: {model: joint, date: 2026-09-15, tail: false, iterations: 800}
+  joint_no_tail_1001: {model: joint, date: 2026-10-01, tail: false, iterations: 800}
+  joint_tight_tail_0905: {model: joint, tail_prior: *tight_tail, iterations: 800}
+  joint_tight_tail_0915: {model: joint, date: 2026-09-15, tail_prior: *tight_tail, iterations: 800}
+  joint_tight_tail_1001: {model: joint, date: 2026-10-01, tail_prior: *tight_tail, iterations: 800}
+  joint_no_tail_drift_0905: {model: joint, tail: false, delay: *drift, iterations: 800}
+  joint_no_tail_drift_0915: {model: joint, date: 2026-09-15, tail: false, delay: *drift, iterations: 800}
+  joint_no_tail_drift_1001: {model: joint, date: 2026-10-01, tail: false, delay: *drift, iterations: 800}
+  joint_tight_tail_drift_0905: {model: joint, tail_prior: *tight_tail, delay: *drift, iterations: 800}
+  joint_tight_tail_drift_0915: {model: joint, date: 2026-09-15, tail_prior: *tight_tail, delay: *drift, iterations: 800}
+  joint_tight_tail_drift_1001: {model: joint, date: 2026-10-01, tail_prior: *tight_tail, delay: *drift, iterations: 800}
 
   # the same from starting values spread far apart
   fixed_spread_0905: {model: fixed cases, starts: spread}

@@ -91,17 +91,20 @@ run_bvd_experiment_chain <- function(experiment, chain, snapshots) {
     fit_bvd_fixed_cases_chain(analysis, cases_fixed,
                               chain, experiment$iterations,
                               delay_settings = experiment$delay,
-                              starts = experiment$starts)
+                              starts = experiment$starts,
+                              deaths_prior = experiment$deaths_prior)
   } else {
     fit <- fit_bvd_deaths_chain(analysis, experiment$variant, chain,
                                 experiment$iterations, starts = experiment$starts,
                                 tail = experiment$tail,
                                 tail_prior = experiment$tail_prior,
-                                delay_settings = experiment$delay)
+                                delay_settings = experiment$delay,
+                                deaths_prior = experiment$deaths_prior)
     fit$model <- paste0(
       "joint", ifelse(experiment$tail, "", ", no tail"),
       if(!is.null(experiment$tail_prior)) paste0(", ", experiment$tail_prior$label),
-      if(!is.null(experiment$delay)) paste0(", ", experiment$delay$label))
+      if(!is.null(experiment$delay)) paste0(", ", experiment$delay$label),
+      if(!is.null(experiment$deaths_prior)) paste0(", ", experiment$deaths_prior$label))
     fit$date_now <- analysis$date_now
     fit
   }

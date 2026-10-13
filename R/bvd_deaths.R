@@ -162,7 +162,7 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
                                  serial_parameters = list(mean = 15.3, sd = 9.3),
                                  progress_dir = "outputs/bvd_deaths/progress",
                                  tail = TRUE, tail_prior = NULL,
-                                 delay_settings = NULL) {
+                                 delay_settings = NULL, deaths_prior = NULL) {
   dir.create(progress_dir, recursive = TRUE, showWarnings = FALSE)
   set.seed(1000 * chain + as.integer(analysis$date_now) %% 1000)
   settings <- fit_settings()
@@ -225,6 +225,9 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
     delay_changepoints = utils::modifyList(
       bvd_delay_settings(),
       bvd_delay_settings_given(delay_settings, dplyr::n_distinct(snapshots$time_onset))))
+  if(!is.null(deaths_prior))
+    deaths_settings <- utils::modifyList(
+      deaths_settings, deaths_prior[names(deaths_prior) != "label"])
   deaths_settings["dated_by_death"] <- list(options$dated_by_death)
 
   time_start <- Sys.time()

@@ -284,6 +284,7 @@ bvd_cases_median <- function(chains, date_now) {
 fit_bvd_fixed_cases_chain <- function(analysis, cases_fixed, chain, niterations,
                                       n_draws = 300, delay_first_length = NULL,
                                       delay_settings = NULL, starts = "spread",
+                                      deaths_prior = NULL,
                                       serial_parameters = list(mean = 15.3, sd = 9.3),
                                       progress_dir = "outputs/bvd_deaths/progress") {
   dir.create(progress_dir, recursive = TRUE, showWarnings = FALSE)
@@ -328,9 +329,15 @@ fit_bvd_fixed_cases_chain <- function(analysis, cases_fixed, chain, niterations,
       c(bvd_delay_settings(),
         if(!is.null(delay_first_length)) list(first_length = delay_first_length)),
       bvd_delay_settings_given(delay_settings, dplyr::n_distinct(snapshots$time_onset))))
+  # settings of the model of deaths which replace the package's (such as
+  # 'delay_prior', the prior on the delay to a death being recorded)
+  if(!is.null(deaths_prior))
+    deaths_settings <- utils::modifyList(
+      deaths_settings, deaths_prior[names(deaths_prior) != "label"])
   is_rule <- !is.null(delay_first_length)
   label <- paste0("fixed cases", ifelse(is_rule, ", delay rule", ""),
-                  if(!is.null(delay_settings)) paste0(", ", delay_settings$label))
+                  if(!is.null(delay_settings)) paste0(", ", delay_settings$label),
+                  if(!is.null(deaths_prior)) paste0(", ", deaths_prior$label))
 
   time_start <- Sys.time()
   fit <- tryCatch(
