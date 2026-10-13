@@ -1,0 +1,31 @@
+"experiment","model","date_now","count","onset_days","median","lo","hi","rhat","recorded_01Aug","recorded_15Sep","recorded_01Oct","recorded_20Aug","recorded_05Sep"
+"joint_no_tail_triggered_0801","joint, no tail, deaths bring reports",2026-08-01,"cases","all",3493,3369,3613.05,1.00252379947554,2875,3388,3409,NA,NA
+"joint_no_tail_triggered_0801","joint, no tail, deaths bring reports",2026-08-01,"cases","latest 28",1642,1522,1761,1.00211816807235,1037,1511,1521,NA,NA
+"joint_no_tail_triggered_0801","joint, no tail, deaths bring reports",2026-08-01,"cases","latest 14",922,809.95,1022,1.00149317191167,403,831,838,NA,NA
+"joint_no_tail_triggered_0801","joint, no tail, deaths bring reports",2026-08-01,"deaths","all",1314.5,1214.95,1670.05,1.99362615599974,956,1497,1516,NA,NA
+"joint_no_tail_triggered_0801","joint, no tail, deaths bring reports",2026-08-01,"deaths","latest 28",628,556,796.15,1.55219596880429,348,694,703,NA,NA
+"joint_no_tail_triggered_0801","joint, no tail, deaths bring reports",2026-08-01,"deaths","latest 14",344.5,285,447,1.3767134995884,126,391,397,NA,NA
+"joint_no_tail_triggered_0820","joint, no tail, deaths bring reports",2026-08-20,"cases","all",4570,4494,4659.05,1.00323331286468,NA,4543,4573,4099,NA
+"joint_no_tail_triggered_0820","joint, no tail, deaths bring reports",2026-08-20,"cases","latest 28",1673,1596,1762.05,1.00303266387604,NA,1668,1682,1201,NA
+"joint_no_tail_triggered_0820","joint, no tail, deaths bring reports",2026-08-20,"cases","latest 14",901.5,832.95,980.05,1.0031586019022,NA,873,881,456,NA
+"joint_no_tail_triggered_0820","joint, no tail, deaths bring reports",2026-08-20,"deaths","all",1980,1855.95,2131,1.10329437603859,NA,2021,2050,1488,NA
+"joint_no_tail_triggered_0820","joint, no tail, deaths bring reports",2026-08-20,"deaths","latest 28",717,652,793.05,1.05992531228955,NA,762,775,411,NA
+"joint_no_tail_triggered_0820","joint, no tail, deaths bring reports",2026-08-20,"deaths","latest 14",381,337,436,1.03436092025899,NA,385,393,146,NA
+"joint_no_tail_triggered_0905","joint, no tail, deaths bring reports",2026-09-05,"cases","all",5551,5478.95,5618.05,1.00331147901551,NA,5391,5504,NA,5079
+"joint_no_tail_triggered_0905","joint, no tail, deaths bring reports",2026-09-05,"cases","latest 28",1724,1652,1792.05,1.00364103713348,NA,1608,1699,NA,1252
+"joint_no_tail_triggered_0905","joint, no tail, deaths bring reports",2026-09-05,"cases","latest 14",874,812,939,1.00249569194206,NA,748,830,NA,430
+"joint_no_tail_triggered_0905","joint, no tail, deaths bring reports",2026-09-05,"deaths","all",2844,2680.95,3078.1,1.67566050388878,NA,2407,2502,NA,2111
+"joint_no_tail_triggered_0905","joint, no tail, deaths bring reports",2026-09-05,"deaths","latest 28",857.5,765.95,953,1.32536057809682,NA,720,794,NA,499
+"joint_no_tail_triggered_0905","joint, no tail, deaths bring reports",2026-09-05,"deaths","latest 14",441,369,499,1.22866198396286,NA,344,407,NA,169
+"joint_no_tail_triggered_0915","joint, no tail, deaths bring reports",2026-09-15,"cases","all",6097,6027,6171.1,1.00211789513596,NA,5619,6044,NA,NA
+"joint_no_tail_triggered_0915","joint, no tail, deaths bring reports",2026-09-15,"cases","latest 28",1677,1607,1753,1.00207323546418,NA,1199,1599,NA,NA
+"joint_no_tail_triggered_0915","joint, no tail, deaths bring reports",2026-09-15,"cases","latest 14",860,795,928.1,1.00153529417108,NA,410,761,NA,NA
+"joint_no_tail_triggered_0915","joint, no tail, deaths bring reports",2026-09-15,"deaths","all",3078.5,2967,3242.05,1.67138210585921,NA,2482,2711,NA,NA
+"joint_no_tail_triggered_0915","joint, no tail, deaths bring reports",2026-09-15,"deaths","latest 28",856,799,916,1.12102761223539,NA,523,726,NA,NA
+"joint_no_tail_triggered_0915","joint, no tail, deaths bring reports",2026-09-15,"deaths","latest 14",439,394,486,1.08432723271904,NA,154,315,NA,NA
+"joint_no_tail_triggered_1001","joint, no tail, deaths bring reports",2026-10-01,"cases","all",6841,6756.9,6911,1.01451454243657,NA,NA,6428,NA,NA
+"joint_no_tail_triggered_1001","joint, no tail, deaths bring reports",2026-10-01,"cases","latest 28",1455,1372.9,1525,1.01368736468207,NA,NA,1043,NA,NA
+"joint_no_tail_triggered_1001","joint, no tail, deaths bring reports",2026-10-01,"cases","latest 14",677,608,740,1.00867482450163,NA,NA,305,NA,NA
+"joint_no_tail_triggered_1001","joint, no tail, deaths bring reports",2026-10-01,"deaths","all",3191.5,3098,3266,1.12205390981122,NA,NA,2821,NA,NA
+"joint_no_tail_triggered_1001","joint, no tail, deaths bring reports",2026-10-01,"deaths","latest 28",675,569.95,734,1.16218965159456,NA,NA,379,NA,NA
+"joint_no_tail_triggered_1001","joint, no tail, deaths bring reports",2026-10-01,"deaths","latest 14",322,241,371,1.14052559836554,NA,NA,87,NA,NA
