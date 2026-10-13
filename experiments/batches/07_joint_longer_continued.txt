@@ -1,0 +1,10 @@
+# Carries on the chains of batch 7 which stopped at the time limit before
+# reaching 3000 iterations (six chains, for the reports to 20 August, 5
+# September and 1 October). The chains which had finished are read back so
+# that the summary covers all of them.
+continue: 38429578349
+joint_no_tail_triggered_0801
+joint_no_tail_triggered_0820
+joint_no_tail_triggered_0905
+joint_no_tail_triggered_0915
+joint_no_tail_triggered_1001
