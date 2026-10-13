@@ -1,0 +1,180 @@
+# Fits the model to simulated data (R/misdated_simulation.R), one scenario
+# per job, and writes the results to the branch experiment-results. A batch
+# is a file of simulations/batches/ which lists names of scenarios; a push
+# which changes the file starts it. Lines
+#   package: <owner>/<repository>@<branch>
+#   replicates: <datasets for each scenario>
+#   chains: <chains for each dataset>
+#   iterations: <iterations of each chain>
+# replace the usual values.
+name: simulations
+run-name: ${{ inputs.batch || github.event.head_commit.message }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch:
+        description: "A batch: the name of a file of simulations/batches/, without .txt"
+        required: true
+  push:
+    paths:
+      - simulations/batches/*.txt
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.plan.outputs.matrix }}
+      batch: ${{ steps.plan.outputs.batch }}
+      package: ${{ steps.plan.outputs.package }}
+      replicates: ${{ steps.plan.outputs.replicates }}
+      chains: ${{ steps.plan.outputs.chains }}
+      iterations: ${{ steps.plan.outputs.iterations }}
+      count: ${{ steps.plan.outputs.count }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: plan
+        env:
+          BATCH: ${{ inputs.batch }}
+        run: |
+          if [ -n "$BATCH" ]; then
+            files="simulations/batches/$BATCH.txt"
+          else
+            files=$(git diff --name-only --diff-filter=AM HEAD^ HEAD -- 'simulations/batches/*.txt')
+          fi
+          f_value() { cat $files | sed -n "s/^$1:[[:space:]]*\([A-Za-z0-9_.\/@-]*\).*/\1/p" | head -n 1; }
+          PACKAGE_GIVEN=$(f_value package)
+          REPLICATES=$(f_value replicates)
+          CHAINS=$(f_value chains)
+          ITERATIONS=$(f_value iterations)
+          BATCH=$(for file in $files; do basename "$file" .txt; done | paste -sd+ -)
+          matrix=$(cat $files | grep -v '^[[:space:]]*#' | grep -v ':' | grep -v '^[[:space:]]*$' | jq -R . | jq -sc '{scenario: (map(gsub("^\\s+|\\s+$"; "")) | unique)}')
+          echo "batch=${BATCH:-chosen}" >> "$GITHUB_OUTPUT"
+          echo "package=github::${PACKAGE_GIVEN:-ben18785/incidenceinflation_2.0@deaths}" >> "$GITHUB_OUTPUT"
+          echo "replicates=${REPLICATES:-3}" >> "$GITHUB_OUTPUT"
+          echo "chains=${CHAINS:-3}" >> "$GITHUB_OUTPUT"
+          echo "iterations=${ITERATIONS:-400}" >> "$GITHUB_OUTPUT"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+          echo "count=$(echo "$matrix" | jq '.scenario | length')" >> "$GITHUB_OUTPUT"
+          echo "Model: ${PACKAGE_GIVEN:-ben18785/incidenceinflation_2.0@deaths}"
+          echo "$matrix" | jq .
+
+  scenario:
+    needs: plan
+    if: needs.plan.outputs.count != '0'
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    name: ${{ matrix.scenario }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.plan.outputs.matrix) }}
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      PIPELINE_WORKERS: 4
+      PIPELINE_REPLICATES_MISDATED: ${{ needs.plan.outputs.replicates }}
+      PIPELINE_CHAINS_MISDATED: ${{ needs.plan.outputs.chains }}
+      PIPELINE_ITERATIONS_MISDATED: ${{ needs.plan.outputs.iterations }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"hard"'
+          packages: |
+            any::targets
+            any::tarchetypes
+            any::crew
+            any::dplyr
+            any::tidyr
+            any::purrr
+            any::ggplot2
+            any::rlang
+            any::yaml
+            any::patchwork
+            any::ggh4x
+            any::matrixStats
+            ${{ needs.plan.outputs.package }}
+      - name: Fit the scenario
+        run: |
+          (while sleep 600; do tail -qn 1 outputs/misdated_simulation/progress/*.txt 2>/dev/null; done) &
+          Rscript scripts/run_simulation_scenario.R "${{ matrix.scenario }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: measures-${{ matrix.scenario }}
+          path: simulations_out/*.csv
+          retention-days: 30
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fits-${{ matrix.scenario }}
+          path: simulations_out/*.rds
+          retention-days: 30
+
+  collect:
+    needs: [plan, scenario]
+    if: always() && needs.plan.outputs.count != '0' && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+      PACKAGE: ${{ needs.plan.outputs.package }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"hard"'
+          packages: |
+            any::targets
+            any::tarchetypes
+            any::dplyr
+            any::tidyr
+            any::purrr
+            any::ggplot2
+            any::rlang
+            any::yaml
+            any::patchwork
+            any::ggh4x
+            any::matrixStats
+            ${{ needs.plan.outputs.package }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: measures-*
+          path: measures
+          merge-multiple: true
+      - name: Summarise
+        run: |
+          Rscript scripts/collect_simulations.R measures results
+          dir="simulations/$(date -u +%Y-%m-%d)_${GITHUB_RUN_NUMBER}_${{ needs.plan.outputs.batch }}"
+          echo "RESULTS_DIR=$dir" >> "$GITHUB_ENV"
+          {
+            echo "Batch ${{ needs.plan.outputs.batch }}. Commit ${GITHUB_SHA} of ${GITHUB_REF_NAME}; model ${PACKAGE}; ${{ needs.plan.outputs.replicates }} datasets for each scenario, ${{ needs.plan.outputs.chains }} chains of ${{ needs.plan.outputs.iterations }} iterations; [files](https://github.com/${GITHUB_REPOSITORY}/tree/experiment-results/${dir})"
+            echo
+            cat results/summary.md
+          } > results/README.md
+          cat results/README.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Save to the branch experiment-results
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          url="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git clone --quiet --depth 1 --branch experiment-results "$url" "$RUNNER_TEMP/results"
+          mkdir -p "$RUNNER_TEMP/results/$(dirname "$RESULTS_DIR")"
+          cp -r results "$RUNNER_TEMP/results/$RESULTS_DIR"
+          cd "$RUNNER_TEMP/results"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit --quiet -m "Results of simulations run ${GITHUB_RUN_NUMBER}"
+          for attempt in 1 2 3; do
+            git push --quiet origin experiment-results && break
+            git pull --quiet --rebase origin experiment-results
+          done

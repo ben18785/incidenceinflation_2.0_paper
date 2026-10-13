@@ -1,0 +1,37 @@
+# Fits to simulated data of the model in which the time from onset to death
+# is supplied and the fraction of fatal cases counted on their day of death is
+# estimated: every scenario of R/misdated_simulation.R, with three datasets
+# and three chains of 400 iterations each.
+package: ben18785/incidenceinflation_2.0@misdated
+replicates: 3
+chains: 3
+iterations: 400
+base
+tau_0
+tau_25
+tau_75
+tau_100
+fraction_0
+fraction_10
+fraction_50
+fit_no_triggered
+fit_fraction_low
+fit_old
+recording_fast
+recording_slow
+cfr_low
+few_cases
+cfr_fall
+recording_change
+cfr_recording_together
+fraction_change
+tau_change
+otd_sd_low
+otd_sd_high
+otd_mean_high
+sooner
+tail
+tail_ignored
+wrong
+early
+corrected_dropped

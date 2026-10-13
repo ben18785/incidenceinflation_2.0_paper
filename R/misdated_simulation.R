@@ -419,3 +419,52 @@ summarise_misdated_scenarios <- function(summary) {
     dplyr::arrange(match(.data$scenario, scenarios$scenario)) %>%
     dplyr::relocate("group", "scenario", "label")
 }
+
+#' A summary of the scenarios to read
+#'
+#' @param summary as returned by summarise_misdated_scenarios()
+#' @param by_dataset rows of results of summarise_misdated_fits()
+#' @return lines of markdown: for each scenario the fraction counted on the
+#' day of death and the share reported when the death is recorded (truth and
+#' the mean of the posterior medians), the fatal cases the reports will come
+#' to count (truth, estimate and the share of datasets with the truth inside
+#' the 90% interval), and the worst potential scale reduction factor
+misdated_summary_text <- function(summary, by_dataset) {
+  f <- function(x, digits = 2) ifelse(is.na(x), "", formatC(x, format = "f", digits = digits))
+  rhat <- summary %>%
+    dplyr::select("scenario", dplyr::ends_with("_rhat")) %>%
+    tidyr::pivot_longer(-"scenario") %>%
+    dplyr::group_by(.data$scenario) %>%
+    dplyr::summarise(rhat = suppressWarnings(max(.data$value, na.rm = TRUE)))
+  rows <- summary %>%
+    dplyr::left_join(rhat, by = "scenario") %>%
+    dplyr::transmute(
+      .data$group, .data$label, datasets = ifelse(is.na(.data$datasets), 0, .data$datasets),
+      fraction = paste0(f(.data$fraction), " (", f(.data$fraction_true), ")"),
+      fraction_inside = f(.data$fraction_inside),
+      share = paste0(f(.data$triggered), " (", f(.data$triggered_true), ")"),
+      deaths = paste0(f(.data$deaths_all, 0), " (", f(.data$deaths_all_true, 0), ")"),
+      deaths_inside = f(.data$deaths_all_inside),
+      deaths_recent = paste0(f(.data$deaths_recent, 0), " (", f(.data$deaths_recent_true, 0), ")"),
+      deaths_recent_inside = f(.data$deaths_recent_inside),
+      shown = f(.data$deaths_shown_at_end, 0),
+      rhat = f(ifelse(is.finite(.data$rhat), .data$rhat, NA)),
+      minutes = f(.data$minutes, 0))
+  header <- c("Scenario group", "Scenario", "Datasets",
+              "Fraction counted on day of death: estimate (truth)", "Truth inside 90% interval",
+              "Share reported at death: estimate (truth)",
+              "Fatal cases, all days: estimate (truth)", "Truth inside",
+              "Fatal cases, latest 14 days: estimate (truth)", "Truth inside",
+              "Deaths shown in the last report", "Worst R-hat", "Minutes per chain")
+  errors <- by_dataset[!is.na(by_dataset$error) & by_dataset$error != "", ]
+  c("# Fits to simulated data",
+    "",
+    "Estimates are means over datasets of the posterior medians. Fatal cases are those the reports will come to count for the days. 'Truth inside' is the share of datasets in which the true value is inside the 90% interval.",
+    "",
+    paste0("| ", paste(header, collapse = " | "), " |"),
+    paste0("|", paste(rep("---", length(header)), collapse = "|"), "|"),
+    apply(rows, 1, function(row) paste0("| ", paste(row, collapse = " | "), " |")),
+    if(nrow(errors) > 0) c(
+      "", "## Errors", "",
+      paste0("- ", errors$scenario, ", dataset ", errors$replicate, ": ", errors$error)))
+}
