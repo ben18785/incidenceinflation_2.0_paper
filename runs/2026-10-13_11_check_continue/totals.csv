@@ -1,0 +1,4 @@
+"experiment","model","date_now","count","onset_days","median","lo","hi","rhat","recorded_05Sep","recorded_15Sep","recorded_01Oct"
+"check_fixed","fixed cases, drift",2026-09-05,"deaths","all",3411.5,3305.15,3490.65,2.01720415415829,2111,2407,2502
+"check_fixed","fixed cases, drift",2026-09-05,"deaths","latest 28",1100.5,1045,1158.2,3.1886794708275,499,720,794
+"check_fixed","fixed cases, drift",2026-09-05,"deaths","latest 14",574,549.5,611.85,1.74437754922061,169,344,407
