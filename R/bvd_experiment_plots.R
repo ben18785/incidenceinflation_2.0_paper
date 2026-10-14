@@ -183,5 +183,11 @@ bvd_model_title <- function(model) {
   else "Previous joint model"
   if(grepl("deaths bring reports", model))
     title <- paste0(title, "; deaths can bring reports")
+  if(grepl("fixed to 31 July", model))
+    title <- paste0(title, "; recording delay fixed to 31 July")
+  if(grepl("one recording delay", model))
+    title <- paste0(title, "; one recording delay")
+  if(grepl("report effects on recording", model))
+    title <- paste0(title, "; report effects on recording")
   title
 }

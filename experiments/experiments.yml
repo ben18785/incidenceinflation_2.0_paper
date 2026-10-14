@@ -92,6 +92,58 @@ deaths_priors:
     recording_first_observed: true
     label: "counted on day of death, deaths bring reports, early recording delay shared"
 
+  # as above, with no change in the delay to a death being recorded among
+  # the onset days to 31 July
+  misdated_triggered_july: &misdated_triggered_july
+    onset_to_death: {mean: 9.3, sd: 5.5}
+    dated_by_death: {fraction: {alpha: 1, beta: 1, initial: 0.25}, n_moves: 1500}
+    initial_delay: {mean: 3, sd: 2.5}
+    delay_prior: {mean_mu: 4, mean_sigma: 4, sd_mu: 4, sd_sigma: 4}
+    recording_tail: {weight_alpha: 1, weight_beta: 9, mean_mu: 40, mean_sigma: 20}
+    triggered: {alpha: 1, beta: 1}
+    fatal_delay: false
+    recording_fixed_until: 2026-07-31
+    label: "counted on day of death, deaths bring reports, recording delay fixed to 31 July"
+
+  # as above, with one delay to a death being recorded for all onset days
+  misdated_triggered_one_delay: &misdated_triggered_one_delay
+    onset_to_death: {mean: 9.3, sd: 5.5}
+    dated_by_death: {fraction: {alpha: 1, beta: 1, initial: 0.25}, n_moves: 1500}
+    initial_delay: {mean: 3, sd: 2.5}
+    delay_prior: {mean_mu: 4, mean_sigma: 4, sd_mu: 4, sd_sigma: 4}
+    recording_tail: {weight_alpha: 1, weight_beta: 9, mean_mu: 40, mean_sigma: 20}
+    triggered: {alpha: 1, beta: 1}
+    fatal_delay: false
+    delay_changepoints: false
+    label: "counted on day of death, deaths bring reports, one recording delay"
+
+  # the early recording delay shared, as misdated_triggered_early, with each
+  # report having its own effect on the delay to a death being recorded
+  misdated_triggered_early_reports: &misdated_triggered_early_reports
+    onset_to_death: {mean: 9.3, sd: 5.5}
+    dated_by_death: {fraction: {alpha: 1, beta: 1, initial: 0.25}, n_moves: 1500}
+    initial_delay: {mean: 3, sd: 2.5}
+    delay_prior: {mean_mu: 4, mean_sigma: 4, sd_mu: 4, sd_sigma: 4}
+    recording_tail: {weight_alpha: 1, weight_beta: 9, mean_mu: 40, mean_sigma: 20}
+    triggered: {alpha: 1, beta: 1}
+    fatal_delay: false
+    recording_first_observed: true
+    recording_report: true
+    label: "counted on day of death, deaths bring reports, early recording delay shared, report effects on recording"
+
+  # one recording delay, with each report having its own effect on it
+  misdated_triggered_one_delay_reports: &misdated_triggered_one_delay_reports
+    onset_to_death: {mean: 9.3, sd: 5.5}
+    dated_by_death: {fraction: {alpha: 1, beta: 1, initial: 0.25}, n_moves: 1500}
+    initial_delay: {mean: 3, sd: 2.5}
+    delay_prior: {mean_mu: 4, mean_sigma: 4, sd_mu: 4, sd_sigma: 4}
+    recording_tail: {weight_alpha: 1, weight_beta: 9, mean_mu: 40, mean_sigma: 20}
+    triggered: {alpha: 1, beta: 1}
+    fatal_delay: false
+    delay_changepoints: false
+    recording_report: true
+    label: "counted on day of death, deaths bring reports, one recording delay, report effects on recording"
+
 experiments:
   # reports to 5 September, deaths alone with no heavier tail
   deaths_0905: {model: deaths, tail: false}
@@ -158,6 +210,14 @@ experiments:
   joint_no_tail_misdated_triggered_early_0924: {model: joint, date: 2026-09-24, tail: false, deaths_prior: *misdated_triggered_early, iterations: 1500}
   joint_no_tail_misdated_triggered_early_1001: {model: joint, date: 2026-10-01, tail: false, deaths_prior: *misdated_triggered_early, iterations: 1500}
   joint_no_tail_misdated_triggered_early_1007: {model: joint, date: 2026-10-07, tail: false, deaths_prior: *misdated_triggered_early, iterations: 1500}
+
+  # reports to 16 September: the recording delay fixed to 31 July, one
+  # recording delay throughout, and each with an effect of each report on
+  # recording
+  joint_no_tail_misdated_triggered_july_0916: {model: joint, date: 2026-09-16, tail: false, deaths_prior: *misdated_triggered_july, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_0916: {model: joint, date: 2026-09-16, tail: false, deaths_prior: *misdated_triggered_one_delay, iterations: 1500}
+  joint_no_tail_misdated_triggered_early_reports_0916: {model: joint, date: 2026-09-16, tail: false, deaths_prior: *misdated_triggered_early_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_reports_0916: {model: joint, date: 2026-09-16, tail: false, deaths_prior: *misdated_triggered_one_delay_reports, iterations: 1500}
 
   # cases and deaths together
   joint_1001: {model: joint, date: 2026-10-01, iterations: 800}

@@ -1,0 +1,10 @@
+# Reports to 16 September, the model of batch 11 with the delay to a death
+# being recorded: (a) fixed among the onset days to 31 July; (b) the same for
+# all onset days; (c) as in batch 11 (fixed to 18 July) with an effect of
+# each report on recording; (d) as (b) with an effect of each report on
+# recording.
+package: ben18785/incidenceinflation_2.0@misdated
+joint_no_tail_misdated_triggered_july_0916
+joint_no_tail_misdated_triggered_one_delay_0916
+joint_no_tail_misdated_triggered_early_reports_0916
+joint_no_tail_misdated_triggered_one_delay_reports_0916

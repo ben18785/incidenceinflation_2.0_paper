@@ -235,6 +235,13 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
   if(isTRUE(deaths_settings$recording_first_observed))
     deaths_settings$delay_changepoints$first_length <- analysis$reporting_first_length
   deaths_settings$recording_first_observed <- NULL
+  # or no change among the onset days up to a given date
+  if(!is.null(deaths_settings$recording_fixed_until))
+    deaths_settings$delay_changepoints$first_length <- min(
+      as.integer(as.Date(deaths_settings$recording_fixed_until) -
+                   analysis$dates$date[1]) + 1L,
+      nrow(analysis$dates))
+  deaths_settings$recording_fixed_until <- NULL
   # what the variant says of fatal cases dated by death, unless the
   # settings given say something of their own
   if(is.null(deaths_prior$dated_by_death))
