@@ -1,0 +1,17 @@
+# As batch 10 (stopped), with 1 October added, with the reports to 7 October: the model with the
+# time from onset to death supplied, the fraction of fatal cases counted on
+# their day of death estimated, deaths able to bring about reports, and no
+# change in the delay to a death being recorded among the onset days first
+# seen long after onset (to 18 July). Reports through August and September,
+# and 1 and 7 October.
+package: ben18785/incidenceinflation_2.0@misdated
+joint_no_tail_misdated_triggered_early_0801
+joint_no_tail_misdated_triggered_early_0809
+joint_no_tail_misdated_triggered_early_0816
+joint_no_tail_misdated_triggered_early_0824
+joint_no_tail_misdated_triggered_early_0902
+joint_no_tail_misdated_triggered_early_0909
+joint_no_tail_misdated_triggered_early_0916
+joint_no_tail_misdated_triggered_early_0924
+joint_no_tail_misdated_triggered_early_1001
+joint_no_tail_misdated_triggered_early_1007
