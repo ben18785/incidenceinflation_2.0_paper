@@ -31,6 +31,9 @@ bvd_projection_draws <- function(fits, snapshots_all, date_later, n_draws = 100,
                      .data$cases_reported, .data$deaths_reported)
   shown <- shown[match(seq_len(t_now), shown$time_onset), ]
   shown[is.na(shown)] <- 0
+  t_later_reports <- as.numeric(unique(snapshots_all$date_reported[
+    snapshots_all$date_reported > analysis$date_now &
+      snapshots_all$date_reported <= date_later]) - day_first) + 1
   is_misdated <- "dated_fraction" %in% names(fits[[1]]$deaths_parameters)
   lags <- ii$lag_probabilities_gamma(onset_to_death$mean, onset_to_death$sd)
   # the probability, from the fit date to the later report, that one of a set
@@ -57,6 +60,18 @@ bvd_projection_draws <- function(fits, snapshots_all, date_later, n_draws = 100,
         list(tail = list(weight = parameters$recording_tail_weight,
                          mean = parameters$recording_tail_mean),
              before = list(lag_probabilities = lags))
+      # where each report has its own effect on recording: those fitted, and
+      # for the reports after the fit date, effects drawn from their prior
+      if(is_misdated && !is.null(parameters$recording_report_sd)) {
+        columns <- grep("^recording_report_[0-9]+$", names(parameters), value = TRUE)
+        days_fitted <- as.numeric(sub("recording_report_", "", columns))
+        days_later <- setdiff(t_later_reports, days_fitted)
+        recording_effects <- ii$update_report_multipliers(c(recording_effects, list(
+          report_days = c(days_fitted, days_later),
+          report_log_effects = c(log(unlist(parameters[columns])),
+                                 stats::rnorm(length(days_later), 0,
+                                              parameters$recording_report_sd)))))
+      }
       tau <- parameters$triggered
       F <- t(vapply(seq_len(t_now), function(t) {
         survivals <- ii$joint_survivals(
