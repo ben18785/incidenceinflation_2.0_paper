@@ -1,0 +1,37 @@
+"experiment","model","date_now","count","onset_days","median","lo","hi","rhat","recorded_05Sep","recorded_15Sep","recorded_01Oct"
+"joint_no_tail_misdated_0905","joint, no tail, counted on day of death",2026-09-05,"cases","all",5578,5513.95,5643,1.02415760380224,5079,5391,5504
+"joint_no_tail_misdated_0905","joint, no tail, counted on day of death",2026-09-05,"cases","latest 28",1749,1684.95,1813.05,1.0232375799547,1252,1608,1699
+"joint_no_tail_misdated_0905","joint, no tail, counted on day of death",2026-09-05,"cases","latest 14",885,822,944,1.02010263676085,430,748,830
+"joint_no_tail_misdated_0905","joint, no tail, counted on day of death",2026-09-05,"deaths","all",2714,2609.95,2828,1.05278058199658,2111,2407,2502
+"joint_no_tail_misdated_0905","joint, no tail, counted on day of death",2026-09-05,"deaths","latest 28",992.5,884.95,1087.1,1.10859339429517,499,720,794
+"joint_no_tail_misdated_0905","joint, no tail, counted on day of death",2026-09-05,"deaths","latest 14",555,453,646,1.14112515670307,169,344,407
+"joint_no_tail_misdated_0915","joint, no tail, counted on day of death",2026-09-15,"cases","all",6192,6119,6274.05,1.02370421133418,NA,5619,6044
+"joint_no_tail_misdated_0915","joint, no tail, counted on day of death",2026-09-15,"cases","latest 28",1771,1698,1850,1.02194033272548,NA,1199,1599
+"joint_no_tail_misdated_0915","joint, no tail, counted on day of death",2026-09-15,"cases","latest 14",916,853,990,1.02078436139477,NA,410,761
+"joint_no_tail_misdated_0915","joint, no tail, counted on day of death",2026-09-15,"deaths","all",3248,3131.95,3384,1.06669029839559,NA,2482,2711
+"joint_no_tail_misdated_0915","joint, no tail, counted on day of death",2026-09-15,"deaths","latest 28",1156,1053.95,1271,1.07736413792615,NA,523,726
+"joint_no_tail_misdated_0915","joint, no tail, counted on day of death",2026-09-15,"deaths","latest 14",621.5,537,718,1.11040236425105,NA,154,315
+"joint_no_tail_misdated_1001","joint, no tail, counted on day of death",2026-10-01,"cases","all",6892,6830,6969,1.01927606647147,NA,NA,6428
+"joint_no_tail_misdated_1001","joint, no tail, counted on day of death",2026-10-01,"cases","latest 28",1503,1441,1577.05,1.01699787708119,NA,NA,1043
+"joint_no_tail_misdated_1001","joint, no tail, counted on day of death",2026-10-01,"cases","latest 14",715,659,779,1.0086163926904,NA,NA,305
+"joint_no_tail_misdated_1001","joint, no tail, counted on day of death",2026-10-01,"deaths","all",3208,3149,3281,1.31508645537238,NA,NA,2821
+"joint_no_tail_misdated_1001","joint, no tail, counted on day of death",2026-10-01,"deaths","latest 28",727,675,777,1.11093248818391,NA,NA,379
+"joint_no_tail_misdated_1001","joint, no tail, counted on day of death",2026-10-01,"deaths","latest 14",350,314.95,386,1.02337335612566,NA,NA,87
+"joint_no_tail_misdated_triggered_0905","joint, no tail, counted on day of death, deaths bring reports",2026-09-05,"cases","all",5585.5,5516,5658,1.01565126447422,5079,5391,5504
+"joint_no_tail_misdated_triggered_0905","joint, no tail, counted on day of death, deaths bring reports",2026-09-05,"cases","latest 28",1754,1686,1825.05,1.01214968050678,1252,1608,1699
+"joint_no_tail_misdated_triggered_0905","joint, no tail, counted on day of death, deaths bring reports",2026-09-05,"cases","latest 14",888,826.95,953.05,1.00425114528485,430,748,830
+"joint_no_tail_misdated_triggered_0905","joint, no tail, counted on day of death, deaths bring reports",2026-09-05,"deaths","all",2804,2677.95,2961.05,1.24422211171834,2111,2407,2502
+"joint_no_tail_misdated_triggered_0905","joint, no tail, counted on day of death, deaths bring reports",2026-09-05,"deaths","latest 28",1015,903.95,1146.05,1.27367474745107,499,720,794
+"joint_no_tail_misdated_triggered_0905","joint, no tail, counted on day of death, deaths bring reports",2026-09-05,"deaths","latest 14",556,465,673,1.33352423561217,169,344,407
+"joint_no_tail_misdated_triggered_0915","joint, no tail, counted on day of death, deaths bring reports",2026-09-15,"cases","all",6133,6053.95,6217,1.17712305934609,NA,5619,6044
+"joint_no_tail_misdated_triggered_0915","joint, no tail, counted on day of death, deaths bring reports",2026-09-15,"cases","latest 28",1711,1632.95,1793,1.16330764938632,NA,1199,1599
+"joint_no_tail_misdated_triggered_0915","joint, no tail, counted on day of death, deaths bring reports",2026-09-15,"cases","latest 14",877,806.95,951.05,1.09045376815401,NA,410,761
+"joint_no_tail_misdated_triggered_0915","joint, no tail, counted on day of death, deaths bring reports",2026-09-15,"deaths","all",3087.5,2877.95,3394.05,2.97685352223396,NA,2482,2711
+"joint_no_tail_misdated_triggered_0915","joint, no tail, counted on day of death, deaths bring reports",2026-09-15,"deaths","latest 28",997.5,824,1219.15,3.06332847449833,NA,523,726
+"joint_no_tail_misdated_triggered_0915","joint, no tail, counted on day of death, deaths bring reports",2026-09-15,"deaths","latest 14",517,404.95,659,2.52673257510448,NA,154,315
+"joint_no_tail_misdated_triggered_1001","joint, no tail, counted on day of death, deaths bring reports",2026-10-01,"cases","all",6881,6815,6947.05,1.06828846170156,NA,NA,6428
+"joint_no_tail_misdated_triggered_1001","joint, no tail, counted on day of death, deaths bring reports",2026-10-01,"cases","latest 28",1493,1426,1558,1.07038716101475,NA,NA,1043
+"joint_no_tail_misdated_triggered_1001","joint, no tail, counted on day of death, deaths bring reports",2026-10-01,"cases","latest 14",706,644.95,764,1.06459671728725,NA,NA,305
+"joint_no_tail_misdated_triggered_1001","joint, no tail, counted on day of death, deaths bring reports",2026-10-01,"deaths","all",3238,3177.95,3307,1.3457058796351,NA,NA,2821
+"joint_no_tail_misdated_triggered_1001","joint, no tail, counted on day of death, deaths bring reports",2026-10-01,"deaths","latest 28",728,682,782,1.19504931974831,NA,NA,379
+"joint_no_tail_misdated_triggered_1001","joint, no tail, counted on day of death, deaths bring reports",2026-10-01,"deaths","latest 14",347.5,309,386,1.10983241334081,NA,NA,87
