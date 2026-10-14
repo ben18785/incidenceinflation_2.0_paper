@@ -67,6 +67,7 @@ bvd_projection_draws <- function(fits, snapshots_all, date_later, n_draws = 100,
         days_fitted <- as.numeric(sub("recording_report_", "", columns))
         days_later <- setdiff(t_later_reports, days_fitted)
         recording_effects <- ii$update_report_multipliers(c(recording_effects, list(
+          report_tail_only = grepl("report effects on recording tail", fits[[1]]$model),
           report_days = c(days_fitted, days_later),
           report_log_effects = c(log(unlist(parameters[columns])),
                                  stats::rnorm(length(days_later), 0,

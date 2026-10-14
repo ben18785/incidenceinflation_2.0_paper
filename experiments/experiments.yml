@@ -144,6 +144,34 @@ deaths_priors:
     recording_report: true
     label: "counted on day of death, deaths bring reports, one recording delay, report effects on recording"
 
+  # one recording delay, with each report having its own effect on the tail
+  # of the delay alone (the backlog of deaths recorded long after they happen)
+  misdated_triggered_one_delay_tail_reports: &misdated_triggered_one_delay_tail_reports
+    onset_to_death: {mean: 9.3, sd: 5.5}
+    dated_by_death: {fraction: {alpha: 1, beta: 1, initial: 0.25}, n_moves: 1500}
+    initial_delay: {mean: 3, sd: 2.5}
+    delay_prior: {mean_mu: 4, mean_sigma: 4, sd_mu: 4, sd_sigma: 4}
+    recording_tail: {weight_alpha: 1, weight_beta: 9, mean_mu: 40, mean_sigma: 20}
+    triggered: {alpha: 1, beta: 1}
+    fatal_delay: false
+    delay_changepoints: false
+    recording_report: {tail_only: true}
+    label: "counted on day of death, deaths bring reports, one recording delay, report effects on recording tail"
+
+  # the recording delay fixed to 31 July and free to change after, with each
+  # report having its own effect on the tail of the delay alone
+  misdated_triggered_july_tail_reports: &misdated_triggered_july_tail_reports
+    onset_to_death: {mean: 9.3, sd: 5.5}
+    dated_by_death: {fraction: {alpha: 1, beta: 1, initial: 0.25}, n_moves: 1500}
+    initial_delay: {mean: 3, sd: 2.5}
+    delay_prior: {mean_mu: 4, mean_sigma: 4, sd_mu: 4, sd_sigma: 4}
+    recording_tail: {weight_alpha: 1, weight_beta: 9, mean_mu: 40, mean_sigma: 20}
+    triggered: {alpha: 1, beta: 1}
+    fatal_delay: false
+    recording_fixed_until: 2026-07-31
+    recording_report: {tail_only: true}
+    label: "counted on day of death, deaths bring reports, recording delay fixed to 31 July, report effects on recording tail"
+
 experiments:
   # reports to 5 September, deaths alone with no heavier tail
   deaths_0905: {model: deaths, tail: false}
@@ -218,6 +246,49 @@ experiments:
   joint_no_tail_misdated_triggered_one_delay_0916: {model: joint, date: 2026-09-16, tail: false, deaths_prior: *misdated_triggered_one_delay, iterations: 1500}
   joint_no_tail_misdated_triggered_early_reports_0916: {model: joint, date: 2026-09-16, tail: false, deaths_prior: *misdated_triggered_early_reports, iterations: 1500}
   joint_no_tail_misdated_triggered_one_delay_reports_0916: {model: joint, date: 2026-09-16, tail: false, deaths_prior: *misdated_triggered_one_delay_reports, iterations: 1500}
+
+  # across the fit dates: (c) the early recording delay shared with effects of
+  # each report on recording, (d) one recording delay with those effects, (e)
+  # one recording delay with effects on its tail alone, (f) the recording delay
+  # fixed to 31 July with effects on its tail alone
+  joint_no_tail_misdated_triggered_early_reports_0801: {model: joint, date: 2026-08-01, tail: false, deaths_prior: *misdated_triggered_early_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_early_reports_0809: {model: joint, date: 2026-08-09, tail: false, deaths_prior: *misdated_triggered_early_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_early_reports_0816: {model: joint, date: 2026-08-16, tail: false, deaths_prior: *misdated_triggered_early_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_early_reports_0824: {model: joint, date: 2026-08-24, tail: false, deaths_prior: *misdated_triggered_early_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_early_reports_0902: {model: joint, date: 2026-09-02, tail: false, deaths_prior: *misdated_triggered_early_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_early_reports_0909: {model: joint, date: 2026-09-09, tail: false, deaths_prior: *misdated_triggered_early_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_early_reports_0924: {model: joint, date: 2026-09-24, tail: false, deaths_prior: *misdated_triggered_early_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_early_reports_1001: {model: joint, date: 2026-10-01, tail: false, deaths_prior: *misdated_triggered_early_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_early_reports_1007: {model: joint, date: 2026-10-07, tail: false, deaths_prior: *misdated_triggered_early_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_reports_0801: {model: joint, date: 2026-08-01, tail: false, deaths_prior: *misdated_triggered_one_delay_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_reports_0809: {model: joint, date: 2026-08-09, tail: false, deaths_prior: *misdated_triggered_one_delay_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_reports_0816: {model: joint, date: 2026-08-16, tail: false, deaths_prior: *misdated_triggered_one_delay_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_reports_0824: {model: joint, date: 2026-08-24, tail: false, deaths_prior: *misdated_triggered_one_delay_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_reports_0902: {model: joint, date: 2026-09-02, tail: false, deaths_prior: *misdated_triggered_one_delay_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_reports_0909: {model: joint, date: 2026-09-09, tail: false, deaths_prior: *misdated_triggered_one_delay_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_reports_0924: {model: joint, date: 2026-09-24, tail: false, deaths_prior: *misdated_triggered_one_delay_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_reports_1001: {model: joint, date: 2026-10-01, tail: false, deaths_prior: *misdated_triggered_one_delay_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_reports_1007: {model: joint, date: 2026-10-07, tail: false, deaths_prior: *misdated_triggered_one_delay_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_tail_reports_0801: {model: joint, date: 2026-08-01, tail: false, deaths_prior: *misdated_triggered_one_delay_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_tail_reports_0809: {model: joint, date: 2026-08-09, tail: false, deaths_prior: *misdated_triggered_one_delay_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_tail_reports_0816: {model: joint, date: 2026-08-16, tail: false, deaths_prior: *misdated_triggered_one_delay_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_tail_reports_0824: {model: joint, date: 2026-08-24, tail: false, deaths_prior: *misdated_triggered_one_delay_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_tail_reports_0902: {model: joint, date: 2026-09-02, tail: false, deaths_prior: *misdated_triggered_one_delay_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_tail_reports_0909: {model: joint, date: 2026-09-09, tail: false, deaths_prior: *misdated_triggered_one_delay_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_tail_reports_0916: {model: joint, date: 2026-09-16, tail: false, deaths_prior: *misdated_triggered_one_delay_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_tail_reports_0924: {model: joint, date: 2026-09-24, tail: false, deaths_prior: *misdated_triggered_one_delay_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_tail_reports_1001: {model: joint, date: 2026-10-01, tail: false, deaths_prior: *misdated_triggered_one_delay_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_one_delay_tail_reports_1007: {model: joint, date: 2026-10-07, tail: false, deaths_prior: *misdated_triggered_one_delay_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_july_tail_reports_0801: {model: joint, date: 2026-08-01, tail: false, deaths_prior: *misdated_triggered_july_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_july_tail_reports_0809: {model: joint, date: 2026-08-09, tail: false, deaths_prior: *misdated_triggered_july_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_july_tail_reports_0816: {model: joint, date: 2026-08-16, tail: false, deaths_prior: *misdated_triggered_july_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_july_tail_reports_0824: {model: joint, date: 2026-08-24, tail: false, deaths_prior: *misdated_triggered_july_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_july_tail_reports_0902: {model: joint, date: 2026-09-02, tail: false, deaths_prior: *misdated_triggered_july_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_july_tail_reports_0909: {model: joint, date: 2026-09-09, tail: false, deaths_prior: *misdated_triggered_july_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_july_tail_reports_0916: {model: joint, date: 2026-09-16, tail: false, deaths_prior: *misdated_triggered_july_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_july_tail_reports_0924: {model: joint, date: 2026-09-24, tail: false, deaths_prior: *misdated_triggered_july_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_july_tail_reports_1001: {model: joint, date: 2026-10-01, tail: false, deaths_prior: *misdated_triggered_july_tail_reports, iterations: 1500}
+  joint_no_tail_misdated_triggered_july_tail_reports_1007: {model: joint, date: 2026-10-07, tail: false, deaths_prior: *misdated_triggered_july_tail_reports, iterations: 1500}
 
   # cases and deaths together
   joint_1001: {model: joint, date: 2026-10-01, iterations: 800}
