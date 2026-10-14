@@ -156,6 +156,7 @@ experiments:
   joint_no_tail_misdated_triggered_early_0909: {model: joint, date: 2026-09-09, tail: false, deaths_prior: *misdated_triggered_early, iterations: 1500}
   joint_no_tail_misdated_triggered_early_0916: {model: joint, date: 2026-09-16, tail: false, deaths_prior: *misdated_triggered_early, iterations: 1500}
   joint_no_tail_misdated_triggered_early_0924: {model: joint, date: 2026-09-24, tail: false, deaths_prior: *misdated_triggered_early, iterations: 1500}
+  joint_no_tail_misdated_triggered_early_1007: {model: joint, date: 2026-10-07, tail: false, deaths_prior: *misdated_triggered_early, iterations: 1500}
 
   # cases and deaths together
   joint_1001: {model: joint, date: 2026-10-01, iterations: 800}
