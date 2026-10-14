@@ -229,6 +229,12 @@ fit_bvd_deaths_chain <- function(analysis, variant, chain, niterations, n_draws 
   if(!is.null(deaths_prior))
     deaths_settings <- utils::modifyList(
       deaths_settings, deaths_prior[names(deaths_prior) != "label"])
+  # no change in the delay to a death being recorded among the onset days
+  # first seen long after onset, as for the reporting delay: those days share
+  # the delay of the first onset days whose early reports are seen
+  if(isTRUE(deaths_settings$recording_first_observed))
+    deaths_settings$delay_changepoints$first_length <- analysis$reporting_first_length
+  deaths_settings$recording_first_observed <- NULL
   # what the variant says of fatal cases dated by death, unless the
   # settings given say something of their own
   if(is.null(deaths_prior$dated_by_death))
