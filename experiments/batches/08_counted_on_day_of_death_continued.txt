@@ -1,0 +1,11 @@
+# Carries on the chains of batch 8 which stopped at the time limit before
+# reaching 1500 iterations. The chains which had finished are read back so
+# that the summary covers all of them.
+continue: 38472229268
+package: ben18785/incidenceinflation_2.0@misdated
+joint_no_tail_misdated_0905
+joint_no_tail_misdated_0915
+joint_no_tail_misdated_1001
+joint_no_tail_misdated_triggered_0905
+joint_no_tail_misdated_triggered_0915
+joint_no_tail_misdated_triggered_1001
