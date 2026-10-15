@@ -362,17 +362,21 @@ T_C & \text{with probability } 1-\tau
 
 A fatal case is not yet reported at $t'$ with probability
 \[
-M(t\given t')=S^{C}(t\given t')\,\bigl[(1-\tau)+\tau\,S^{D}(t\given t')\bigr],
-\qquad
+M(t\given t')=\underbrace{S^{C}(t\given t')}_{\substack{\text{its own reporting}\\\text{delay has not}\\\text{elapsed}}}\,
+\Bigl[\underbrace{(1-\tau)}_{\substack{\text{its death does not}\\\text{bring a report}}}
++\underbrace{\tau\,S^{D}(t\given t')}_{\substack{\text{or it does, but the death}\\\text{is not yet recorded}}}\Bigr]
+\]
+
+$p^{F}(t\given t_j)$, the probability a fatal case not in the report of
+$t_{j-1}$ is in that of $t_j$, is now
+\[
 p^{F}(t\given t_j)=1-\frac{M(t\given t_j)}{M(t\given t_{j-1})}.
 \]
 
 \begin{itemize}
 \item Fatal cases are reported sooner than others, and early reports are
 more often fatal.
-\item Only $p^{F}$ and $p^{\text{dead}}$ change, so the likelihood keeps
-the same form.
-\item $\tau=0$ is the independent model. $\tau\sim\operatorname{beta}(1,1)$.
+\item $\tau=0$ is the independent model.
 \end{itemize}
 \end{frame}
 
@@ -383,12 +387,9 @@ date of death recorded as their onset date.
 
 \bigskip
 \begin{itemize}
-\item Such a case is counted about nine days later than its true onset, and
-can be shown as dead almost at once.
-\item To tell how many there are, we need what is known of the true time
+\item Such a case can be shown as dead almost at once.
+\item To infer how many there are, we need what is known of the true time
 from onset to death (next slide).
-\item The reports describe the curve as by date of onset: whether some are
-by date of death is an inference, not something the reports say.
 \end{itemize}
 \end{frame}
 
