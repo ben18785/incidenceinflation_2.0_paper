@@ -322,31 +322,62 @@ the same form.
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Explanation 2: some onset dates are recorded as the date of death}
+\begin{frame}{Explanation 2: some onset dates are incorrectly recorded as the date of death}
 Some fatal cases may be identified only at or after death, and have their
-date of death recorded as their onset date: \textbf{misdated} cases.
+date of death recorded as their onset date.
 
 \bigskip
+\begin{itemize}
+\item Such a case is counted about nine days later than its true onset, and
+can be shown as dead almost at once.
+\item To tell how many there are, we need what is known of the true time
+from onset to death (next slide).
+\item The reports describe the curve as by date of onset: whether some are
+by date of death is an inference, not something the reports say.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{The time from onset to death}
+\centering
+\includegraphics[height=0.62\textheight]{bvd_onset_to_death_review.png}
+
+\smallskip
+\begin{minipage}{0.9\textwidth}
+\small A review of Ebola virus disease: 16 studies, 1{,}485 patients
+(columns: mean, sd, patients, weights). We assume a gamma with mean 9.3 days
+(the random-effects estimate) and sd 5.5 days (the studies' sds, weighted by
+patients).
+\end{minipage}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Are the deaths in the reports consistent with this?}
+Deaths shown within 1 and 2 days of their recorded onset day:
+
+\medskip
 \begin{center}
 \renewcommand{\arraystretch}{1.3}
 \begin{tabular}{lcc}
 \toprule
  & Within 1 day & Within 2 days \\
 \midrule
-Deaths from onset, gamma (mean 9.3, sd 5.5 days) & 0.5\% & 3\% \\
-Deaths already shown, after their recorded onset day & 7.8\% & 14\% \\
+Expected if every onset were correctly dated: & & \\
+\quad deaths by then, gamma (mean 9.3, sd 5.5) & 0.5\% & 3\% \\
+In the reports: share of the deaths eventually & & \\
+\quad recorded for a day already shown by then & 7.8\% & 14\% \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\bigskip
+\medskip
 \begin{itemize}
-\item Onset to death: a review of Ebola virus disease (16 studies).
-\item If the time from onset to death is held to what is known of it, the
-early deaths can only be misdated cases. Their number says what fraction $f$
-of fatal cases are misdated.
-\item The reports describe the curve as by date of onset: this is an
-inference, not something the reports say.
+\item The expected values are upper bounds: a death must also be recorded,
+and its case reported, before it is shown.
+\item So, with this time from onset to death, the early deaths can only be
+cases whose onset was recorded as their date of death: we call them
+\textbf{misdated}. Their number says what fraction $f$ of fatal cases are
+misdated.
 \end{itemize}
 \end{frame}
 
