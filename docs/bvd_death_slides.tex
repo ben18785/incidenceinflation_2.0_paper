@@ -34,11 +34,13 @@
 \newcommand{\resultsinput}[1]{%
   \IfFileExists{../outputs/tables/#1}{\input{../outputs/tables/#1}}{\input{outputs/tables/#1}}}
 
-% The numbers on the slides are typed in by hand. The effects of each report
-% at 16 September come from runs/2026-10-14_20_12_recording_delay_0916
-% (batch 12, report effects on the whole recording delay) on the branch
-% experiment-results, second half of each chain, via scripts/plot_death_slides.R.
-% The data table and the counts of falls come from the reports to 7 October.
+% The numbers on the slides are typed in by hand. The fits, the projections,
+% the parameter estimates and the effects of each report are those of the
+% chosen model, option (f) (recording delay fixed to 31 July, effects of each
+% report on its tail alone), from runs/2026-10-15_23_13b_collect_report_effects
+% on the branch experiment-results, second half of each chain, via
+% scripts/plot_death_slides_f.R. The data table and the counts of falls come
+% from the reports to 7 October.
 
 \begin{document}
 \resultsinput{bvd_numbers.tex}
@@ -145,11 +147,10 @@ is about 79\% of its latest value, and the death count about 60\%.
 % % ---------------------------------------------------------------------------
 \begin{frame}{Fits to past sitreps: deaths}
 \centering
-\placeholderfig{bvd_deaths_fits_deaths.png}{0.78\textheight}
+\includegraphics[height=0.78\textheight]{bvd_deaths_fits_deaths.png}
 
 \smallskip
-{\small Panels: the date of each fit. Shading: 90\% interval of the projection.
-To be replaced by the fits of the final model.}
+{\small Panels: the date of each fit. Shading: 90\% interval of the projection.}
 \end{frame}
 
 ---------------------------------------------------------------------------
@@ -462,9 +463,9 @@ F^{\mathrm{mis}}(t)\sim\bin\bigl(F(t),\ f\bigr),
 \]
 are misdated: recorded on their day of death, $Z$ days later, with
 \[
-P(Z=z)=h_z\propto G(z)-G(z-1),\qquad z=1,2,\dots,
+P(Z=z)=h_z\propto H(z)-H(z-1),\qquad z=1,2,\dots,
 \]
-$G$ the distribution function of a gamma with mean 9.3 and sd 5.5 days (the
+$H$ the distribution function of a gamma with mean 9.3 and sd 5.5 days (the
 time from onset to death, from the review). $F^{\mathrm{mis}}(t,z)$: those
 who die $z$ days after onset (multinomial given $F^{\mathrm{mis}}(t)$).
 
@@ -530,7 +531,8 @@ $f$ of 0.40, 0.33, 0.26 and 0.17 for sds of 4.5, 5.5, 6.5 and 8 days.
 % ---------------------------------------------------------------------------
 \begin{frame}{Deaths recorded long after}
 With the time to death near nine days, a death first shown months after
-onset must be explained by $U$. A gamma with a mean of a few days makes such
+onset must be explained by a long delay $U$ from death to the death being
+recorded. A gamma with a mean of a few days makes such
 deaths all but impossible.
 
 \bigskip
@@ -570,8 +572,9 @@ Recording delay $(\mu^{d},\sigma^{d})$ & 14 days \\
 \bigskip
 \begin{itemize}
 \item $\cfr_t$ is indexed by onset day: a change is between cohorts of cases.
-\item Onset days first seen long after onset (to 18 July) cannot show how
-fast deaths were recorded, so they share one recording delay.
+\item The recording delay is the same for all onset days to 31 July: early
+onset days, many first seen long after onset, say little about how fast
+deaths were recorded.
 \end{itemize}
 \end{frame}
 
@@ -702,10 +705,11 @@ records.)
 
 % ---------------------------------------------------------------------------
 \begin{frame}{Effects of each report on recording}
-The hazard of a death being recorded on each day after report $t_{j-1}$, up
-to and including report $t_j$, is multiplied by
+On each day after report $t_{j-1}$, up to and including report $t_j$, the
+hazard of a death being recorded is multiplied by
 \[
-\psi^{d}_{w(j)}\,e^{\varepsilon_j},\qquad
+\underbrace{\psi^{d}_{w(j)}\,e^{\varepsilon_j}}_{\text{deaths in the tail}},\qquad
+\underbrace{\psi^{d}_{w(j)}}_{\text{other deaths}},\qquad
 \varepsilon_j\sim N(0,s^2),
 \]
 with $w(j)$ the day of the week of report $t_j$.
@@ -713,6 +717,8 @@ with $w(j)$ the day of the week of report $t_j$.
 \bigskip
 \begin{itemize}
 \item One effect per report, shared by all onset days.
+\item The effects act on the tail alone: a burst clears a backlog of old
+deaths without speeding up the recording of recent ones.
 \item Reports after the fit date: effects are drawn from $N(0,s^2)$ when
 projecting.
 \item Sampled in blocks with steps scaled by $s$, with $s$ by Gibbs, and a
@@ -721,47 +727,68 @@ joint rescaling of $(\varepsilon,s)$ to cross the funnel.
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Effects of each report: the fit to 16 September}
+\begin{frame}{Effects of each report: the fit to 7 October}
 \centering
 \includegraphics[height=0.62\textheight]{bvd_deaths_report_effects.png}
 
 \smallskip
 \begin{minipage}{0.85\textwidth}
-\small Posterior medians and 90\% intervals. Multipliers of 2 to 8 on the
-reports of 2 to 15 September, the bursts; near 1 otherwise. $s=0.88$
-(0.73--1.10).
+\small $e^{\varepsilon_j}$: posterior medians and 90\% intervals. Multipliers
+of 2 to 10 on most reports from 26 August to 15 September, the bursts, and on
+29 September and 7 October; near 1 otherwise. $s=1.21$ (0.96--1.58).
 \end{minipage}
 \end{frame}
 
 % ---------------------------------------------------------------------------
 \begin{frame}{Fits to past sitreps: deaths}
 \centering
-\placeholderfig{bvd_deaths_fits_deaths.png}{0.78\textheight}
+\includegraphics[height=0.78\textheight]{bvd_deaths_fits_deaths.png}
 
 \smallskip
-{\small Panels: the date of each fit. Shading: 90\% interval of the projection.
-To be replaced by the fits of the final model.}
+{\small Panels: the date of each fit. Shading: 90\% interval of the projection.}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Fits to past sitreps: deaths in the latest 28 onset days}
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{lccc}
+\toprule
+Fit date & Shown then & Projected for 7 October & Actual on 7 October \\
+\midrule
+1 Aug & 348 & 545 (504--595) & 709 \\
+9 Aug & 380 & 556 (512--612) & 761 \\
+16 Aug & 403 & 574 (529--628) & 813 \\
+24 Aug & 441 & 630 (588--677) & 798 \\
+2 Sep & 495 & 666 (627--711) & 826 \\
+9 Sep & 489 & 716 (669--772) & 786 \\
+16 Sep & 513 & 722 (685--776) & 768 \\
+24 Sep & 457 & 619 (585--668) & 639 \\
+1 Oct & 379 & 472 (450--524) & 510 \\
+\bottomrule
+\end{tabular}
+
+\medskip
+{\small Deaths in the latest 28 onset days of each fit. Posterior medians and
+90\% intervals.}
 \end{frame}
 
 % ---------------------------------------------------------------------------
 \begin{frame}{Parameter estimates, fit to 7 October: cases}
-\placeholdertag
-
-\medskip
 \begin{center}
 \renewcommand{\arraystretch}{1.25}
 \begin{tabular}{lcc}
 \toprule
 Parameter & Median & 90\% interval \\
 \midrule
-$R_t$, latest onset day & -- & -- \\
-Number of changes in $R_t$ & -- & -- \\
-Overdispersion $\kappa$ & -- & -- \\
-Mean reporting delay, latest onset day (days) & -- & -- \\
-Sd of reporting delay, latest onset day (days) & -- & -- \\
-Number of changes in the reporting delay & -- & -- \\
-Wrong records per genuine case reported, $\eta$ & -- & -- \\
-Daily probability a wrong record is removed, $\rho$ & -- & -- \\
+$R_t$, latest onset day & 0.95 & 0.88 to 1.16 \\
+Number of changes in $R_t$ & 3 & 3 to 5 \\
+Overdispersion $\kappa$ & 26 & 19 to 38 \\
+Mean reporting delay, latest onset day (days) & 9.5 & 9.2 to 9.8 \\
+Sd of reporting delay, latest onset day (days) & 7.1 & 6.8 to 7.5 \\
+Number of changes in the reporting delay & 1 & 1 to 1 \\
+Wrong records per genuine case reported, $\eta$ & 0.033 & 0.027 to 0.039 \\
+Daily probability a wrong record is removed, $\rho$ & 0.050 & 0.041 to 0.060 \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -769,24 +796,21 @@ Daily probability a wrong record is removed, $\rho$ & -- & -- \\
 
 % ---------------------------------------------------------------------------
 \begin{frame}{Parameter estimates, fit to 7 October: deaths}
-\placeholdertag
-
-\medskip
 \begin{center}
 \renewcommand{\arraystretch}{1.25}
 \begin{tabular}{lcc}
 \toprule
 Parameter & Median & 90\% interval \\
 \midrule
-$\cfr_t$, latest onset day & -- & -- \\
-Number of changes in $\cfr_t$ & -- & -- \\
-Share of fatal cases whose death brings the report, $\tau$ & -- & -- \\
-Share of fatal cases misdated, $f$ & -- & -- \\
-Mean delay from death to recording, latest onset day (days) & -- & -- \\
-Share of deaths recorded in the tail, $\omega^{d}$ & -- & -- \\
-Mean of the tail, $m^{d}$ (days) & -- & -- \\
-Sd of the effects of each report, $s$ & -- & -- \\
-Probability a wrong record is shown as dead, $\delta$ & -- & -- \\
+$\cfr_t$, latest onset day & 0.47 & 0.41 to 0.48 \\
+Number of changes in $\cfr_t$ & 0 & 0 to 1 \\
+Share of fatal cases whose death brings the report, $\tau$ & 0.94 & 0.82 to 1.00 \\
+Share of fatal cases misdated, $f$ & 0.39 & 0.33 to 0.42 \\
+Mean delay from death to recording, latest onset day (days) & 3.9 & 3.2 to 5.6 \\
+Share of deaths recorded in the tail, $\omega^{d}$ & 0.33 & 0.30 to 0.36 \\
+Mean of the tail, $m^{d}$ (days) & 56 & 44 to 75 \\
+Sd of the effects of each report, $s$ & 1.21 & 0.96 to 1.58 \\
+Probability a wrong record is shown as dead, $\delta$ & 0.43 & 0.34 to 0.54 \\
 \bottomrule
 \end{tabular}
 \end{center}
