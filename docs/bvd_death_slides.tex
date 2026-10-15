@@ -114,9 +114,8 @@ daily probability $\rho$.
 
 \bigskip
 \textbf{Changes at unknown times.} $R_t$ and $(\mu,\sigma)$ are constant
-within segments of onset days. Each day starts a new segment with
-probability $p\sim\operatorname{beta}(1,T)$; the number of changes is
-inferred.
+within segments of onset days. Each day starts a new segment with an
+unknown probability $p$; the number of changes is inferred.
 
 \bigskip
 \textbf{Fitting.} Metropolis within Gibbs: $I(t)$ from its discrete full
@@ -317,10 +316,8 @@ newly reported between the two reports.
 \setlength{\itemsep}{0.6em}
 \item Errors are made when cases are being reported, and are found later.
 \item $\eta$: the expected number of wrong records added with each genuine
-case reported. $\rho$: the daily probability a wrong record is removed. Both
-with the same priors as for cases.
-\item $\delta$: the probability a wrong record is shown as dead;
-$\delta\sim\operatorname{beta}(1,1)$.
+case reported. $\rho$: the daily probability a wrong record is removed.
+\item $\delta$: the probability a wrong record is shown as dead.
 \item The hidden counts in each report are $C^{F}$, $E^{A}$ and $E^{D}$.
 $D^{F}=D-E^{D}$ and $C^{N}=C-C^{F}-E^{A}-E^{D}$ follow from them.
 \end{itemize}
@@ -353,14 +350,13 @@ onset to report & (summed over reports) & as dead \\
 
 If $T_C$ and $T_D$ were independent, this share would be about
 $\cfr_t\,[1-S^{D}(u)]$ at $u$ days: near zero at first, then rising.
-Instead, it starts high (0.43), dips, then rises again.
 \end{frame}
 
 % ---------------------------------------------------------------------------
 \begin{frame}{A puzzle: deaths shown very early}
 \begin{itemize}
 \item To fit this with independent delays, $T_D$ needs a spike near zero and
-a very long tail (gamma shape about 0.2, mean 46 days).
+a very long tail.
 \item It then expects many deaths still to come, and overshoots badly.
 \end{itemize}
 
@@ -463,7 +459,7 @@ $I(t)$, $F(t)$ and $\cfr_t$ stay by true day of onset, so transmission
 and the case fatality ratio are on the right days. Of the fatal cases with
 true onset on day $t$,
 \[
-F^{\mathrm{mis}}(t)\sim\bin\bigl(F(t),\ f\bigr),\qquad f\sim\operatorname{beta}(1,1),
+F^{\mathrm{mis}}(t)\sim\bin\bigl(F(t),\ f\bigr),
 \]
 are misdated: recorded on their day of death, $Z\sim h$ days later
 ($Z\ge1$; the supplied gamma, discretised). $F^{\mathrm{mis}}(t,z)$: those
@@ -543,9 +539,7 @@ S^{U}(d\given t')=(1-\omega^{d})\,S_{\mathrm{gamma}}(t'-d\given\mu^{d},\sigma^{d
 \]
 
 \begin{itemize}
-\item $\omega^{d}\sim\operatorname{beta}(1,9)$; $m^{d}\sim$ gamma with mean
-40 and sd 20 days.
-\item Both are the same for all onset days.
+\item $\omega^{d}$ and $m^{d}$ are the same for all onset days.
 \item This is where most of the difficulty lies (later slides).
 \end{itemize}
 \end{frame}
@@ -553,19 +547,19 @@ S^{U}(d\given t')=(1-\omega^{d})\,S_{\mathrm{gamma}}(t'-d\given\mu^{d},\sigma^{d
 % ---------------------------------------------------------------------------
 \begin{frame}{Changes at unknown times}
 Four quantities are piecewise constant in the onset day, each with its own
-change points and the same prior on them.
+change points, with the same model for them as for $R_t$.
 
 \bigskip
 \begin{center}
 \renewcommand{\arraystretch}{1.35}
-\begin{tabular}{lll}
+\begin{tabular}{lc}
 \toprule
-Quantity & Prior within a segment & Minimum segment \\
+Quantity & Minimum segment \\
 \midrule
-$R_t$ & gamma & 7 days \\
-Reporting delay $(\mu,\sigma)$ & hierarchical log-normal & 14 days \\
-Case fatality ratio $\cfr_t$ & $\operatorname{beta}(1,1)$ & 14 days \\
-Recording delay $(\mu^{d},\sigma^{d})$ & hierarchical log-normal & 14 days \\
+$R_t$ & 7 days \\
+Reporting delay $(\mu,\sigma)$ & 14 days \\
+Case fatality ratio $\cfr_t$ & 14 days \\
+Recording delay $(\mu^{d},\sigma^{d})$ & 14 days \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -709,7 +703,7 @@ The hazard of a death being recorded on each day after report $t_{j-1}$, up
 to and including report $t_j$, is multiplied by
 \[
 \psi^{d}_{w(j)}\,e^{\varepsilon_j},\qquad
-\varepsilon_j\sim N(0,s^2),\qquad s^2\sim\operatorname{inverse\ gamma}(3,\,0.2),
+\varepsilon_j\sim N(0,s^2),
 \]
 with $w(j)$ the day of the week of report $t_j$.
 
@@ -814,6 +808,55 @@ Probability a wrong record is shown as dead, $\delta$ & -- & -- \\
 
 % ---------------------------------------------------------------------------
 \appendix
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Appendix: priors, transmission and cases}
+\begin{center}
+\footnotesize
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{p{0.27\textwidth}p{0.25\textwidth}p{0.4\textwidth}}
+\toprule
+Parameter & Prior & Why \\
+\midrule
+$R_t$, each segment & gamma(shape 1, rate 1) & Mean 1; wide (95\% from 0.03 to 3.7). \\
+Probability $p$ of a change on a day (each of $R_t$, $\cfr_t$ and the two delays) & $\operatorname{beta}(1,T)$, $T$ onset days & About one change expected over the whole period, so few changes unless the data need them. \\
+Overdispersion $\kappa$ & gamma(mean 20, sd 20) & From strongly overdispersed to near Poisson. \\
+Reporting delay: centre of mean and of sd, $(\mu,\sigma)$ & gamma(mean 7, sd 10); gamma(mean 5, sd 5) (days) & Delays of a few days to a few weeks. \\
+Reporting and recording delays: spread of segments about the centre & half-normal(0, 0.5), on the log scale & Segments usually within a factor of 2 to 3 of the centre. \\
+Day-of-week effects $\psi_w$, $\psi^{d}_w$ & $\log\psi_w\sim N(0,1)$, one day the reference & Effects up to a factor of about 7 either way. \\
+Wrong records per genuine case, $\eta$ & gamma(mean 0.005, sd 0.005) & Wrong records are rare: counts fall in about 2\% of comparisons. \\
+Daily probability a wrong record is removed, $\rho$ & $\operatorname{beta}(1,4)$ & Mean 0.2: most errors found within a week or two, but wide. \\
+\bottomrule
+\end{tabular}
+\end{center}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Appendix: priors, deaths}
+\begin{center}
+\footnotesize
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{p{0.27\textwidth}p{0.25\textwidth}p{0.4\textwidth}}
+\toprule
+Parameter & Prior & Why \\
+\midrule
+$\cfr_t$, each segment & $\operatorname{beta}(1,1)$ & Uniform. \\
+Share of fatal cases whose death brings the report, $\tau$ & $\operatorname{beta}(1,1)$ & Uniform. \\
+Share of fatal cases misdated, $f$ & $\operatorname{beta}(1,1)$ & Uniform. \\
+Delay from death to recording: centre of mean and of sd, $(\mu^{d},\sigma^{d})$ & gamma(mean 4, sd 4); gamma(mean 4, sd 4) (days) & A few days, but wide. \\
+Share of deaths recorded in the tail, $\omega^{d}$ & $\operatorname{beta}(1,9)$ & Mean 0.1: most deaths are recorded promptly. \\
+Mean of the tail, $m^{d}$ & gamma(mean 40, sd 20) (days) & Deaths are still being added one to two months after onset. \\
+Probability a wrong record is shown as dead, $\delta$ & $\operatorname{beta}(1,1)$ & Uniform. \\
+Sd of the effects of each report, $s$ & $s^2\sim$ inverse gamma(3, 0.2) & Prior mean of $s^2$ 0.1 ($s\approx0.3$), with a long enough tail for bursts. \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\smallskip
+{\footnotesize Fixed, not estimated: the serial interval, gamma(mean 15.3, sd
+9.3 days; Zaire ebolavirus), and the time from onset to death, gamma(mean
+9.3, sd 5.5 days).}
+\end{frame}
 
 \begin{frame}{Appendix: cases added by each report}
 \centering
