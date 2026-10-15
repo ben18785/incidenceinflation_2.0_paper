@@ -442,30 +442,100 @@ fast deaths were recorded, so they share one recording delay.
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Fitting}
-Metropolis within Gibbs, extending the sampler for cases.
+\begin{frame}{Inference method}
+Metropolis within Gibbs, extending the sampler for cases. We infer:
 
-\bigskip
+\medskip
+\begin{center}
+\small
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{lp{0.62\textwidth}}
+\toprule
+\multicolumn{2}{l}{\textbf{Counts, for each onset day $t$}}\\
+$I(t)$, $F(t)$ & true cases, and the fatal cases among them\\
+$W(t,z)$ & fatal cases of onset day $t$ counted on their day of death, $z$
+days later; $F^{d}(t)=\sum_z W(t,z)$\\
+$H_t$ & hidden counts in each report $t_j$: the fatal cases
+$C^{F}(t\given t_j)$, and the wrong records shown as alive and as dead\\
+\midrule
+\multicolumn{2}{l}{\textbf{Parameters}}\\
+Transmission & $R_t$ (with change points), $\kappa$\\
+Reporting of cases, $\theta$ & $(\mu,\sigma)$ (with change points), $\psi_w$, $\eta$, $\rho$\\
+Fatality & $\cfr_t$ (with change points)\\
+Recording of deaths, $\phi$ & $(\mu^{d},\sigma^{d})$ (with change points),
+$\psi^{d}_w$, $\omega^{d}$, $m^{d}$, $\tau$, $f$, $\delta$; report effects
+$\varepsilon_j$ and $s$ in some options\\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+Write $y_t=\{C(t\given t_j),D(t\given t_j)\}_{j=1}^{J}$: the counts of cases
+and of deaths for onset day $t$ in every report.
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Inference method}
+\textbf{The counts of each onset day.} We can calculate
+$p\bigl(y_t\given I(t),F(t),\theta,\phi\bigr)$ exactly, summing over the hidden
+counts $H_t$. Each sweep, for each $t$:
+
+\medskip
+\begin{enumerate}
+\item $F(t)$, with $H_t$ summed out: propose $F'=F(t)\pm k$, $k\in\{1,2,3\}$,
+and accept with probability
+\[
+\min\Bigl\{1,\ \frac{p(y_t\given I(t),F')\,\bin\bigl(F'\given I(t),\cfr_t\bigr)\,
+\bin\bigl(F^{d}(t)\given F',f\bigr)}
+{p(y_t\given I(t),F(t))\,\bin\bigl(F(t)\given I(t),\cfr_t\bigr)\,
+\bin\bigl(F^{d}(t)\given F(t),f\bigr)}\Bigr\}.
+\]
+\item $H_t$ is drawn exactly from $p\bigl(H_t\given y_t,I(t),F(t)\bigr)$: the
+hidden counts in the last report first, then those in each earlier report
+given the later ones.
+\item $I(t)$ is drawn exactly from its discrete conditional, with $F(t)$
+summed out:
+\[
+p\bigl(I(t)\given\cdot\bigr)\propto\prod_{s\ge t}\operatorname{NB}\bigl(I(s)\given R_s\Lambda_s,\kappa\bigr)
+\sum_{F}\bin\bigl(F\given I(t),\cfr_t\bigr)\,\bin\bigl(F^{d}(t)\given F,f\bigr)\,
+p\bigl(y_t,H_t\given I(t),F\bigr).
+\]
+\item $F(t)$ is drawn exactly given $I(t)$ and $H_t$: the summand above,
+normalised over $F$.
+\end{enumerate}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Inference method}
+\textbf{Which fatal cases are counted on their day of death.} Metropolis
+proposals change the counts $W$ by one, keeping the number of fatal cases
+recorded for each day, $\tilde{F}$, fixed:
 \begin{itemize}
-\item \textbf{$F(t)$, with the path summed out.} Forward filtering over the
-reports of an onset day gives $p(\text{reports}\given I(t),F(t))$; a change
-in $F(t)$ is proposed and accepted by Metropolis.
-\item \textbf{Paths $C^{F}$.} Drawn exactly by backward sampling.
-\item \textbf{$I(t)$ and $F(t)$ given the paths.} $I(t)$ from its discrete
-conditional with $F(t)$ summed out, then $F(t)$ given $I(t)$.
-\item \textbf{Which cases are counted on the day of death.} Many Metropolis
-moves of single cases each iteration: between onset and death, changing the
-time to death, and at either end of the series.
-\item \textbf{$\cfr_t$ segments.} Drawn exactly with values integrated out
-(beta-binomial), as for $R_t$.
-\item \textbf{The rest.} Delay segments by split, merge and shift moves;
-$\tau$, $\rho$, the tail and day-of-week effects by random walks; $f$ from a
-matched beta proposal; $\delta$, $\eta$ conjugate.
+\item one of the fatal cases recorded for day $s$ switches between ``onset on
+day $s$'' and ``onset on day $s-z$, counted on its day of death $s$'': $I$ and
+$F$ change by one on both days;
+\item one counted on its day of death $s$ is given a different time to death
+$z'$: it moves from onset day $s-z$ to $s-z'$.
 \end{itemize}
+The ratio includes the renewal model, $h$, $\bin(F^{d}\given F,f)$ and
+$p(y\given I,F)$ for the days changed.
 
-\bigskip
-{\small Fits run as 4 chains of 1{,}500 iterations, one per job on GitHub
-Actions; about 2 to 5 hours each.}
+\medskip
+\textbf{Parameters.}
+\begin{itemize}
+\item $\cfr_t$: change points drawn with the values integrated out
+(beta-binomial), as for $R_t$; then for each segment $k$,
+$\cfr_k\sim\operatorname{beta}\bigl(1+\sum_{t\in k}F(t),\ 1+\sum_{t\in k}[I(t)-F(t)]\bigr)$.
+\item $f$: close to $\operatorname{beta}\bigl(1+\sum_tF^{d}(t),\
+1+\sum_t[F(t)-F^{d}(t)]\bigr)$; drawn from a beta matched to its conditional,
+with a Metropolis--Hastings correction.
+\item $\delta$ and $\eta$: conjugate (beta and gamma), given the wrong records
+in $H$.
+\item $(\mu,\sigma)$ and $(\mu^{d},\sigma^{d})$: split, merge and shift moves
+of change points.
+\item $\kappa$, $\rho$, $\tau$, $\omega^{d}$, $m^{d}$, $\psi_w$, $\psi^{d}_w$:
+random-walk Metropolis.
+\end{itemize}
 \end{frame}
 
 % ---------------------------------------------------------------------------
@@ -499,26 +569,25 @@ but much about deaths,} which go on being recorded for weeks.
 \toprule
  & \multicolumn{3}{c}{Deaths} & \\
 \cmidrule(lr){2-4}
-Fit date & Shown then & Projected for 7 Oct & Shown 7 Oct & Share in the tail, $\omega^{d}$ ($\hat{R}$) \\
+Fit date & Shown then & Projected for 7 Oct & Shown 7 Oct & Share in the tail, $\omega^{d}$ \\
 \midrule
-1 Aug & 348 & 796 (681--893) & 709 & 0.56 (1.39) \\
-9 Aug & 380 & 728 (660--844) & 761 & 0.47 (1.09) \\
-16 Aug & 403 & 632 (581--732) & 813 & 0.47 (1.25) \\
-24 Aug & 441 & 687 (639--776) & 798 & 0.50 (1.03) \\
-2 Sep & 495 & 782 (728--844) & 826 & 0.54 (1.01) \\
-9 Sep & 489 & 871 (747--975) & 786 & 0.46 (3.07) \\
-16 Sep & 513 & 840 (758--909) & 768 & 0.46 (6.13) \\
-24 Sep & 457 & 662 (625--710) & 639 & 0.32 (5.31) \\
-1 Oct & 379 & 490 (471--512) & 510 & 0.30 (4.60) \\
+1 Aug & 348 & 796 (681--893) & 709 & 0.56 \\
+9 Aug & 380 & 728 (660--844) & 761 & 0.47 \\
+16 Aug & 403 & 632 (581--732) & 813 & 0.47 \\
+24 Aug & 441 & 687 (639--776) & 798 & 0.50 \\
+2 Sep & 495 & 782 (728--844) & 826 & 0.54 \\
+9 Sep & 489 & 871 (747--975) & 786 & 0.46 \\
+16 Sep & 513 & 840 (758--909) & 768 & 0.46 \\
+24 Sep & 457 & 662 (625--710) & 639 & 0.32 \\
+1 Oct & 379 & 490 (471--512) & 510 & 0.30 \\
 \bottomrule
 \end{tabular}
 
 \medskip
 \begin{minipage}{0.88\textwidth}
-\small Posterior medians and 90\% intervals; 4 chains of 1{,}500 iterations,
-second halves (3 chains at 24 Aug). Up to 2 September the chains agree, and
-the projections are mostly too low; from 9 September the chains disagree,
-and on 9 and 16 September the projections are about 10\% too high.
+\small Posterior medians and 90\% intervals. Up to 2 September the
+projections are mostly too low; on 9 and 16 September they are about 10\%
+too high.
 \end{minipage}
 \end{frame}
 
@@ -537,7 +606,7 @@ records.)
 
 % ---------------------------------------------------------------------------
 \begin{frame}{Two ways to explain the late deaths}
-From 9 September, chains settle in one of two modes:
+From 9 September, the posterior has two modes:
 
 \bigskip
 \begin{center}
@@ -631,30 +700,26 @@ Deaths in the latest 28 onset days: 513 shown on 16 September, 768 on
 \medskip
 \begin{center}
 \renewcommand{\arraystretch}{1.3}
-\begin{tabular}{lcccc}
+\begin{tabular}{lccc}
 \toprule
-Option & Projected for 7 Oct & Eventual & Case fatality ratio & Largest $\hat{R}$ \\
+Option & Projected for 7 Oct & Eventual & Case fatality ratio \\
 \midrule
-Base & 840 (758--909) & 1{,}081 (798--1{,}198) & 0.63 (0.48--0.70) & 6.1 \\
-(a) Fixed to 31 July & 856 (812--906) & 1{,}104 (1{,}030--1{,}188) & 0.65 (0.60--0.69) & 1.07 \\
-(b) One delay & 851 (803--906) & 1{,}098 (1{,}022--1{,}194) & 0.64 (0.60--0.70) & 1.22 \\
-(c) Base, report effects & 692 (638--742) & 748 (700--790) & 0.46 (0.44--0.48) & 1.58 \\
-(d) One delay, report effects & 676 (614--732) & 751 (651--798) & 0.47 (0.40--0.49) & 1.50 \\
+Base & 840 (758--909) & 1{,}081 (798--1{,}198) & 0.63 (0.48--0.70) \\
+(a) Fixed to 31 July & 856 (812--906) & 1{,}104 (1{,}030--1{,}188) & 0.65 (0.60--0.69) \\
+(b) One delay & 851 (803--906) & 1{,}098 (1{,}022--1{,}194) & 0.64 (0.60--0.70) \\
+(c) Base, report effects & 692 (638--742) & 748 (700--790) & 0.46 (0.44--0.48) \\
+(d) One delay, report effects & 676 (614--732) & 751 (651--798) & 0.47 (0.40--0.49) \\
 \bottomrule
 \end{tabular}
 \end{center}
 
 \medskip
 \begin{itemize}
-\item (a) and (b) converge, and choose the heavy tail: about 10\% too high.
+\item (a) and (b) choose the heavy tail: about 10\% too high.
 \item (c) and (d) go too far the other way: their eventual deaths are fewer
 than 7 October already shows. Effects on the whole delay speed up the
 recording of recent deaths too. Hence (e) and (f).
 \end{itemize}
-
-\smallskip
-{\small Largest $\hat{R}$ over $f$, $\tau$, $\omega^{d}$, $m^{d}$ and the
-case fatality ratio of the latest 28 onset days.}
 \end{frame}
 
 % ---------------------------------------------------------------------------
@@ -668,7 +733,7 @@ deaths by report date can be explained in more than one way, and the fits
 choose between them differently at different dates.
 \item \textbf{Report effects remove the overshoot, but overcorrect}:
 effects on the whole delay also speed up recent deaths.
-\item \textbf{Running now:} options (c) to (f) at every fit date from
+\item \textbf{Next:} options (c) to (f) at every fit date from
 1 August to 7 October, scored against the report of 7 October.
 \item \textbf{Sensitivity:} the supplied time to death, especially its sd.
 \end{itemize}
