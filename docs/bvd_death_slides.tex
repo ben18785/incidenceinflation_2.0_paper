@@ -186,8 +186,6 @@ Fatal cases reported, death recorded & $D(t\given t_j)$ & dead \\
 \begin{itemize}
 \item Observed: $C=C^{N}+C^{F}$ and $D$.
 \item Not observed: the split of $C$ into $C^{F}$ and $C^{N}$.
-\item So each onset day has one unobserved path over reports,
-$C^{F}(t\given t_1),\,C^{F}(t\given t_2),\dots$
 \end{itemize}
 \end{frame}
 
@@ -199,7 +197,7 @@ $C^{F}(t\given t_1),\,C^{F}(t\given t_2),\dots$
 \text{non-fatal cases new to the report}\quad
  & \Delta C^{N}(t\given t_j)\sim\bin\bigl(N(t)-C^{N}(t\given t_{j-1}),\ p^{N}(t\given t_j)\bigr)\\[3pt]
 \text{new cases already shown as dead}\quad
- & \dnew(t\given t_j)\sim\bin\bigl(\Delta C^{F}(t\given t_j),\ g(t\given t_j)\bigr)\\[3pt]
+ & \dnew(t\given t_j)\sim\bin\bigl(\Delta C^{F}(t\given t_j),\ p^{\text{dead}}(t\given t_j)\bigr)\\[3pt]
 \text{cases shown as alive before, now dead}\quad
  & \dold(t\given t_j)\sim\bin\Bigl(C^{F}(t\given t_{j-1})-D(t\given t_{j-1}),\
  1-\frac{S^{D}(t\given t_j)}{S^{D}(t\given t_{j-1})}\Bigr)
@@ -210,34 +208,48 @@ Observed: $\Delta C=\Delta C^{F}+\Delta C^{N}$ and $\Delta D=\dnew+\dold$.
 
 \medskip
 \begin{itemize}
-\item Example: 10 cases, 3 dead, then 12 cases, 5 dead. The 2 new deaths may
-be among the 7 shown as alive before, or the 2 new cases, or one of each.
-\item Given $I(t)$ and $F(t)$, each onset day is a hidden Markov chain over
-reports, with state $C^{F}$. The likelihood sums over its paths exactly.
+\item $p^{F}(t\given t_j)$: probability a fatal case not in the report of
+$t_{j-1}$ is in that of $t_j$.
+\item $p^{N}(t\given t_j)$: the same for a non-fatal case. With independent
+delays, $p^{F}=p^{N}=1-S^{C}(t\given t_j)/S^{C}(t\given t_{j-1})$.
+\item $p^{\text{dead}}(t\given t_j)$: probability a fatal case new to the
+report of $t_j$ is already shown as dead in it. With independent delays,
+$p^{\text{dead}}=1-S^{D}(t\given t_j)$.
 \end{itemize}
 \end{frame}
 
 % ---------------------------------------------------------------------------
 \begin{frame}{A puzzle: deaths shown very early}
-If $T_C$ and $T_D$ were independent, the share of reported cases shown as dead
-at time $u$ since onset would be $\cfr_t\,[1-S^{D}(u)]$: near zero at first,
-then rising. The reports (onset days 12 July to 5 September):
+For each onset day and each report, take the cases of that onset day shown
+in the report and the share of them shown as dead. Group by the days from
+onset to report (onset days 12 July to 5 September):
 
 \medskip
 \begin{center}
-\renewcommand{\arraystretch}{1.25}
-\begin{tabular}{lc}
+\small
+\renewcommand{\arraystretch}{1.15}
+\begin{tabular}{ccc}
 \toprule
-Time since onset & Share shown as dead \\
+Days from & Cases shown & Share shown \\
+onset to report & (summed over reports) & as dead \\
 \midrule
-0 to 1 days & 0.43 \\
-About a week & 0.34 \\
-2 to 3 months & 0.46 \\
+0--1 & 148 & 0.43 \\
+2--7 & 3,970 & 0.35 \\
+8--14 & 10,850 & 0.37 \\
+15--28 & 27,014 & 0.41 \\
+29--42 & 28,766 & 0.44 \\
+43 or more & 39,158 & 0.46 \\
 \bottomrule
 \end{tabular}
 \end{center}
 
-\medskip
+If $T_C$ and $T_D$ were independent, this share would be about
+$\cfr_t\,[1-S^{D}(u)]$ at $u$ days: near zero at first, then rising.
+Instead, it starts high (0.43), dips, then rises again.
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{A puzzle: deaths shown very early}
 \begin{itemize}
 \item To fit this with independent delays, $T_D$ needs a spike near zero and
 a very long tail (gamma shape about 0.2, mean 46 days).
@@ -245,8 +257,10 @@ a very long tail (gamma shape about 0.2, mean 46 days).
 \end{itemize}
 
 \bigskip
-Two explanations, not exclusive: deaths bring about reports, and some
-deaths are counted on the day of death.
+There are two potential explanations we consider in what follows for these
+patterns: a person dying actually triggers a case to be reported or some
+proportion of cases that die have their date of onset recorded as their date
+of death.
 \end{frame}
 
 % ---------------------------------------------------------------------------
@@ -271,8 +285,8 @@ p^{F}(t\given t_j)=1-\frac{M(t\given t_j)}{M(t\given t_{j-1})}.
 \begin{itemize}
 \item Fatal cases are reported sooner than others, and early reports are
 more often fatal.
-\item Only $p^{F}$ and $g$ change; the hidden state is unchanged, so the
-likelihood is still exact.
+\item Only $p^{F}$ and $p^{\text{dead}}$ change, so the likelihood keeps
+the same form.
 \item $\tau=0$ is the independent model. $\tau\sim\operatorname{beta}(1,1)$.
 \end{itemize}
 \end{frame}
@@ -470,17 +484,15 @@ but much about deaths,} which go on being recorded for weeks.
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Fits to past reports: deaths}
+\begin{frame}{Fits to past sitreps: deaths}
 \centering
-\includegraphics[height=0.72\textheight]{bvd_deaths_fits_deaths.png}
+\includegraphics[height=0.8\textheight]{bvd_deaths_fits_deaths.png}
 
-{\small Green: eventual deaths (median, 90\% interval). Orange: the report of
-the fit date. Purple: projected for the report of 7 October. Black: that
-report.}
+{\small Panels: the date of each fit. Shading: 90\% interval of the projection.}
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Fits to past reports: deaths in the latest 28 onset days}
+\begin{frame}{Fits to past sitreps: deaths in the latest 28 onset days}
 \centering
 \renewcommand{\arraystretch}{1.2}
 \begin{tabular}{lcccc}
@@ -680,12 +692,11 @@ effects on the whole delay also speed up recent deaths.
 many records.)}
 \end{frame}
 
-\begin{frame}{Appendix: fits to past reports, cases}
+\begin{frame}{Appendix: fits to past sitreps, cases}
 \centering
-\includegraphics[height=0.72\textheight]{bvd_deaths_fits_cases.png}
+\includegraphics[height=0.8\textheight]{bvd_deaths_fits_cases.png}
 
-{\small As for deaths: green eventual, orange the report of the fit date,
-purple projected for 7 October, black that report.}
+{\small Panels: the date of each fit. Shading: 90\% interval of the projection.}
 \end{frame}
 
 % ---------------------------------------------------------------------------
