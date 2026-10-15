@@ -2,3 +2,4 @@
 # a figure too wide for 38 experiments. No chains are run.
 collect_from: 38655749430
 package: ben18785/incidenceinflation_2.0@misdated
+# retry: fetch the chains one at a time

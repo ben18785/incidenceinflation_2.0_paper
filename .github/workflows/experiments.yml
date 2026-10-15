@@ -201,12 +201,32 @@ jobs:
           BVD_DATA_KEY_FILE="$RUNNER_TEMP/bvd_data_key" scripts/decrypt_bvd_data.sh
           rm "$RUNNER_TEMP/bvd_data_key"
       - uses: actions/download-artifact@v4
+        if: needs.plan.outputs.collect_from == ''
         with:
           pattern: chain-*
           path: chains
           merge-multiple: true
-          run-id: ${{ needs.plan.outputs.collect_from || github.run_id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      # the chains of an earlier run, one at a time: fetching them all at once
+      # from another run trips the secondary rate limit of the API
+      - name: Fetch the chains of the earlier run
+        if: needs.plan.outputs.collect_from != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN: ${{ needs.plan.outputs.collect_from }}
+        run: |
+          mkdir -p chains
+          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$RUN/artifacts?per_page=100" \
+            --jq '.artifacts[] | select(.name | startswith("chain-")) | "\(.id) \(.name)"' > artifacts.txt
+          echo "$(wc -l < artifacts.txt) chains to fetch"
+          while read -r id name; do
+            for attempt in 1 2 3 4 5; do
+              if gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$id/zip" > a.zip; then break; fi
+              echo "retrying $name"; sleep $((attempt * 20))
+            done
+            unzip -oq a.zip -d chains && rm a.zip
+            sleep 1
+          done < artifacts.txt
+          ls chains | wc -l
       - name: Summarise
         run: |
           Rscript scripts/collect_experiments.R chains results
