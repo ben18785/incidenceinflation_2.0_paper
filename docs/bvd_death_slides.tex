@@ -455,14 +455,17 @@ misdated.
 
 % ---------------------------------------------------------------------------
 \begin{frame}{Misdated cases: two sets of counts}
-$I(t)$, $F(t)$ and $\cfr_t$ stay by true day of onset, so transmission
-and the case fatality ratio are on the right days. Of the fatal cases with
+$I(t)$, $F(t)$ and $\cfr_t$ are all indexed by the true day of onset. Of the fatal cases with
 true onset on day $t$,
 \[
 F^{\mathrm{mis}}(t)\sim\bin\bigl(F(t),\ f\bigr),
 \]
-are misdated: recorded on their day of death, $Z\sim h$ days later
-($Z\ge1$; the supplied gamma, discretised). $F^{\mathrm{mis}}(t,z)$: those
+are misdated: recorded on their day of death, $Z$ days later, with
+\[
+P(Z=z)=h_z\propto G(z)-G(z-1),\qquad z=1,2,\dots,
+\]
+$G$ the distribution function of a gamma with mean 9.3 and sd 5.5 days (the
+time from onset to death, from the review). $F^{\mathrm{mis}}(t,z)$: those
 who die $z$ days after onset (multinomial given $F^{\mathrm{mis}}(t)$).
 
 \bigskip
@@ -819,12 +822,12 @@ Probability a wrong record is shown as dead, $\delta$ & -- & -- \\
 Parameter & Prior & Justification \\
 \midrule
 $R_t$, each segment & gamma(shape 1, rate 1) & Mean 1; 5--95\% prior quantiles 0.05 to 3.0: from rapid decline to fast growth. \\
-Probability $p$ of a change on a day (each of $R_t$, $\cfr_t$ and the two delays) & $\operatorname{beta}(1,T)$, $T$ onset days & Expected number of changes over the period about 1 (5--95\%: 0.05 to 2.9), so changes are added only when the data need them. \\
+Probability $p$ of a change on a day (each of $R_t$, $\cfr_t$ and the two delays) & $\operatorname{beta}(1,T)$, $T$ onset days & Expected number of changes over the period about 1 (5--95\%: 0.05 to 2.9). \\
 Overdispersion $\kappa$ & gamma(mean 20, sd 20) & 5--95\%: 1 to 60. At 50 cases a day, variance 50 to 1.8 times the mean: from strongly overdispersed to near Poisson. \\
-Reporting delay: centre of mean and of sd, $(\mu,\sigma)$ & gamma(mean 7, sd 10); gamma(mean 5, sd 5) (days) & 5--95\%: mean 0.03 to 27 days; sd 0.3 to 15 days. \\
-Reporting and recording delays: spread of segments about the centre (sd on the log scale) & half-normal(0, 0.5) & 5--95\%: 0.03 to 0.98. At the median, 0.34, 95\% of segments have a mean delay within a factor of 1.9 of the centre. \\
+Reporting delay: centre $(\bar\mu,\bar\sigma)$ about which the segments' $(\mu_k,\sigma_k)$ lie & $\bar\mu\sim$ gamma(mean 7, sd 10); $\bar\sigma\sim$ gamma(mean 5, sd 5) (days) & 5--95\%: mean 0.03 to 27 days; sd 0.3 to 15 days. \\
+Spread $\zeta$ of the segments of each delay about its centre: $\log\mu_k\sim N(\log\bar\mu,\zeta^2)$, $\log\sigma_k\sim N(\log\bar\sigma,\zeta^2)$ & half-normal(0, 0.5) & 5--95\%: 0.03 to 0.98. At the median, 0.34, 95\% of segments have a mean delay within a factor of 1.9 of the centre. \\
 Day-of-week effects $\psi_w$, $\psi^{d}_w$, relative to a reference day & $\log\psi_w\sim N(0,1)$ & 5--95\%: $\psi_w$ from 0.19 to 5.2: a weekday has between a fifth and five times the reporting of the reference day. \\
-Wrong records per genuine case reported, $\eta$ & gamma(mean 0.005, sd 0.005) & 5--95\%: 0.0003 to 0.015, one wrong record per 3{,}800 to 67 genuine cases. Counts fall in about 2\% of comparisons. \\
+Wrong records per genuine case reported, $\eta$ & gamma(mean 0.005, sd 0.005) & 5--95\%: 0.0003 to 0.015, one wrong record per 3{,}800 to 67 genuine cases. \\
 Daily probability a wrong record is removed, $\rho$ & $\operatorname{beta}(1,4)$ & Mean 0.2; 5--95\%: 0.013 to 0.53, a wrong record lasting on average 2 to 78 days. \\
 \bottomrule
 \end{tabular}
@@ -840,14 +843,14 @@ Daily probability a wrong record is removed, $\rho$ & $\operatorname{beta}(1,4)$
 \toprule
 Parameter & Prior & Justification \\
 \midrule
-$\cfr_t$, each segment & $\operatorname{beta}(1,1)$ & Uniform on 0 to 1: no prior view. \\
-Share of fatal cases whose death brings the report, $\tau$ & $\operatorname{beta}(1,1)$ & Uniform on 0 to 1: no prior view. \\
-Share of fatal cases misdated, $f$ & $\operatorname{beta}(1,1)$ & Uniform on 0 to 1: no prior view. \\
-Delay from death to recording: centre of mean and of sd, $(\mu^{d},\sigma^{d})$ & gamma(mean 4, sd 4) each (days) & 5--95\%: 0.2 to 12 days. \\
+$\cfr_t$, each segment & $\operatorname{beta}(1,1)$ & Uniform on 0 to 1. \\
+Share of fatal cases whose death brings the report, $\tau$ & $\operatorname{beta}(1,1)$ & Uniform on 0 to 1. \\
+Share of fatal cases misdated, $f$ & $\operatorname{beta}(1,1)$ & Uniform on 0 to 1. \\
+Delay from death to recording: centre $(\bar\mu^{d},\bar\sigma^{d})$ about which the segments lie & gamma(mean 4, sd 4) each (days) & 5--95\%: 0.2 to 12 days. \\
 Share of deaths recorded in the tail, $\omega^{d}$ & $\operatorname{beta}(1,9)$ & Mean 0.1; 5--95\%: 0.006 to 0.28: most deaths are recorded without a long delay. \\
 Mean of the tail, $m^{d}$ & gamma(mean 40, sd 20) (days) & 5--95\%: 14 to 78 days. Deaths are still being added to onset days one to two months old. \\
-Probability a wrong record is shown as dead, $\delta$ & $\operatorname{beta}(1,1)$ & Uniform on 0 to 1: no prior view. \\
-Sd of the effects of each report, $s$ & $s^2\sim$ inverse gamma(3, 0.2) & 5--95\%: $s$ from 0.18 to 0.49; at the median, 0.27, 95\% of reports multiply the hazard of recording by 1/1.7 to 1.7. The data can outweigh it: the fit to 16 September gives $s=0.88$. \\
+Probability a wrong record is shown as dead, $\delta$ & $\operatorname{beta}(1,1)$ & Uniform on 0 to 1. \\
+Sd $s$ of the log effects of each report, $\varepsilon_j\sim N(0,s^2)$ & $s^2\sim$ inverse gamma(shape 3, scale 0.2) & Prior mean of $s^2$ 0.1. 5--95\%: $s$ from 0.18 to 0.49, so 95\% of reports multiply the hazard of recording by between 0.70 and 1.4 ($s=0.18$) or between 0.38 and 2.6 ($s=0.49$). \\
 \bottomrule
 \end{tabular}
 \end{center}
