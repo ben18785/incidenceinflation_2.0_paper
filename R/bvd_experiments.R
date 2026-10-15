@@ -338,8 +338,10 @@ write_bvd_experiment_results <- function(chains, snapshots_all, dir) {
     utils::write.csv(totals, paths[3], row.names = FALSE)
     utils::write.csv(delays, paths[4], row.names = FALSE)
     n_experiments <- length(unique(delays$experiment))
-    save_plot(plot_bvd_experiment_delays(delays), paths[5],
-              max(5, 2.6 * n_experiments + 1), 5.5)
+    # a figure is not worth losing the results for
+    tryCatch(save_plot(plot_bvd_experiment_delays(delays), paths[5],
+                       min(48, max(5, 2.6 * n_experiments + 1)), 5.5),
+             error = function(e) message("No figure of the delays: ", conditionMessage(e)))
     worst <- summary %>%
       dplyr::group_by(.data$experiment) %>%
       dplyr::summarise(`worst R-hat` = sprintf("%.2f", max(.data$rhat, na.rm = TRUE)),

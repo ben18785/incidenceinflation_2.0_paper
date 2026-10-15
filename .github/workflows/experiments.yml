@@ -10,6 +10,10 @@
 # A line
 #   package: <owner>/<repository>@<branch>
 # has the chains use that version of the model in place of the usual one.
+# A batch whose file has a line
+#   collect_from: <id of an earlier run>
+# runs no chains: it summarises the chains saved by that run and writes the
+# results to experiment-results (for when only the summary failed).
 name: experiments
 run-name: ${{ inputs.batch || inputs.experiments || github.event.head_commit.message }}
 
@@ -43,6 +47,7 @@ jobs:
       time_limit: ${{ steps.plan.outputs.time_limit }}
       package: ${{ steps.plan.outputs.package }}
       count: ${{ steps.plan.outputs.count }}
+      collect_from: ${{ steps.plan.outputs.collect_from }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -64,12 +69,14 @@ jobs:
               CONTINUE_FROM=$(cat $files | sed -n 's/^continue:[[:space:]]*\([0-9]*\).*/\1/p' | head -n 1)
             fi
             TIME_LIMIT=$(cat $files | sed -n 's/^time_limit:[[:space:]]*\([0-9.]*\).*/\1/p' | head -n 1)
+            COLLECT_FROM=$(cat $files | sed -n 's/^collect_from:[[:space:]]*\([0-9]*\).*/\1/p' | head -n 1)
             PACKAGE_GIVEN=$(cat $files | sed -n 's/^package:[[:space:]]*\([A-Za-z0-9_.\/@-]*\).*/\1/p' | head -n 1)
-            WANTED=$(cat $files | grep -v '^[[:space:]]*#' | grep -v '^continue:' | grep -v '^time_limit:' | grep -v '^package:' | grep -v '^[[:space:]]*$' | paste -sd, -)
+            WANTED=$(cat $files | grep -v '^[[:space:]]*#' | grep -v '^continue:' | grep -v '^time_limit:' | grep -v '^package:' | grep -v '^collect_from:' | grep -v '^[[:space:]]*$' | paste -sd, -)
             BATCH=$(for file in $files; do basename "$file" .txt; done | paste -sd+ -)
           fi
           echo "batch=${BATCH:-chosen}" >> "$GITHUB_OUTPUT"
           echo "continue_from=$CONTINUE_FROM" >> "$GITHUB_OUTPUT"
+          echo "collect_from=$COLLECT_FROM" >> "$GITHUB_OUTPUT"
           echo "time_limit=${TIME_LIMIT:-320}" >> "$GITHUB_OUTPUT"
           echo "package=github::${PACKAGE_GIVEN:-ben18785/incidenceinflation_2.0@deaths}" >> "$GITHUB_OUTPUT"
           echo "Model: ${PACKAGE_GIVEN:-ben18785/incidenceinflation_2.0@deaths}"
@@ -160,7 +167,7 @@ jobs:
 
   collect:
     needs: [plan, chain]
-    if: always() && needs.plan.outputs.count != '0' && needs.plan.result == 'success'
+    if: always() && needs.plan.result == 'success' && (needs.plan.outputs.count != '0' || needs.plan.outputs.collect_from != '')
     runs-on: ubuntu-latest
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
@@ -198,6 +205,8 @@ jobs:
           pattern: chain-*
           path: chains
           merge-multiple: true
+          run-id: ${{ needs.plan.outputs.collect_from || github.run_id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Summarise
         run: |
           Rscript scripts/collect_experiments.R chains results
