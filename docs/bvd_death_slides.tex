@@ -293,9 +293,13 @@ newly reported between the two reports.
 \begin{itemize}
 \setlength{\itemsep}{0.6em}
 \item Errors are made when cases are being reported, and are found later.
-\item $\delta$: probability a wrong record is shown as dead;
-$\delta\sim\operatorname{beta}(1,1)$. $\eta$ and $\rho$ as for cases.
-\item The hidden counts in each report are now $C^{F}$, $E^{A}$ and $E^{D}$.
+\item $\eta$: the expected number of wrong records added with each genuine
+case reported. $\rho$: the daily probability a wrong record is removed. Both
+with the same priors as for cases.
+\item $\delta$: the probability a wrong record is shown as dead;
+$\delta\sim\operatorname{beta}(1,1)$.
+\item The hidden counts in each report are $C^{F}$, $E^{A}$ and $E^{D}$.
+$D^{F}=D-E^{D}$ and $C^{N}=C-C^{F}-E^{A}-E^{D}$ follow from them.
 \end{itemize}
 \end{frame}
 
