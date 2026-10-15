@@ -64,7 +64,7 @@ $S^{C}(t\given t')$: probability a case is not yet reported at $t'$.
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Recap: the model of cases (continued)}
+\begin{frame}{Recap: the model of cases}
 \textbf{Wrong records.} Counts sometimes fall. Records are added in error
 in proportion to reporting activity (rate $\eta$), and each is removed with
 probability $\rho$ a day.
@@ -94,10 +94,10 @@ D(t\given t_j) &: \text{the number of those cases shown as dead},\quad D\le C.
 \end{align*}
 
 \begin{itemize}
-\item \textbf{No dates of death.} A death is counted on the onset day of its
-case.
+\item \textbf{No dates of death.} A death is counted on the reported onset
+day of its case.
 \item \textbf{Deaths are shown only with their cases.} A case can first
-appear already dead, but a report never shows a death without its case.
+appear already dead.
 \item \textbf{Deaths lag cases.} At 7 to 14 days after onset the case count
 is about 79\% of its latest value, and the death count about 60\%.
 \end{itemize}
@@ -123,7 +123,7 @@ before (delay, day-of-week effects, wrong records).
 \item $\phi$: the vector of parameters of the recording of deaths (delay,
 day-of-week effects, and those introduced on later slides).
 \item $\cfr_t$ and the delay to a death being recorded each have their own
-change points, with the same model for them as $R_t$.
+change points, with the same model for them as for $R_t$.
 \end{itemize}
 
 \bigskip
@@ -133,7 +133,8 @@ onset days, and $\cfr_t$, allowing for deaths not yet recorded.
 
 % ---------------------------------------------------------------------------
 \begin{frame}{Two delays for each fatal case}
-To begin with, each fatal case has two independent delays from onset:
+We are building up to a more nuanced delay model but, to start, let's
+assume that the following delays from onset are independent:
 
 \smallskip
 \begin{center}
@@ -142,8 +143,8 @@ To begin with, each fatal case has two independent delays from onset:
 \toprule
  & Delay & Probability it has not happened by $t'$ \\
 \midrule
-The case is reported & $X$ & $S^{C}(t\given t')$ \\
-The death is recorded & $Y$ & $S^{D}(t\given t')$ \\
+The case is reported & $T_C$ & $S^{C}(t\given t')$ \\
+The death is recorded & $T_D$ & $S^{D}(t\given t')$ \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -151,14 +152,15 @@ The death is recorded & $Y$ & $S^{D}(t\given t')$ \\
 \medskip
 \begin{itemize}
 \item A fatal case is \textbf{shown as dead} once it is reported \emph{and}
-its death is recorded: $\max(X,Y)\le t'-t$.
+its death is recorded.
 \item Reported, but death not yet recorded: \textbf{shown as alive}.
-\item So some of the cases shown as alive will die, and we cannot see which.
+\item So some of the cases shown as alive will die, and we cannot see which because we do
+not have a line list.
 \end{itemize}
 
 \bigskip
 Later slides change this: a death can bring about the report of its case
-($X$ and $Y$ then depend on each other), and $Y$ becomes the time to death
+($T_C$ and $T_D$ then depend on each other), and $T_D$ becomes the time to death
 plus a delay to recording.
 \end{frame}
 
@@ -217,7 +219,7 @@ reports, with state $C^{F}$. The likelihood sums over its paths exactly.
 
 % ---------------------------------------------------------------------------
 \begin{frame}{A puzzle: deaths shown very early}
-If $X$ and $Y$ were independent, the share of reported cases shown as dead
+If $T_C$ and $T_D$ were independent, the share of reported cases shown as dead
 at time $u$ since onset would be $\cfr_t\,[1-S^{D}(u)]$: near zero at first,
 then rising. The reports (onset days 12 July to 5 September):
 
@@ -237,7 +239,7 @@ About a week & 0.34 \\
 
 \medskip
 \begin{itemize}
-\item To fit this with independent delays, $Y$ needs a spike near zero and
+\item To fit this with independent delays, $T_D$ needs a spike near zero and
 a very long tail (gamma shape about 0.2, mean 46 days).
 \item It then expects many deaths still to come, and overshoots badly.
 \end{itemize}
@@ -254,8 +256,8 @@ they have not been reported by then:
 \[
 \text{time to being reported}=
 \begin{cases}
-\min(X,Y) & \text{with probability } \tau\\
-X & \text{with probability } 1-\tau
+\min(T_C,T_D) & \text{with probability } \tau\\
+T_C & \text{with probability } 1-\tau
 \end{cases}
 \]
 
@@ -356,7 +358,7 @@ data simulated exactly.
 
 % ---------------------------------------------------------------------------
 \begin{frame}{The delay to a death being recorded}
-With onset to death supplied, $Y=Z+U$: the time to death, then a delay $U$
+With onset to death supplied, $T_D=Z+U$: the time to death, then a delay $U$
 from death to the death being recorded, gamma$(\mu^{d},\sigma^{d})$:
 \[
 S^{D}(t\given t')=\sum_{z>t'-t}h_z+\sum_{z\le t'-t}h_z\,S^{U}(t+z\given t')
@@ -668,6 +670,15 @@ effects on the whole delay also speed up recent deaths.
 
 % ---------------------------------------------------------------------------
 \appendix
+
+\begin{frame}{Appendix: cases added by each report}
+\centering
+\includegraphics[height=0.74\textheight]{bvd_cases_increments.png}
+
+\smallskip
+{\small As the first slide, for cases. (6 September: a report which corrected
+many records.)}
+\end{frame}
 
 \begin{frame}{Appendix: fits to past reports, cases}
 \centering
