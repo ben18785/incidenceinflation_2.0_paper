@@ -1,0 +1,729 @@
+\documentclass[aspectratio=169,9pt]{beamer}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+
+\usetheme{default}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}[frame number]
+\setbeamerfont{frametitle}{size=\large,series=\bfseries}
+\setbeamertemplate{itemize items}[circle]
+\setlength{\leftmargini}{1.2em}
+
+% figures are written to outputs/
+\graphicspath{{../outputs/}{outputs/}}
+\newcommand{\given}{\,|\,}
+\newcommand{\bin}{\operatorname{binomial}}
+\newcommand{\dnew}{\Delta D^{\mathrm{new}}}
+\newcommand{\dold}{\Delta D^{\mathrm{old}}}
+
+% The numbers on the slides of results are typed in by hand. They come from
+% the chains of the runs runs/2026-10-14_19_11_new_sitreps_with_1001 (batch 11) and
+% runs/2026-10-14_20_12_recording_delay_0916 (batch 12) on the branch
+% experiment-results, the second half of each chain, and from the reports.
+% The figures bvd_deaths_*.png were made from the same chains, and the
+% numbers printed, by scripts/plot_death_slides.R.
+
+\begin{document}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Bundibugyo virus disease, 2026: joint modelling of cases and deaths}
+\centering
+\includegraphics[height=0.76\textheight]{New cases and deaths with onset between consecutive sitreps.png}
+
+\smallskip
+{\small Each situation report revises the counts of cases and of deaths for
+every onset date. Deaths go on being added for much longer than cases.}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Recap: the model of cases}
+Each report gives $C(t\given t_j)$: confirmed cases with onset on day $t$, as
+known on day $t_j$. The true cases $I(t)$ are unknown.
+
+\bigskip
+\textbf{Transmission.} A renewal process with overdispersion:
+\[
+I(t)\sim\operatorname{NB}\bigl(R_t\,\Lambda_t,\ \kappa\bigr),\qquad
+\Lambda_t=\sum_{s=1}^{40}\omega_s\,I(t-s)
+\]
+
+\textbf{Reporting.} Each case is reported after a gamma$(\mu,\sigma)$ delay,
+with each day's hazard multiplied by an effect of the day of the week.
+$S^{C}(t\given t')$: probability a case is not yet reported at $t'$.
+\[
+\Delta C(t\given t_j)\sim\bin\Bigl(I(t)-C(t\given t_{j-1}),\
+1-\frac{S^{C}(t\given t_j)}{S^{C}(t\given t_{j-1})}\Bigr)
+\]
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Recap: the model of cases (continued)}
+\textbf{Wrong records.} Counts sometimes fall. Records are added in error
+in proportion to reporting activity (rate $\eta$), and each is removed with
+probability $\rho$ a day. They are summed out exactly by a forward
+recursion over reports.
+
+\bigskip
+\textbf{Changes at unknown times.} $R_t$ and $(\mu,\sigma)$ are constant
+within segments of onset days. Each day starts a new segment with
+probability $p$, $p\sim\operatorname{beta}(1,T)$; the number of changes is
+inferred.
+
+\bigskip
+\textbf{Fitting.} Metropolis within Gibbs: $I(t)$ from its discrete full
+conditional, $R_t$ segments drawn exactly with their values integrated out,
+the delay segments by split, merge and shift moves.
+
+\bigskip
+Today: adding deaths to this.
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{What the reports show}
+Each report splits each onset day's cases into alive and dead. For onset
+day $t$ and the report of day $t_j$:
+\begin{align*}
+C(t\given t_j) &: \text{confirmed cases counted for day $t$};\\
+D(t\given t_j) &: \text{the number of those cases shown as dead},\quad D\le C.
+\end{align*}
+
+\begin{itemize}
+\item \textbf{No dates of death.} A death is counted on the onset day of its
+case. We see only that the count of dead for a day rose between two reports.
+\item \textbf{The dead are among the cases already counted.} A death cannot
+be shown before its case is in the report.
+\item \textbf{Deaths lag cases.} At 7 to 14 days after onset the case count
+is about 79\% of its latest value, and the death count about 60\%.
+\end{itemize}
+
+\bigskip
+So the crude ratio $D/C$ is too low for recent onset days: 0.45 to 0.49 for
+onset fortnights up to early September, but 0.28 for the latest fortnight.
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Approach}
+Unknown for each onset day: the true cases $I(t)$ and, of those, the cases
+which will die, $F(t)$:
+\[
+p\bigl(I, F, R, c, \theta, \phi \given C, D\bigr)\;\propto\;
+\underbrace{p\bigl(C, D\given I, F, \theta, \phi\bigr)}_{\text{reporting}}\;
+\underbrace{p\bigl(F\given I, c\bigr)}_{\text{fatality}}\;
+\underbrace{p\bigl(I\given R\bigr)}_{\text{transmission}}\;
+p(R)\,p(c)\,p(\theta)\,p(\phi)
+\]
+
+\bigskip
+\begin{itemize}
+\item $c_t$: case fatality ratio, by onset day. $F(t)\sim\bin\bigl(I(t),c_t\bigr)$.
+\item $\theta$: reporting of cases (as before). $\phi$: recording of deaths.
+\item $c_t$ and the delay to a death being recorded can change at unknown
+times, as $R_t$ can.
+\end{itemize}
+
+\bigskip
+Aims: the eventual numbers of cases and deaths for recent onset days, and a
+case fatality ratio which allows for deaths not yet recorded.
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Two delays for each fatal case}
+Each fatal case has two delays from onset:
+
+\smallskip
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{lll}
+\toprule
+ & Delay & Probability it has not happened by $t'$ \\
+\midrule
+The case is reported & $X$ & $S^{C}(t\given t')$ \\
+The death is recorded & $Y$ & $S^{D}(t\given t')$ \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+\begin{itemize}
+\item A fatal case is \textbf{shown as dead} once it is reported \emph{and}
+its death is recorded: $\max(X,Y)\le t'-t$.
+\item Reported, but death not yet recorded: \textbf{shown as alive}.
+\item So some of the cases shown as alive will die, and we cannot see which.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{What a report shows}
+The cases of onset day $t$ in the report of $t_j$ are of three kinds:
+
+\medskip
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lll}
+\toprule
+ & Number & Shown as \\
+\midrule
+Non-fatal cases reported so far & $C^{N}(t\given t_j)$ & alive \\
+Fatal cases reported, death not yet recorded & $C^{F}(t\given t_j)-D(t\given t_j)$ & alive \\
+Fatal cases reported, death recorded & $D(t\given t_j)$ & dead \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\bigskip
+\begin{itemize}
+\item Observed: $C=C^{N}+C^{F}$ and $D$.
+\item Not observed: the split of $C$ into $C^{F}$ and $C^{N}$.
+\item So each onset day has one unobserved path over reports,
+$C^{F}(t\given t_1),\,C^{F}(t\given t_2),\dots$
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{From one report to the next}
+\begin{align*}
+\text{fatal cases new to the report}\quad
+ & \Delta C^{F}(t\given t_j)\sim\bin\bigl(F(t)-C^{F}(t\given t_{j-1}),\ p^{F}(t\given t_j)\bigr)\\[3pt]
+\text{non-fatal cases new to the report}\quad
+ & \Delta C^{N}(t\given t_j)\sim\bin\bigl(N(t)-C^{N}(t\given t_{j-1}),\ p^{N}(t\given t_j)\bigr)\\[3pt]
+\text{new cases already shown as dead}\quad
+ & \dnew(t\given t_j)\sim\bin\bigl(\Delta C^{F}(t\given t_j),\ g(t\given t_j)\bigr)\\[3pt]
+\text{cases shown as alive before, now dead}\quad
+ & \dold(t\given t_j)\sim\bin\Bigl(C^{F}(t\given t_{j-1})-D(t\given t_{j-1}),\
+ 1-\frac{S^{D}(t\given t_j)}{S^{D}(t\given t_{j-1})}\Bigr)
+\end{align*}
+
+\smallskip
+Observed: $\Delta C=\Delta C^{F}+\Delta C^{N}$ and $\Delta D=\dnew+\dold$.
+
+\medskip
+\begin{itemize}
+\item Example: 10 cases, 3 dead, then 12 cases, 5 dead. The 2 new deaths may
+be among the 7 shown as alive before, or the 2 new cases, or one of each.
+\item Given $I(t)$ and $F(t)$, each onset day is a hidden Markov chain over
+reports, with state $C^{F}$. The likelihood sums over its paths exactly.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{A puzzle: deaths shown very early}
+If $X$ and $Y$ were independent, the share of reported cases shown as dead
+at time $u$ since onset would be $c_t\,[1-S^{D}(u)]$: near zero at first,
+then rising. The reports (onset days 12 July to 5 September):
+
+\medskip
+\begin{center}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabular}{lc}
+\toprule
+Time since onset & Share shown as dead \\
+\midrule
+0 to 1 days & 0.43 \\
+About a week & 0.34 \\
+2 to 3 months & 0.46 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+\begin{itemize}
+\item To fit this with independent delays, $Y$ needs a spike near zero and
+a very long tail (gamma shape about 0.2, mean 46 days).
+\item It then expects many deaths still to come, and overshoots badly.
+\end{itemize}
+
+\bigskip
+Two explanations, not exclusive: deaths bring about reports, and some
+deaths are counted on the day of death.
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Explanation 1: a death which brings about the report}
+A share $\tau$ of fatal cases are reported when their death is recorded, if
+they have not been reported by then:
+\[
+\text{time to being reported}=
+\begin{cases}
+\min(X,Y) & \text{with probability } \tau\\
+X & \text{with probability } 1-\tau
+\end{cases}
+\]
+
+A fatal case is not yet reported at $t'$ with probability
+\[
+M(t\given t')=S^{C}(t\given t')\,\bigl[(1-\tau)+\tau\,S^{D}(t\given t')\bigr],
+\qquad
+p^{F}(t\given t_j)=1-\frac{M(t\given t_j)}{M(t\given t_{j-1})}.
+\]
+
+\begin{itemize}
+\item Fatal cases are reported sooner than others, and early reports are
+more often fatal.
+\item Only $p^{F}$ and $g$ change; the hidden state is unchanged, so the
+likelihood is still exact.
+\item $\tau=0$ is the independent model. $\tau\sim\operatorname{beta}(1,1)$.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Explanation 2: some deaths are counted on the day of death}
+Some fatal cases may be identified only at or after death, with no known
+onset date, and be counted on the day they died.
+
+\bigskip
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{lcc}
+\toprule
+ & Within 1 day & Within 2 days \\
+\midrule
+Deaths from onset, gamma (mean 9.3, sd 5.5 days) & 0.5\% & 3\% \\
+Deaths already shown, after the day counted for & 7.8\% & 14\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\bigskip
+\begin{itemize}
+\item Onset to death: a review of Ebola virus disease (16 studies).
+\item If the time from onset to death is held to what is known of it, the
+early deaths can only be cases counted on their day of death. Their number
+says what fraction $f$ of fatal cases are.
+\item The reports describe the curve as by date of onset: this is an
+inference, not something the reports say.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Counted on the day of death: two sets of counts}
+$I(t)$, $F(t)$ and $c_t$ stay \textbf{by true day of onset}, so transmission
+and the case fatality ratio are on the right days. Of the fatal cases with
+onset on day $t$,
+\[
+F^{d}(t)\sim\bin\bigl(F(t),\ f\bigr),\qquad f\sim\operatorname{beta}(1,1),
+\]
+are counted on their day of death, $Z\sim h$ days later ($Z\ge1$; the
+supplied gamma, discretised).
+
+\bigskip
+The reports count, for day $t$,
+\[
+\tilde{F}(t)=\underbrace{F(t)-F^{d}(t)}_{\text{onset on day }t}
++\underbrace{G(t)}_{\text{died on day }t},\qquad
+G(t)=\sum_{z\ge1}W(t-z,z),
+\]
+with $W(t,z)$ those of onset day $t$ who die $z$ days later
+(multinomial given $F^{d}(t)$).
+
+\bigskip
+{\small Example: 10 fatal cases with onset on 9 August, 4 counted on their
+day of death; 5 earlier cases die on 9 August. Then $\tilde{F}=10-4+5=11$.}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Counted on the day of death: an approximation}
+The exact likelihood would follow $C^{F,o}$ and $C^{F,d}$ (counted by onset
+and by death) separately: two hidden counts per day and report, and several
+times slower.
+
+\bigskip
+Instead, each of the $\tilde{F}(t)$ fatal cases recorded for day $t$ is
+taken to be counted by death with probability $\tilde{f}_t=G(t)/\tilde{F}(t)$,
+independently. Not yet reported at $t'$:
+\[
+\tilde{M}(t\given t')=(1-\tilde{f}_t)\,M(t\given t')+\tilde{f}_t\,S^{U}(t\given t')
+\]
+
+\begin{itemize}
+\item A case counted on its day of death enters the records when its death
+does ($S^{U}$, next slides), and is shown as dead from the start.
+\item The hidden state stays $C^{F}$ alone.
+\item Expected counts in each report are the same as in the exact version;
+the approximation allows somewhat more variation about them. Checked on
+data simulated exactly.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{The delay to a death being recorded}
+With onset to death supplied, $Y=Z+U$: the time to death, then a delay $U$
+from death to the death being recorded, gamma$(\mu^{d},\sigma^{d})$:
+\[
+S^{D}(t\given t')=\sum_{z>t'-t}h_z+\sum_{z\le t'-t}h_z\,S^{U}(t+z\given t')
+\]
+
+\begin{itemize}
+\item $(\mu^{d},\sigma^{d})$ are estimated, and can change at unknown
+times; $h$ is fixed.
+\item Effects of the day of the week act on the hazard of recording.
+\item A death cannot be shown on the day of onset.
+\end{itemize}
+
+\bigskip
+\textbf{What $f$ rests on.} Mostly the sd of the time to death: a wider $h$
+allows more early deaths among cases counted by onset. A rough fit gives
+$f$ of 0.40, 0.33, 0.26 and 0.17 for sds of 4.5, 5.5, 6.5 and 8 days.
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Deaths recorded long after}
+With the time to death near nine days, a death first shown months after
+onset must be explained by $U$. A gamma with a mean of a few days makes such
+deaths all but impossible.
+
+\bigskip
+So a share $\omega^{d}$ of deaths are recorded after an exponential delay
+with mean $m^{d}$ instead (the \emph{recording tail}):
+\[
+S^{U}(d\given t')=(1-\omega^{d})\,S_{\mathrm{gamma}}(t'-d\given\mu^{d},\sigma^{d})
++\omega^{d}\,e^{-(t'-d)/m^{d}}
+\]
+
+\begin{itemize}
+\item $\omega^{d}\sim\operatorname{beta}(1,9)$; $m^{d}\sim$ gamma with mean
+40 and sd 20 days.
+\item Both are the same for all onset days.
+\item This is where most of the difficulty lies (later slides).
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Changes at unknown times}
+Four quantities are piecewise constant in the onset day, each with its own
+change points and the same prior on them.
+
+\bigskip
+\begin{center}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{lll}
+\toprule
+Quantity & Prior within a segment & Minimum segment \\
+\midrule
+$R_t$ & gamma & 7 days \\
+Reporting delay $(\mu,\sigma)$ & hierarchical log-normal & 14 days \\
+Case fatality ratio $c_t$ & $\operatorname{beta}(1,1)$ & 14 days \\
+Recording delay $(\mu^{d},\sigma^{d})$ & hierarchical log-normal & 14 days \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\bigskip
+\begin{itemize}
+\item $c_t$ is indexed by onset day: a change is between cohorts of cases.
+\item Onset days first seen long after onset (to 18 July) cannot show how
+fast deaths were recorded, so they share one recording delay.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Fitting}
+Metropolis within Gibbs, extending the sampler for cases.
+
+\bigskip
+\begin{itemize}
+\item \textbf{$F(t)$, with the path summed out.} Forward filtering over the
+reports of an onset day gives $p(\text{reports}\given I(t),F(t))$; a change
+in $F(t)$ is proposed and accepted by Metropolis.
+\item \textbf{Paths $C^{F}$.} Drawn exactly by backward sampling.
+\item \textbf{$I(t)$ and $F(t)$ given the paths.} $I(t)$ from its discrete
+conditional with $F(t)$ summed out, then $F(t)$ given $I(t)$.
+\item \textbf{Which cases are counted on the day of death.} Many Metropolis
+moves of single cases each iteration: between onset and death, changing the
+time to death, and at either end of the series.
+\item \textbf{$c_t$ segments.} Drawn exactly with values integrated out
+(beta-binomial), as for $R_t$.
+\item \textbf{The rest.} Delay segments by split, merge and shift moves;
+$\tau$, $\rho$, the tail and day-of-week effects by random walks; $f$ from a
+matched beta proposal; $\delta$, $\eta$ conjugate.
+\end{itemize}
+
+\bigskip
+{\small Fits run as 4 chains of 1{,}500 iterations, one per job on GitHub
+Actions; about 2 to 5 hours each.}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{What can and cannot be learned}
+\begin{itemize}
+\item \textbf{A recent fall in $c_t$ and deaths not yet recorded look the
+same.} For the last three to four weeks of onset days, $c_t$ rests mostly on
+the recording delay estimated from earlier days.
+\item \textbf{A change in the recording delay and in $c_t$ at about the same
+time are hard to tell apart.}
+\item \textbf{$f$ rests on the supplied time to death,} and the cases
+counted on the day of death who have yet to die are in no report.
+\item \textbf{Old onset days say little about the reporting delay of cases,
+but much about deaths,} which go on being recorded for weeks.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Fits to past reports: deaths}
+\centering
+\includegraphics[height=0.72\textheight]{bvd_deaths_fits_deaths.png}
+
+{\small Green: eventual deaths (median, 90\% interval). Orange: the report of
+the fit date. Purple: projected for the report of 7 October. Black: that
+report.}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Fits to past reports: deaths in the latest 28 onset days}
+\centering
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{lcccc}
+\toprule
+ & \multicolumn{3}{c}{Deaths} & \\
+\cmidrule(lr){2-4}
+Fit date & Shown then & Projected for 7 Oct & Shown 7 Oct & Share in the tail, $\omega^{d}$ ($\hat{R}$) \\
+\midrule
+1 Aug & 348 & 796 (681--893) & 709 & 0.56 (1.39) \\
+9 Aug & 380 & 728 (660--844) & 761 & 0.47 (1.09) \\
+16 Aug & 403 & 632 (581--732) & 813 & 0.47 (1.25) \\
+24 Aug & 441 & 687 (639--776) & 798 & 0.50 (1.03) \\
+2 Sep & 495 & 782 (728--844) & 826 & 0.54 (1.01) \\
+9 Sep & 489 & 871 (747--975) & 786 & 0.46 (3.07) \\
+16 Sep & 513 & 840 (758--909) & 768 & 0.46 (6.13) \\
+24 Sep & 457 & 662 (625--710) & 639 & 0.32 (5.31) \\
+1 Oct & 379 & 490 (471--512) & 510 & 0.30 (4.60) \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\begin{minipage}{0.88\textwidth}
+\small Posterior medians and 90\% intervals; 4 chains of 1{,}500 iterations,
+second halves (3 chains at 24 Aug). Up to 2 September the chains agree, and
+the projections are mostly too low; from 9 September the chains disagree,
+and on 9 and 16 September the projections are about 10\% too high.
+\end{minipage}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Deaths are added to old onset days in bursts}
+\centering
+\includegraphics[height=0.6\textheight]{bvd_deaths_late_additions.png}
+
+\smallskip
+\begin{minipage}{0.85\textwidth}
+\small Deaths added by each report to onset days at least 35 days old, per
+day since the report before. (6 September: a report which corrected many
+records.)
+\end{minipage}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Two ways to explain the late deaths}
+From 9 September, chains settle in one of two modes:
+
+\bigskip
+\begin{center}
+\renewcommand{\arraystretch}{1.35}
+\begin{tabular}{lcc}
+\toprule
+ & Heavy tail & Light tail \\
+\midrule
+Share of deaths in the tail, $\omega^{d}$ & about 0.45 & about 0.15 \\
+Mean of the tail, $m^{d}$ & about 40 days & -- \\
+Recording delay, early onset days & about 2.5 days & about 20 days, then changes \\
+Case fatality ratio, latest onset days & 0.60 to 0.65 & about 0.5 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\bigskip
+\begin{itemize}
+\item The heavy tail expects the September bursts to go on: projections
+too high.
+\item The light tail explains them by a slow early delay and changes in it.
+\item Both are features of onset days; the bursts are features of reports.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Options for the recording delay}
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{lp{0.62\textwidth}}
+\toprule
+Option & Recording delay $(\mu^{d},\sigma^{d})$ \\
+\midrule
+Base & Changes at unknown times; fixed for onset days to 18 July \\
+(a) & Fixed for onset days to 31 July, then changes at unknown times \\
+(b) & One delay for all onset days \\
+(c) & As base, and each report has its own effect on recording \\
+(d) & As (b), and each report has its own effect on recording \\
+(e) & As (b), and each report has its own effect on the tail alone \\
+(f) & As (a), and each report has its own effect on the tail alone \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\bigskip
+(a) and (b) remove freedom the data seem not to use. (c) to (f) let the
+bursts be bursts, rather than features of onset days.
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Effects of each report on recording}
+The hazard of a death being recorded on each day after report $t_{j-1}$, up
+to and including report $t_j$, is multiplied by
+\[
+\psi^{d}_{w(j)}\,e^{\varepsilon_j},\qquad
+\varepsilon_j\sim N(0,s^2),\qquad s^2\sim\operatorname{inverse\ gamma}(3,\,0.2),
+\]
+with $w(j)$ the day of the week of report $t_j$.
+
+\bigskip
+\begin{itemize}
+\item One effect per report, shared by all onset days.
+\item In (e) and (f), only the exponential tail is multiplied; the gamma
+part keeps the day-of-week effects alone. A burst then clears a backlog of
+old deaths without speeding up the deaths of recent onset days.
+\item Reports after the fit date: effects are drawn from $N(0,s^2)$ when
+projecting.
+\item Sampled in blocks with steps scaled by $s$, with $s$ by Gibbs, and a
+joint rescaling of $(\varepsilon,s)$ to cross the funnel.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Effects of each report: the fit to 16 September, option (c)}
+\centering
+\includegraphics[height=0.62\textheight]{bvd_deaths_report_effects.png}
+
+\smallskip
+\begin{minipage}{0.85\textwidth}
+\small Posterior medians and 90\% intervals. Multipliers of 2 to 8 on the
+reports of 2 to 15 September, the bursts; near 1 otherwise. $s=0.88$
+(0.73--1.10).
+\end{minipage}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{The options compared: the fit to 16 September}
+Deaths in the latest 28 onset days: 513 shown on 16 September, 768 on
+7 October.
+
+\medskip
+\begin{center}
+\renewcommand{\arraystretch}{1.3}
+\begin{tabular}{lcccc}
+\toprule
+Option & Projected for 7 Oct & Eventual & Case fatality ratio & Largest $\hat{R}$ \\
+\midrule
+Base & 840 (758--909) & 1{,}081 (798--1{,}198) & 0.63 (0.48--0.70) & 6.1 \\
+(a) Fixed to 31 July & 856 (812--906) & 1{,}104 (1{,}030--1{,}188) & 0.65 (0.60--0.69) & 1.07 \\
+(b) One delay & 851 (803--906) & 1{,}098 (1{,}022--1{,}194) & 0.64 (0.60--0.70) & 1.22 \\
+(c) Base, report effects & 692 (638--742) & 748 (700--790) & 0.46 (0.44--0.48) & 1.58 \\
+(d) One delay, report effects & 676 (614--732) & 751 (651--798) & 0.47 (0.40--0.49) & 1.50 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\medskip
+\begin{itemize}
+\item (a) and (b) converge, and choose the heavy tail: about 10\% too high.
+\item (c) and (d) go too far the other way: their eventual deaths are fewer
+than 7 October already shows. Effects on the whole delay speed up the
+recording of recent deaths too. Hence (e) and (f).
+\end{itemize}
+
+\smallskip
+{\small Largest $\hat{R}$ over $f$, $\tau$, $\omega^{d}$, $m^{d}$ and the
+case fatality ratio of the latest 28 onset days.}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Where this leaves us}
+\begin{itemize}
+\item \textbf{Deaths bring reports, and some deaths are counted on the day
+of death.} Both are needed to fit the early deaths with a plausible time to
+death.
+\item \textbf{The difficulty is the slow part of recording.} Bursts of late
+deaths by report date can be explained in more than one way, and the fits
+choose between them differently at different dates.
+\item \textbf{Report effects remove the overshoot, but overcorrect}:
+effects on the whole delay also speed up recent deaths.
+\item \textbf{Running now:} options (c) to (f) at every fit date from
+1 August to 7 October, scored against the report of 7 October.
+\item \textbf{Sensitivity:} the supplied time to death, especially its sd.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}
+\centering
+\Huge Any questions?
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\appendix
+
+\begin{frame}{Appendix: fits to past reports, cases}
+\centering
+\includegraphics[height=0.72\textheight]{bvd_deaths_fits_cases.png}
+
+{\small As for deaths: green eventual, orange the report of the fit date,
+purple projected for 7 October, black that report.}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Appendix: wrong records, alive or dead}
+Counts of deaths also fall now and then (18 times in 2{,}129 comparisons
+of consecutive reports, never by more than 2).
+
+\bigskip
+As for cases, wrong records are added in proportion to reporting activity
+and removed at rate $\rho$ a day. Each is shown as dead with probability
+$\delta$:
+\[
+C(t\given t_j)=C^{N}+C^{F}+E^{A}+E^{D},
+\qquad
+D(t\given t_j)=D^{G}+E^{D}
+\]
+
+\begin{itemize}
+\item The hidden state for each onset day becomes $(C^{F},E^{A},E^{D})$.
+\item A fall in deaths with no fall in cases: a wrong record shown as dead
+is removed while a genuine case is added.
+\item $\delta\sim\operatorname{beta}(1,1)$.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Appendix: onset days first seen late}
+The first report is that of 12 July, and already shows cases with onset
+from April. The analysis starts at the onset day of 11 May.
+
+\bigskip
+\begin{itemize}
+\item For these days the first report which includes them is treated as any
+other, with nothing reported before it.
+\item No change in the reporting delay of cases is allowed among them: they
+say almost nothing about it.
+\item Their recording delay is that of the first onset days whose early
+reports are seen (to 18 July), so the deaths still being added months
+later are left to the tail.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Appendix: the report of 6 September}
+This report corrected the records of onset days before 28 June: 137 records
+removed, 48 added, and some records changed from dead to alive. The model
+of wrong records (few, removed one at a time) cannot follow counts across
+it.
+
+\bigskip
+\begin{itemize}
+\item For the corrected onset days, the reports made before 6 September are
+left out, and that report is treated as their first.
+\item Those days are 71 to 118 days old when first seen, so $c_t$ is close
+to the share shown as dead.
+\item What is given up: those earlier reports showed their deaths being
+recorded over many weeks.
+\end{itemize}
+\end{frame}
+
+\end{document}
