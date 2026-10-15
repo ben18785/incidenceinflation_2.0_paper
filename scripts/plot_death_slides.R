@@ -32,6 +32,35 @@ cat("late additions (35d+), per day, by report:\n")
 print(as.data.frame(late %>% mutate(per_day = round(old / days, 1), report = format(report, "%d %b"))),
       row.names = FALSE)
 
+# Counts by onset date at each fit date: what the sitrep of the fit date
+# showed, what was projected for the latest sitrep and what that sitrep showed
+plot_slide_counts <- function(by_day, count, later, from = as.Date("2026-07-10")) {
+  noun <- if (count == "cases") "cases" else "deaths"
+  lab <- c(now = sprintf("%s reported as of that sitrep", tools::toTitleCase(noun)),
+           projected = sprintf("Projected reported %s for sitrep on %s", noun, paste(as.integer(format(later, "%d")), format(later, "%B"))),
+           later = sprintf("Actual %s reported on %s", noun, paste(as.integer(format(later, "%d")), format(later, "%B"))))
+  cols <- setNames(c("#E69F00", "#009E73", "black"), lab)
+  df <- dplyr::filter(by_day, .data$count == !!count, .data$date >= from) %>%
+    dplyr::mutate(date = as.Date(.data$date), panel = format_date_now(.data$date_now))
+  lines <- dplyr::bind_rows(
+    dplyr::transmute(df, panel, date, y = shown_now, what = lab[["now"]]),
+    dplyr::transmute(df, panel, date, y = p50, what = lab[["projected"]]),
+    dplyr::transmute(df, panel, date, y = shown_later, what = lab[["later"]])) %>%
+    dplyr::mutate(what = factor(what, levels = lab))
+  g <- ggplot(df, aes(x = date)) +
+    geom_ribbon(aes(ymin = p05, ymax = p95), fill = "#009E73", alpha = 0.3, na.rm = TRUE) +
+    geom_line(data = lines, aes(y = y, colour = what), linewidth = 0.4, na.rm = TRUE) +
+    scale_colour_manual(values = cols, name = NULL) +
+    guides(colour = guide_legend(override.aes = list(linewidth = 1.2))) +
+    facet_wrap(~panel, scales = "free_x", nrow = 2) +
+    labs(x = "Onset date", y = if (count == "cases") "Confirmed cases" else "Deaths") +
+    theme_paper() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          strip.text = element_text(size = 14, face = "bold"),
+          legend.position = "bottom", legend.text = element_text(size = 12))
+  save_plot(g, sprintf("outputs/bvd_deaths_fits_%s.png", count), 12, 6.8)
+}
+
 # --- batch 11 at every fit date ------------------------------------------
 half <- function(d) { n <- max(d$iteration); d[d$iteration > n / 2, ] }
 load_chains <- function(files) lapply(files, function(f) {
@@ -43,10 +72,8 @@ load_chains <- function(files) lapply(files, function(f) {
 b11 <- load_chains(Sys.glob(file.path(args[1], "*.rds")))
 b11 <- purrr::keep(b11, ~is.null(.$error))
 by_day <- bvd_experiment_by_day(b11, snap, later, n_draws = 60)
-for (count in c("cases", "deaths")) {
-  g <- plot_bvd_experiment_counts(by_day, count) + ggplot2::labs(title = NULL, subtitle = NULL)
-  save_plot(g, sprintf("outputs/bvd_deaths_fits_%s.png", count), 12, 6.5)
-}
+plot_slide_counts(by_day, "cases", later)
+plot_slide_counts(by_day, "deaths", later)
 
 summ <- function(ch, label) {
   g <- function(n) bind_rows(lapply(ch, `[[`, n))
