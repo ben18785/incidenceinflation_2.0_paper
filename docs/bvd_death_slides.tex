@@ -219,6 +219,36 @@ $p^{\text{dead}}=1-S^{D}(t\given t_j)$.
 \end{frame}
 
 % ---------------------------------------------------------------------------
+\begin{frame}{Wrong records}
+Counts of cases sometimes fall, and so do counts of deaths (18 times in
+2{,}129 comparisons of consecutive reports, never by more than 2). So, as for
+cases, some records are wrong, and now each is shown as alive or as dead:
+\[
+C(t\given t_j)=C^{N}+C^{F}+E^{A}+E^{D},\qquad
+D(t\given t_j)=D^{F}+E^{D},
+\]
+where $D^{F}$ is the genuine fatal cases shown as dead (the $D$ of the
+previous slides).
+
+\medskip
+Between the reports of $t_{j-1}$ and $t_j$, for onset day $t$:
+\begin{align*}
+\text{wrong records added, shown as alive}\quad & \operatorname{Poisson}\bigl((1-\delta)\,\lambda_j\bigr)\\
+\text{wrong records added, shown as dead}\quad & \operatorname{Poisson}\bigl(\delta\,\lambda_j\bigr),\qquad
+\lambda_j=\eta\times\text{expected genuine cases newly reported}\\
+\text{each wrong record present is removed}\quad & \text{with probability }1-(1-\rho)^{t_j-t_{j-1}}
+\end{align*}
+
+\begin{itemize}
+\item Errors are made when cases are being reported, and are found later.
+\item A fall in deaths with no fall in cases: a wrong record shown as dead is
+removed while a genuine case is added.
+\item $\delta\sim\operatorname{beta}(1,1)$; $\eta$ and $\rho$ as for cases.
+\item The hidden counts in each report are now $C^{F}$, $E^{A}$ and $E^{D}$.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
 \begin{frame}{A puzzle: deaths shown very early}
 For each onset day and each report, take the cases of that onset day shown
 in the report and the share of them shown as dead. Group by the days from
@@ -292,9 +322,9 @@ the same form.
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Explanation 2: some deaths are counted on the day of death}
-Some fatal cases may be identified only at or after death, with no known
-onset date, and be counted on the day they died.
+\begin{frame}{Explanation 2: some onset dates are recorded as the date of death}
+Some fatal cases may be identified only at or after death, and have their
+date of death recorded as their onset date: \textbf{misdated} cases.
 
 \bigskip
 \begin{center}
@@ -304,7 +334,7 @@ onset date, and be counted on the day they died.
  & Within 1 day & Within 2 days \\
 \midrule
 Deaths from onset, gamma (mean 9.3, sd 5.5 days) & 0.5\% & 3\% \\
-Deaths already shown, after the day counted for & 7.8\% & 14\% \\
+Deaths already shown, after their recorded onset day & 7.8\% & 14\% \\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -313,57 +343,57 @@ Deaths already shown, after the day counted for & 7.8\% & 14\% \\
 \begin{itemize}
 \item Onset to death: a review of Ebola virus disease (16 studies).
 \item If the time from onset to death is held to what is known of it, the
-early deaths can only be cases counted on their day of death. Their number
-says what fraction $f$ of fatal cases are.
+early deaths can only be misdated cases. Their number says what fraction $f$
+of fatal cases are misdated.
 \item The reports describe the curve as by date of onset: this is an
 inference, not something the reports say.
 \end{itemize}
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Counted on the day of death: two sets of counts}
+\begin{frame}{Misdated cases: two sets of counts}
 $I(t)$, $F(t)$ and $\cfr_t$ stay \textbf{by true day of onset}, so transmission
 and the case fatality ratio are on the right days. Of the fatal cases with
-onset on day $t$,
+true onset on day $t$,
 \[
-F^{d}(t)\sim\bin\bigl(F(t),\ f\bigr),\qquad f\sim\operatorname{beta}(1,1),
+F^{\mathrm{mis}}(t)\sim\bin\bigl(F(t),\ f\bigr),\qquad f\sim\operatorname{beta}(1,1),
 \]
-are counted on their day of death, $Z\sim h$ days later ($Z\ge1$; the
-supplied gamma, discretised).
+are misdated: recorded on their day of death, $Z\sim h$ days later
+($Z\ge1$; the supplied gamma, discretised). $F^{\mathrm{mis}}(t,z)$: those
+who die $z$ days after onset (multinomial given $F^{\mathrm{mis}}(t)$).
 
 \bigskip
 The reports count, for day $t$,
 \[
-\tilde{F}(t)=\underbrace{F(t)-F^{d}(t)}_{\text{onset on day }t}
-+\underbrace{G(t)}_{\text{died on day }t},\qquad
-G(t)=\sum_{z\ge1}W(t-z,z),
+\tilde{F}(t)=\underbrace{F(t)-F^{\mathrm{mis}}(t)}_{\text{true onset on day }t}
++\underbrace{G(t)}_{\substack{\text{misdated:}\\\text{died on day }t}},\qquad
+G(t)=\sum_{z\ge1}F^{\mathrm{mis}}(t-z,z).
 \]
-with $W(t,z)$ those of onset day $t$ who die $z$ days later
-(multinomial given $F^{d}(t)$).
 
 \bigskip
-{\small Example: 10 fatal cases with onset on 9 August, 4 counted on their
-day of death; 5 earlier cases die on 9 August. Then $\tilde{F}=10-4+5=11$.}
+{\small Example: 10 fatal cases with true onset on 9 August, 4 of them
+misdated; 5 misdated cases with earlier onsets die on 9 August. Then
+$\tilde{F}=10-4+5=11$.}
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Counted on the day of death: an approximation}
-The exact likelihood would follow $C^{F,o}$ and $C^{F,d}$ (counted by onset
-and by death) separately: two hidden counts per day and report, and several
-times slower.
+\begin{frame}{Misdated cases: an approximation}
+The exact likelihood would follow correctly dated and misdated fatal cases
+($C^{F,\mathrm{onset}}$ and $C^{F,\mathrm{mis}}$) separately: two hidden
+counts per day and report, and several times slower.
 
 \bigskip
 Instead, each of the $\tilde{F}(t)$ fatal cases recorded for day $t$ is
-taken to be counted by death with probability $\tilde{f}_t=G(t)/\tilde{F}(t)$,
+taken to be misdated with probability $\tilde{f}_t=G(t)/\tilde{F}(t)$,
 independently. Not yet reported at $t'$:
 \[
 \tilde{M}(t\given t')=(1-\tilde{f}_t)\,M(t\given t')+\tilde{f}_t\,S^{U}(t\given t')
 \]
 
 \begin{itemize}
-\item A case counted on its day of death enters the records when its death
-does ($S^{U}$, next slides), and is shown as dead from the start.
-\item The hidden state stays $C^{F}$ alone.
+\item A misdated case enters the records when its death does ($S^{U}$, next
+slides), and is shown as dead from the start.
+\item The hidden count stays $C^{F}$ alone.
 \item Expected counts in each report are the same as in the exact version;
 the approximation allows somewhat more variation about them. Checked on
 data simulated exactly.
@@ -387,7 +417,7 @@ times; $h$ is fixed.
 
 \bigskip
 \textbf{What $f$ rests on.} Mostly the sd of the time to death: a wider $h$
-allows more early deaths among cases counted by onset. A rough fit gives
+allows more early deaths among correctly dated cases. A rough fit gives
 $f$ of 0.40, 0.33, 0.26 and 0.17 for sds of 4.5, 5.5, 6.5 and 8 days.
 \end{frame}
 
@@ -453,10 +483,10 @@ Metropolis within Gibbs, extending the sampler for cases. We infer:
 \toprule
 \multicolumn{2}{l}{\textbf{Counts, for each onset day $t$}}\\
 $I(t)$, $F(t)$ & true cases, and the fatal cases among them\\
-$W(t,z)$ & fatal cases of onset day $t$ counted on their day of death, $z$
-days later; $F^{d}(t)=\sum_z W(t,z)$\\
-$H_t$ & hidden counts in each report $t_j$: the fatal cases
-$C^{F}(t\given t_j)$, and the wrong records shown as alive and as dead\\
+$F^{\mathrm{mis}}(t,z)$ & fatal cases of true onset day $t$, misdated to
+their day of death $t+z$\\
+$C^{F}$, $E^{A}$, $E^{D}$ & hidden counts in each report $t_j$: fatal cases,
+and wrong records shown as alive and as dead\\
 \midrule
 \multicolumn{2}{l}{\textbf{Parameters}}\\
 Transmission & $R_t$ (with change points), $\kappa$\\
@@ -478,46 +508,46 @@ and of deaths for onset day $t$ in every report.
 \begin{frame}{Inference method}
 \textbf{The counts of each onset day.} We can calculate
 $p\bigl(y_t\given I(t),F(t),\theta,\phi\bigr)$ exactly, summing over the hidden
-counts $H_t$. Each sweep, for each $t$:
+counts $C^{F}$, $E^{A}$, $E^{D}$ in every report. Each sweep, for each $t$:
 
 \medskip
 \begin{enumerate}
-\item $F(t)$, with $H_t$ summed out: propose $F'=F(t)\pm k$, $k\in\{1,2,3\}$,
+\item $F(t)$, with the hidden counts summed out: propose $F'=F(t)\pm k$, $k\in\{1,2,3\}$,
 and accept with probability
 \[
 \min\Bigl\{1,\ \frac{p(y_t\given I(t),F')\,\bin\bigl(F'\given I(t),\cfr_t\bigr)\,
-\bin\bigl(F^{d}(t)\given F',f\bigr)}
+\bin\bigl(F^{\mathrm{mis}}(t)\given F',f\bigr)}
 {p(y_t\given I(t),F(t))\,\bin\bigl(F(t)\given I(t),\cfr_t\bigr)\,
-\bin\bigl(F^{d}(t)\given F(t),f\bigr)}\Bigr\}.
+\bin\bigl(F^{\mathrm{mis}}(t)\given F(t),f\bigr)}\Bigr\}.
 \]
-\item $H_t$ is drawn exactly from $p\bigl(H_t\given y_t,I(t),F(t)\bigr)$: the
-hidden counts in the last report first, then those in each earlier report
-given the later ones.
+\item The hidden counts are drawn exactly from their conditional given $y_t$,
+$I(t)$ and $F(t)$: those in the last report first, then those in each
+earlier report given the later ones.
 \item $I(t)$ is drawn exactly from its discrete conditional, with $F(t)$
 summed out:
 \[
 p\bigl(I(t)\given\cdot\bigr)\propto\prod_{s\ge t}\operatorname{NB}\bigl(I(s)\given R_s\Lambda_s,\kappa\bigr)
-\sum_{F}\bin\bigl(F\given I(t),\cfr_t\bigr)\,\bin\bigl(F^{d}(t)\given F,f\bigr)\,
-p\bigl(y_t,H_t\given I(t),F\bigr).
+\sum_{F}\bin\bigl(F\given I(t),\cfr_t\bigr)\,\bin\bigl(F^{\mathrm{mis}}(t)\given F,f\bigr)\,
+p\bigl(y_t,C^{F},E^{A},E^{D}\given I(t),F\bigr).
 \]
-\item $F(t)$ is drawn exactly given $I(t)$ and $H_t$: the summand above,
+\item $F(t)$ is drawn exactly given $I(t)$ and the hidden counts: the summand above,
 normalised over $F$.
 \end{enumerate}
 \end{frame}
 
 % ---------------------------------------------------------------------------
 \begin{frame}{Inference method}
-\textbf{Which fatal cases are counted on their day of death.} Metropolis
-proposals change the counts $W$ by one, keeping the number of fatal cases
+\textbf{Which fatal cases are misdated.} Metropolis proposals change the
+counts $F^{\mathrm{mis}}(t,z)$ by one, keeping the number of fatal cases
 recorded for each day, $\tilde{F}$, fixed:
 \begin{itemize}
 \item one of the fatal cases recorded for day $s$ switches between ``onset on
-day $s$'' and ``onset on day $s-z$, counted on its day of death $s$'': $I$ and
+day $s$'' and ``onset on day $s-z$, misdated to its day of death $s$'': $I$ and
 $F$ change by one on both days;
-\item one counted on its day of death $s$ is given a different time to death
+\item one misdated to its day of death $s$ is given a different time to death
 $z'$: it moves from onset day $s-z$ to $s-z'$.
 \end{itemize}
-The ratio includes the renewal model, $h$, $\bin(F^{d}\given F,f)$ and
+The ratio includes the renewal model, $h$, $\bin(F^{\mathrm{mis}}\given F,f)$ and
 $p(y\given I,F)$ for the days changed.
 
 \medskip
@@ -526,8 +556,8 @@ $p(y\given I,F)$ for the days changed.
 \item $\cfr_t$: change points drawn with the values integrated out
 (beta-binomial), as for $R_t$; then for each segment $k$,
 $\cfr_k\sim\operatorname{beta}\bigl(1+\sum_{t\in k}F(t),\ 1+\sum_{t\in k}[I(t)-F(t)]\bigr)$.
-\item $f$: close to $\operatorname{beta}\bigl(1+\sum_tF^{d}(t),\
-1+\sum_t[F(t)-F^{d}(t)]\bigr)$; drawn from a beta matched to its conditional,
+\item $f$: close to $\operatorname{beta}\bigl(1+\sum_tF^{\mathrm{mis}}(t),\
+1+\sum_t[F(t)-F^{\mathrm{mis}}(t)]\bigr)$; drawn from a beta matched to its conditional,
 with a Metropolis--Hastings correction.
 \item $\delta$ and $\eta$: conjugate (beta and gamma), given the wrong records
 in $H$.
@@ -546,8 +576,8 @@ same.} For the last three to four weeks of onset days, $\cfr_t$ rests mostly on
 the recording delay estimated from earlier days.
 \item \textbf{A change in the recording delay and in $\cfr_t$ at about the same
 time are hard to tell apart.}
-\item \textbf{$f$ rests on the supplied time to death,} and the cases
-counted on the day of death who have yet to die are in no report.
+\item \textbf{$f$ rests on the supplied time to death,} and misdated cases who
+have yet to die are in no report.
 \item \textbf{Old onset days say little about the reporting delay of cases,
 but much about deaths,} which go on being recorded for weeks.
 \end{itemize}
@@ -725,8 +755,8 @@ recording of recent deaths too. Hence (e) and (f).
 % ---------------------------------------------------------------------------
 \begin{frame}{Where this leaves us}
 \begin{itemize}
-\item \textbf{Deaths bring reports, and some deaths are counted on the day
-of death.} Both are needed to fit the early deaths with a plausible time to
+\item \textbf{Deaths bring reports, and some onset dates are recorded as
+the date of death.} Both are needed to fit the early deaths with a plausible time to
 death.
 \item \textbf{The difficulty is the slow part of recording.} Bursts of late
 deaths by report date can be explained in more than one way, and the fits
@@ -762,29 +792,6 @@ many records.)}
 \includegraphics[height=0.8\textheight]{bvd_deaths_fits_cases.png}
 
 {\small Panels: the date of each fit. Shading: 90\% interval of the projection.}
-\end{frame}
-
-% ---------------------------------------------------------------------------
-\begin{frame}{Appendix: wrong records, alive or dead}
-Counts of deaths also fall now and then (18 times in 2{,}129 comparisons
-of consecutive reports, never by more than 2).
-
-\bigskip
-As for cases, wrong records are added in proportion to reporting activity
-and removed at rate $\rho$ a day. Each is shown as dead with probability
-$\delta$:
-\[
-C(t\given t_j)=C^{N}+C^{F}+E^{A}+E^{D},
-\qquad
-D(t\given t_j)=D^{G}+E^{D}
-\]
-
-\begin{itemize}
-\item The hidden state for each onset day becomes $(C^{F},E^{A},E^{D})$.
-\item A fall in deaths with no fall in cases: a wrong record shown as dead
-is removed while a genuine case is added.
-\item $\delta\sim\operatorname{beta}(1,1)$.
-\end{itemize}
 \end{frame}
 
 % ---------------------------------------------------------------------------
