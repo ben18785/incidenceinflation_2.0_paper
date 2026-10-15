@@ -2,6 +2,7 @@
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
+\usepackage{tikz}
 
 \usetheme{default}
 \setbeamertemplate{navigation symbols}{}
@@ -13,6 +14,14 @@
 % figures are written to outputs/
 \graphicspath{{../outputs/}{outputs/}}
 \newcommand{\given}{\,|\,}
+% a figure with a placeholder sign across it
+\newcommand{\placeholderfig}[2]{%
+  \begin{tikzpicture}
+    \node[inner sep=0] (img) {\includegraphics[height=#2]{#1}};
+    \node[rotate=15, draw=red, line width=2pt, fill=white, fill opacity=0.8,
+          text=red, text opacity=1, font=\Huge\bfseries, inner sep=10pt]
+      at (img.center) {PLACEHOLDER};
+  \end{tikzpicture}}
 \newcommand{\bin}{\operatorname{binomial}}
 \newcommand{\dnew}{\Delta D^{\mathrm{new}}}
 \newcommand{\dold}{\Delta D^{\mathrm{old}}}
@@ -130,7 +139,17 @@ is about 79\% of its latest value, and the death count about 60\%.
 \end{itemize}
 \end{frame}
 
-% ---------------------------------------------------------------------------
+% % ---------------------------------------------------------------------------
+\begin{frame}{Fits to past sitreps: deaths}
+\centering
+\placeholderfig{bvd_deaths_fits_deaths.png}{0.78\textheight}
+
+\smallskip
+{\small Panels: the date of each fit. Shading: 90\% interval of the projection.
+To be replaced by the fits of the final model.}
+\end{frame}
+
+---------------------------------------------------------------------------
 \begin{frame}{Approach}
 Unknown for each onset day: the true cases $I(t)$ and, of those, the cases
 which will die, $F(t)\le I(t)$:
@@ -711,6 +730,16 @@ joint rescaling of $(\varepsilon,s)$ to cross the funnel.
 reports of 2 to 15 September, the bursts; near 1 otherwise. $s=0.88$
 (0.73--1.10).
 \end{minipage}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Fits to past sitreps: deaths}
+\centering
+\placeholderfig{bvd_deaths_fits_deaths.png}{0.78\textheight}
+
+\smallskip
+{\small Panels: the date of each fit. Shading: 90\% interval of the projection.
+To be replaced by the fits of the final model.}
 \end{frame}
 
 % ---------------------------------------------------------------------------
