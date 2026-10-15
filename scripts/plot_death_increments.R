@@ -10,6 +10,9 @@ snap <- build_bvd_snapshots(
   list.files("data/raw/Ebola CFR", pattern = "^Varified.*\\.csv$", full.names = TRUE))
 r <- sort(unique(snap$date_reported))
 ylim <- range(r[-1]) + c(-1, 1)
+big <- theme(plot.title = element_text(size = 17, face = "bold"),
+             axis.title = element_text(size = 16), axis.text = element_text(size = 14),
+             legend.title = element_text(size = 14), legend.text = element_text(size = 13))
 for(count in c("deaths", "cases")) {
   column <- paste0(count, "_reported")
   increments <- bind_rows(lapply(2:length(r), function(i) {
@@ -30,19 +33,19 @@ for(count in c("deaths", "cases")) {
     scale_fill_gradient2(low = "#2166AC", mid = "white", high = "#B2182B",
                          limits = c(-5, 5), breaks = c(-5, -2.5, 0, 2.5, 5),
                          labels = c("≤ −5", "−2.5", "0", "2.5", "≥ 5"),
-                         name = paste0(Count, " added\nper day")) +
+                         name = paste0(Count, " added per day  ")) +
     scale_y_date(limits = ylim, expand = c(0, 0)) +
     labs(x = "Onset date", y = "Date of report",
          title = sprintf("A. %s added to each onset day", Count)) +
-    theme_paper() + theme(legend.position = "left")
+    theme_paper() + big + theme(legend.position = "bottom", legend.key.width = unit(1.6, "cm"))
   bars <- ggplot(old, aes(x = report, y = added)) +
     geom_col(fill = "#B2182B", width = 0.8) +
     geom_hline(yintercept = 0, colour = "grey50") +
     coord_flip() +
     scale_x_date(limits = ylim, expand = c(0, 0)) +
     labs(x = NULL, y = "Change per day",
-         title = sprintf("B. Changes to %s from\nonset days at least\n35 days old (left of\nthe line)", count)) +
-    theme_paper() + theme(axis.text.y = element_blank())
-  p <- patchwork::wrap_plots(tiles, bars, widths = c(3, 1))
+         title = sprintf("B. Changes to %s\nfrom onset days at\nleast 35 days old\n(left of the line)", count)) +
+    theme_paper() + big + theme(axis.text.y = element_blank())
+  p <- patchwork::wrap_plots(tiles, bars, widths = c(2.3, 1))
   save_plot(p, sprintf("outputs/bvd_%s_increments.png", count), 12, 6.5)
 }
