@@ -21,12 +21,11 @@
 \newcommand{\resultsinput}[1]{%
   \IfFileExists{../outputs/tables/#1}{\input{../outputs/tables/#1}}{\input{outputs/tables/#1}}}
 
-% The numbers on the slides of results are typed in by hand. They come from
-% the chains of the runs runs/2026-10-14_19_11_new_sitreps_with_1001 (batch 11) and
-% runs/2026-10-14_20_12_recording_delay_0916 (batch 12) on the branch
-% experiment-results, the second half of each chain, and from the reports.
-% The figures bvd_deaths_*.png were made from the same chains, and the
-% numbers printed, by scripts/plot_death_slides.R.
+% The numbers on the slides are typed in by hand. The effects of each report
+% at 16 September come from runs/2026-10-14_20_12_recording_delay_0916
+% (batch 12, report effects on the whole recording delay) on the branch
+% experiment-results, second half of each chain, via scripts/plot_death_slides.R.
+% The data table and the counts of falls come from the reports to 7 October.
 
 \begin{document}
 \resultsinput{bvd_numbers.tex}
@@ -40,6 +39,37 @@
 {\small Each situation report revises the deaths for every onset date, and
 goes on adding deaths to onset days months old: most in bursts, in early
 September. (6 September: a report which corrected many records.)}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{The data}
+\centering
+\small
+\renewcommand{\arraystretch}{1.2}
+\begin{tabular}{lcc}
+\toprule
+ & Cases & Deaths \\
+\midrule
+Situation reports & \multicolumn{2}{c}{52 (12 July to 7 October)} \\
+Days between consecutive reports & \multicolumn{2}{c}{median 1, at most 6} \\
+Onset days analysed & \multicolumn{2}{c}{150 (11 May to 7 October)} \\
+Count for these days, report of 7 October & 6{,}782 & 3{,}031 \\
+Per onset day (days over four weeks old) & median 50 (2 to 89) & median 23 (1 to 47) \\
+Of these, shown within 7, 14 and 28 days of onset & 50\%, 83\%, 96\% & 35\%, 63\%, 81\% \\
+Comparisons of a count with the report before$^{*}$ & \multicolumn{2}{c}{5{,}540} \\
+\quad of which the count went up, stayed the same, went down & 22\%, 75\%, 2\% & 24\%, 75\%, 1\% \\
+Largest fall in a count; removed in all$^{\dagger}$ & 3; 101 & 2; 38 \\
+The report of 6 September: largest fall; removed in all & 13; 130 & 7; 56 \\
+\bottomrule
+\end{tabular}
+
+\medskip
+\begin{minipage}{0.9\textwidth}
+\footnotesize $^{*}$Every report gives a count for every onset day so far. For
+each onset day, we compare its count in each report with its count in the
+report before. $^{\dagger}$Leaving out the report of 6 September, which
+corrected many records.
+\end{minipage}
 \end{frame}
 
 % ---------------------------------------------------------------------------
@@ -94,11 +124,11 @@ D(t\given t_j) &: \text{the number of those cases shown as dead},\quad D\le C.
 \end{align*}
 
 \begin{itemize}
-\item \textbf{No dates of death.} A death is counted on the reported onset
+\item No dates of death. A death is counted on the reported onset
 day of its case.
-\item \textbf{Deaths are shown only with their cases.} A case can first
+\item Deaths are shown only with their cases. A case can first
 appear already dead.
-\item \textbf{Deaths lag cases.} At 7 to 14 days after onset the case count
+\item Deaths lag cases. At 7 to 14 days after onset the case count
 is about 79\% of its latest value, and the death count about 60\%.
 \end{itemize}
 \end{frame}
@@ -220,8 +250,9 @@ $p^{\text{dead}}=1-S^{D}(t\given t_j)$.
 
 % ---------------------------------------------------------------------------
 \begin{frame}{Wrong records}
-Counts of cases sometimes fall, and so do counts of deaths (18 times in
-2{,}129 comparisons of consecutive reports, never by more than 2). So, as for
+Counts of cases sometimes fall, and so do counts of deaths (37 times in
+5{,}422 comparisons of consecutive reports, never by more than 2, leaving out
+the report of 6 September). So, as for
 cases, some records are wrong, and now each is shown as alive or as dead:
 \[
 C(t\given t_j)=C^{N}+C^{F}+E^{A}+E^{D},\qquad
@@ -553,11 +584,11 @@ $I(t)$ and $F(t)$: those in the last report first, then those in each
 earlier report given the later ones.
 \item $I(t)$ is drawn exactly from its discrete conditional, with $F(t)$
 summed out:
-\[
-p\bigl(I(t)\given\cdot\bigr)\propto\prod_{s\ge t}\operatorname{NB}\bigl(I(s)\given R_s\Lambda_s,\kappa\bigr)
-\sum_{F}\bin\bigl(F\given I(t),\cfr_t\bigr)\,\bin\bigl(F^{\mathrm{mis}}(t)\given F,f\bigr)\,
+\begin{align*}
+p\bigl(I(t)\given\cdot\bigr)\propto{}&\prod_{s\ge t}\operatorname{NB}\bigl(I(s)\given R_s\Lambda_s,\kappa\bigr)\\
+&\times\sum_{F}\bin\bigl(F\given I(t),\cfr_t\bigr)\,\bin\bigl(F^{\mathrm{mis}}(t)\given F,f\bigr)\,
 p\bigl(y_t,C^{F},E^{A},E^{D}\given I(t),F\bigr).
-\]
+\end{align*}
 \item $F(t)$ is drawn exactly given $I(t)$ and the hidden counts: the summand above,
 normalised over $F$.
 \end{enumerate}
@@ -587,8 +618,7 @@ $\cfr_k\sim\operatorname{beta}\bigl(1+\sum_{t\in k}F(t),\ 1+\sum_{t\in k}[I(t)-F
 \item $f$: close to $\operatorname{beta}\bigl(1+\sum_tF^{\mathrm{mis}}(t),\
 1+\sum_t[F(t)-F^{\mathrm{mis}}(t)]\bigr)$; drawn from a beta matched to its conditional,
 with a Metropolis--Hastings correction.
-\item $\delta$ and $\eta$: conjugate (beta and gamma), given the wrong records
-in $H$.
+\item $\delta$ and $\eta$: conjugate (beta and gamma), given the wrong records.
 \item $(\mu,\sigma)$ and $(\mu^{d},\sigma^{d})$: split, merge and shift moves
 of change points.
 \item $\kappa$, $\rho$, $\tau$, $\omega^{d}$, $m^{d}$, $\psi_w$, $\psi^{d}_w$:
@@ -599,54 +629,17 @@ random-walk Metropolis.
 % ---------------------------------------------------------------------------
 \begin{frame}{What can and cannot be learned}
 \begin{itemize}
-\item \textbf{A recent fall in $\cfr_t$ and deaths not yet recorded look the
-same.} For the last three to four weeks of onset days, $\cfr_t$ rests mostly on
-the recording delay estimated from earlier days.
-\item \textbf{A change in the recording delay and in $\cfr_t$ at about the same
-time are hard to tell apart.}
-\item \textbf{$f$ rests on the supplied time to death,} and misdated cases who
-have yet to die are in no report.
-\item \textbf{Old onset days say little about the reporting delay of cases,
-but much about deaths,} which go on being recorded for weeks.
+\setlength{\itemsep}{1.2em}
+\item A recent fall in $\cfr_t$ and deaths not yet recorded look the same.
+For the last three to four weeks of onset days, $\cfr_t$ rests mostly on the
+recording delay estimated from earlier days.
+\item A change in the recording delay and in $\cfr_t$ at about the same time
+are hard to tell apart.
+\item $f$ rests on the supplied time to death, and misdated cases who have yet
+to die are in no report.
+\item Old onset days say little about the reporting delay of cases, but much
+about deaths, which go on being recorded for weeks.
 \end{itemize}
-\end{frame}
-
-% ---------------------------------------------------------------------------
-\begin{frame}{Fits to past sitreps: deaths}
-\centering
-\includegraphics[height=0.8\textheight]{bvd_deaths_fits_deaths.png}
-
-{\small Panels: the date of each fit. Shading: 90\% interval of the projection.}
-\end{frame}
-
-% ---------------------------------------------------------------------------
-\begin{frame}{Fits to past sitreps: deaths in the latest 28 onset days}
-\centering
-\renewcommand{\arraystretch}{1.2}
-\begin{tabular}{lcccc}
-\toprule
- & \multicolumn{3}{c}{Deaths} & \\
-\cmidrule(lr){2-4}
-Fit date & Shown then & Projected for 7 Oct & Shown 7 Oct & Share in the tail, $\omega^{d}$ \\
-\midrule
-1 Aug & 348 & 796 (681--893) & 709 & 0.56 \\
-9 Aug & 380 & 728 (660--844) & 761 & 0.47 \\
-16 Aug & 403 & 632 (581--732) & 813 & 0.47 \\
-24 Aug & 441 & 687 (639--776) & 798 & 0.50 \\
-2 Sep & 495 & 782 (728--844) & 826 & 0.54 \\
-9 Sep & 489 & 871 (747--975) & 786 & 0.46 \\
-16 Sep & 513 & 840 (758--909) & 768 & 0.46 \\
-24 Sep & 457 & 662 (625--710) & 639 & 0.32 \\
-1 Oct & 379 & 490 (471--512) & 510 & 0.30 \\
-\bottomrule
-\end{tabular}
-
-\medskip
-\begin{minipage}{0.88\textwidth}
-\small Posterior medians and 90\% intervals. Up to 2 September the
-projections are mostly too low; on 9 and 16 September they are about 10\%
-too high.
-\end{minipage}
 \end{frame}
 
 % ---------------------------------------------------------------------------
@@ -663,58 +656,6 @@ records.)
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Two ways to explain the late deaths}
-From 9 September, the posterior has two modes:
-
-\bigskip
-\begin{center}
-\renewcommand{\arraystretch}{1.35}
-\begin{tabular}{lcc}
-\toprule
- & Heavy tail & Light tail \\
-\midrule
-Share of deaths in the tail, $\omega^{d}$ & about 0.45 & about 0.15 \\
-Mean of the tail, $m^{d}$ & about 40 days & -- \\
-Recording delay, early onset days & about 2.5 days & about 20 days, then changes \\
-Case fatality ratio, latest onset days & 0.60 to 0.65 & about 0.5 \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\bigskip
-\begin{itemize}
-\item The heavy tail expects the September bursts to go on: projections
-too high.
-\item The light tail explains them by a slow early delay and changes in it.
-\item Both are features of onset days; the bursts are features of reports.
-\end{itemize}
-\end{frame}
-
-% ---------------------------------------------------------------------------
-\begin{frame}{Options for the recording delay}
-\begin{center}
-\renewcommand{\arraystretch}{1.4}
-\begin{tabular}{lp{0.62\textwidth}}
-\toprule
-Option & Recording delay $(\mu^{d},\sigma^{d})$ \\
-\midrule
-Base & Changes at unknown times; fixed for onset days to 18 July \\
-(a) & Fixed for onset days to 31 July, then changes at unknown times \\
-(b) & One delay for all onset days \\
-(c) & As base, and each report has its own effect on recording \\
-(d) & As (b), and each report has its own effect on recording \\
-(e) & As (b), and each report has its own effect on the tail alone \\
-(f) & As (a), and each report has its own effect on the tail alone \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\bigskip
-(a) and (b) remove freedom the data seem not to use. (c) to (f) let the
-bursts be bursts, rather than features of onset days.
-\end{frame}
-
-% ---------------------------------------------------------------------------
 \begin{frame}{Effects of each report on recording}
 The hazard of a death being recorded on each day after report $t_{j-1}$, up
 to and including report $t_j$, is multiplied by
@@ -727,9 +668,6 @@ with $w(j)$ the day of the week of report $t_j$.
 \bigskip
 \begin{itemize}
 \item One effect per report, shared by all onset days.
-\item In (e) and (f), only the exponential tail is multiplied; the gamma
-part keeps the day-of-week effects alone. A burst then clears a backlog of
-old deaths without speeding up the deaths of recent onset days.
 \item Reports after the fit date: effects are drawn from $N(0,s^2)$ when
 projecting.
 \item Sampled in blocks with steps scaled by $s$, with $s$ by Gibbs, and a
@@ -738,7 +676,7 @@ joint rescaling of $(\varepsilon,s)$ to cross the funnel.
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Effects of each report: the fit to 16 September, option (c)}
+\begin{frame}{Effects of each report: the fit to 16 September}
 \centering
 \includegraphics[height=0.62\textheight]{bvd_deaths_report_effects.png}
 
@@ -751,49 +689,16 @@ reports of 2 to 15 September, the bursts; near 1 otherwise. $s=0.88$
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{The options compared: the fit to 16 September}
-Deaths in the latest 28 onset days: 513 shown on 16 September, 768 on
-7 October.
-
-\medskip
-\begin{center}
-\renewcommand{\arraystretch}{1.3}
-\begin{tabular}{lccc}
-\toprule
-Option & Projected for 7 Oct & Eventual & Case fatality ratio \\
-\midrule
-Base & 840 (758--909) & 1{,}081 (798--1{,}198) & 0.63 (0.48--0.70) \\
-(a) Fixed to 31 July & 856 (812--906) & 1{,}104 (1{,}030--1{,}188) & 0.65 (0.60--0.69) \\
-(b) One delay & 851 (803--906) & 1{,}098 (1{,}022--1{,}194) & 0.64 (0.60--0.70) \\
-(c) Base, report effects & 692 (638--742) & 748 (700--790) & 0.46 (0.44--0.48) \\
-(d) One delay, report effects & 676 (614--732) & 751 (651--798) & 0.47 (0.40--0.49) \\
-\bottomrule
-\end{tabular}
-\end{center}
-
-\medskip
-\begin{itemize}
-\item (a) and (b) choose the heavy tail: about 10\% too high.
-\item (c) and (d) go too far the other way: their eventual deaths are fewer
-than 7 October already shows. Effects on the whole delay speed up the
-recording of recent deaths too. Hence (e) and (f).
-\end{itemize}
-\end{frame}
-
-% ---------------------------------------------------------------------------
 \begin{frame}{Where this leaves us}
 \begin{itemize}
-\item \textbf{Deaths bring reports, and some onset dates are recorded as
-the date of death.} Both are needed to fit the early deaths with a plausible time to
-death.
-\item \textbf{The difficulty is the slow part of recording.} Bursts of late
-deaths by report date can be explained in more than one way, and the fits
-choose between them differently at different dates.
-\item \textbf{Report effects remove the overshoot, but overcorrect}:
-effects on the whole delay also speed up recent deaths.
-\item \textbf{Next:} options (c) to (f) at every fit date from
-1 August to 7 October, scored against the report of 7 October.
-\item \textbf{Sensitivity:} the supplied time to death, especially its sd.
+\setlength{\itemsep}{1.2em}
+\item Deaths bring reports, and some onset dates are recorded as the date of
+death: both are needed to fit the early deaths with a plausible time to death.
+\item The difficulty is the slow part of recording: deaths are added to old
+onset days in bursts, which are features of reports rather than of onset
+days.
+\item Effects of each report on recording allow for the bursts.
+\item Sensitivity: the supplied time to death, especially its sd.
 \end{itemize}
 \end{frame}
 
@@ -813,13 +718,6 @@ effects on the whole delay also speed up recent deaths.
 \smallskip
 {\small As the first slide, for cases. (6 September: a report which corrected
 many records.)}
-\end{frame}
-
-\begin{frame}{Appendix: fits to past sitreps, cases}
-\centering
-\includegraphics[height=0.8\textheight]{bvd_deaths_fits_cases.png}
-
-{\small Panels: the date of each fit. Shading: 90\% interval of the projection.}
 \end{frame}
 
 % ---------------------------------------------------------------------------
