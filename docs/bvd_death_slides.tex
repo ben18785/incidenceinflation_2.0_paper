@@ -16,6 +16,10 @@
 \newcommand{\bin}{\operatorname{binomial}}
 \newcommand{\dnew}{\Delta D^{\mathrm{new}}}
 \newcommand{\dold}{\Delta D^{\mathrm{old}}}
+\newcommand{\cfr}{\mathrm{CFR}}
+% numbers for the appendix of slides on the model of cases
+\newcommand{\resultsinput}[1]{%
+  \IfFileExists{../outputs/tables/#1}{\input{../outputs/tables/#1}}{\input{outputs/tables/#1}}}
 
 % The numbers on the slides of results are typed in by hand. They come from
 % the chains of the runs runs/2026-10-14_19_11_new_sitreps_with_1001 (batch 11) and
@@ -25,15 +29,17 @@
 % numbers printed, by scripts/plot_death_slides.R.
 
 \begin{document}
+\resultsinput{bvd_numbers.tex}
 
 % ---------------------------------------------------------------------------
 \begin{frame}{Bundibugyo virus disease, 2026: joint modelling of cases and deaths}
 \centering
-\includegraphics[height=0.76\textheight]{New cases and deaths with onset between consecutive sitreps.png}
+\includegraphics[height=0.74\textheight]{bvd_deaths_increments.png}
 
 \smallskip
-{\small Each situation report revises the counts of cases and of deaths for
-every onset date. Deaths go on being added for much longer than cases.}
+{\small Each situation report revises the deaths for every onset date, and
+goes on adding deaths to onset days months old: most in bursts, in early
+September. (6 September: a report which corrected many records.)}
 \end{frame}
 
 % ---------------------------------------------------------------------------
@@ -61,13 +67,12 @@ $S^{C}(t\given t')$: probability a case is not yet reported at $t'$.
 \begin{frame}{Recap: the model of cases (continued)}
 \textbf{Wrong records.} Counts sometimes fall. Records are added in error
 in proportion to reporting activity (rate $\eta$), and each is removed with
-probability $\rho$ a day. They are summed out exactly by a forward
-recursion over reports.
+probability $\rho$ a day.
 
 \bigskip
 \textbf{Changes at unknown times.} $R_t$ and $(\mu,\sigma)$ are constant
 within segments of onset days. Each day starts a new segment with
-probability $p$, $p\sim\operatorname{beta}(1,T)$; the number of changes is
+probability $p\sim\operatorname{beta}(1,T)$; the number of changes is
 inferred.
 
 \bigskip
@@ -90,46 +95,45 @@ D(t\given t_j) &: \text{the number of those cases shown as dead},\quad D\le C.
 
 \begin{itemize}
 \item \textbf{No dates of death.} A death is counted on the onset day of its
-case. We see only that the count of dead for a day rose between two reports.
-\item \textbf{The dead are among the cases already counted.} A death cannot
-be shown before its case is in the report.
+case.
+\item \textbf{Deaths are shown only with their cases.} A case can first
+appear already dead, but a report never shows a death without its case.
 \item \textbf{Deaths lag cases.} At 7 to 14 days after onset the case count
 is about 79\% of its latest value, and the death count about 60\%.
 \end{itemize}
-
-\bigskip
-So the crude ratio $D/C$ is too low for recent onset days: 0.45 to 0.49 for
-onset fortnights up to early September, but 0.28 for the latest fortnight.
 \end{frame}
 
 % ---------------------------------------------------------------------------
 \begin{frame}{Approach}
 Unknown for each onset day: the true cases $I(t)$ and, of those, the cases
-which will die, $F(t)$:
+which will die, $F(t)\le I(t)$:
 \[
-p\bigl(I, F, R, c, \theta, \phi \given C, D\bigr)\;\propto\;
+p\bigl(I, F, R, \cfr, \theta, \phi \given C, D\bigr)\;\propto\;
 \underbrace{p\bigl(C, D\given I, F, \theta, \phi\bigr)}_{\text{reporting}}\;
-\underbrace{p\bigl(F\given I, c\bigr)}_{\text{fatality}}\;
+\underbrace{p\bigl(F\given I, \cfr\bigr)}_{\text{fatality}}\;
 \underbrace{p\bigl(I\given R\bigr)}_{\text{transmission}}\;
-p(R)\,p(c)\,p(\theta)\,p(\phi)
+p(R)\,p(\cfr)\,p(\theta)\,p(\phi)
 \]
 
 \bigskip
 \begin{itemize}
-\item $c_t$: case fatality ratio, by onset day. $F(t)\sim\bin\bigl(I(t),c_t\bigr)$.
-\item $\theta$: reporting of cases (as before). $\phi$: recording of deaths.
-\item $c_t$ and the delay to a death being recorded can change at unknown
-times, as $R_t$ can.
+\item $\cfr_t$: case fatality ratio, by onset day. $F(t)\sim\bin\bigl(I(t),\cfr_t\bigr)$.
+\item $\theta$: the vector of parameters of the reporting of cases, as
+before (delay, day-of-week effects, wrong records).
+\item $\phi$: the vector of parameters of the recording of deaths (delay,
+day-of-week effects, and those introduced on later slides).
+\item $\cfr_t$ and the delay to a death being recorded each have their own
+change points, with the same model for them as $R_t$.
 \end{itemize}
 
 \bigskip
-Aims: the eventual numbers of cases and deaths for recent onset days, and a
-case fatality ratio which allows for deaths not yet recorded.
+Aims: to estimate the eventual numbers of cases and of deaths for recent
+onset days, and $\cfr_t$, allowing for deaths not yet recorded.
 \end{frame}
 
 % ---------------------------------------------------------------------------
 \begin{frame}{Two delays for each fatal case}
-Each fatal case has two delays from onset:
+To begin with, each fatal case has two independent delays from onset:
 
 \smallskip
 \begin{center}
@@ -151,6 +155,11 @@ its death is recorded: $\max(X,Y)\le t'-t$.
 \item Reported, but death not yet recorded: \textbf{shown as alive}.
 \item So some of the cases shown as alive will die, and we cannot see which.
 \end{itemize}
+
+\bigskip
+Later slides change this: a death can bring about the report of its case
+($X$ and $Y$ then depend on each other), and $Y$ becomes the time to death
+plus a delay to recording.
 \end{frame}
 
 % ---------------------------------------------------------------------------
@@ -209,7 +218,7 @@ reports, with state $C^{F}$. The likelihood sums over its paths exactly.
 % ---------------------------------------------------------------------------
 \begin{frame}{A puzzle: deaths shown very early}
 If $X$ and $Y$ were independent, the share of reported cases shown as dead
-at time $u$ since onset would be $c_t\,[1-S^{D}(u)]$: near zero at first,
+at time $u$ since onset would be $\cfr_t\,[1-S^{D}(u)]$: near zero at first,
 then rising. The reports (onset days 12 July to 5 September):
 
 \medskip
@@ -297,7 +306,7 @@ inference, not something the reports say.
 
 % ---------------------------------------------------------------------------
 \begin{frame}{Counted on the day of death: two sets of counts}
-$I(t)$, $F(t)$ and $c_t$ stay \textbf{by true day of onset}, so transmission
+$I(t)$, $F(t)$ and $\cfr_t$ stay \textbf{by true day of onset}, so transmission
 and the case fatality ratio are on the right days. Of the fatal cases with
 onset on day $t$,
 \[
@@ -402,7 +411,7 @@ Quantity & Prior within a segment & Minimum segment \\
 \midrule
 $R_t$ & gamma & 7 days \\
 Reporting delay $(\mu,\sigma)$ & hierarchical log-normal & 14 days \\
-Case fatality ratio $c_t$ & $\operatorname{beta}(1,1)$ & 14 days \\
+Case fatality ratio $\cfr_t$ & $\operatorname{beta}(1,1)$ & 14 days \\
 Recording delay $(\mu^{d},\sigma^{d})$ & hierarchical log-normal & 14 days \\
 \bottomrule
 \end{tabular}
@@ -410,7 +419,7 @@ Recording delay $(\mu^{d},\sigma^{d})$ & hierarchical log-normal & 14 days \\
 
 \bigskip
 \begin{itemize}
-\item $c_t$ is indexed by onset day: a change is between cohorts of cases.
+\item $\cfr_t$ is indexed by onset day: a change is between cohorts of cases.
 \item Onset days first seen long after onset (to 18 July) cannot show how
 fast deaths were recorded, so they share one recording delay.
 \end{itemize}
@@ -431,7 +440,7 @@ conditional with $F(t)$ summed out, then $F(t)$ given $I(t)$.
 \item \textbf{Which cases are counted on the day of death.} Many Metropolis
 moves of single cases each iteration: between onset and death, changing the
 time to death, and at either end of the series.
-\item \textbf{$c_t$ segments.} Drawn exactly with values integrated out
+\item \textbf{$\cfr_t$ segments.} Drawn exactly with values integrated out
 (beta-binomial), as for $R_t$.
 \item \textbf{The rest.} Delay segments by split, merge and shift moves;
 $\tau$, $\rho$, the tail and day-of-week effects by random walks; $f$ from a
@@ -446,10 +455,10 @@ Actions; about 2 to 5 hours each.}
 % ---------------------------------------------------------------------------
 \begin{frame}{What can and cannot be learned}
 \begin{itemize}
-\item \textbf{A recent fall in $c_t$ and deaths not yet recorded look the
-same.} For the last three to four weeks of onset days, $c_t$ rests mostly on
+\item \textbf{A recent fall in $\cfr_t$ and deaths not yet recorded look the
+same.} For the last three to four weeks of onset days, $\cfr_t$ rests mostly on
 the recording delay estimated from earlier days.
-\item \textbf{A change in the recording delay and in $c_t$ at about the same
+\item \textbf{A change in the recording delay and in $\cfr_t$ at about the same
 time are hard to tell apart.}
 \item \textbf{$f$ rests on the supplied time to death,} and the cases
 counted on the day of death who have yet to die are in no report.
@@ -719,11 +728,310 @@ it.
 \begin{itemize}
 \item For the corrected onset days, the reports made before 6 September are
 left out, and that report is treated as their first.
-\item Those days are 71 to 118 days old when first seen, so $c_t$ is close
+\item Those days are 71 to 118 days old when first seen, so $\cfr_t$ is close
 to the share shown as dead.
 \item What is given up: those earlier reports showed their deaths being
 recorded over many weeks.
 \end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+% The slides on the model of cases (docs/bvd_slides.tex)
+\begin{frame}
+\centering
+\Large Appendix: the model of cases
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Cases: the counts keep changing}
+\centering
+\includegraphics[height=0.74\textheight]{sitrep_increments.png}
+
+\smallskip
+{\small Counts for each onset date keep changing from one situation report to
+the next: mostly added (red), sometimes removed (blue).}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Cases: Approach}
+Each report gives $C(t\given t')$: confirmed cases with onset on day $t$, as
+known on day $t'$.
+
+\bigskip
+The true cases $I(t)$ are unknown. We model how they arise and how they come
+to be reported:
+\[
+p\bigl(I, R, \theta \given C\bigr)\;\propto\;
+\underbrace{p\bigl(C\given I,\theta\bigr)}_{\text{reporting}}\;
+\underbrace{p\bigl(I\given R\bigr)}_{\text{transmission}}\;
+p(R)\,p(\theta)
+\]
+
+\bigskip
+\begin{itemize}
+\item $R$: reproduction numbers $R_t$. $\theta$: parameters of reporting
+(the delay distribution, effects of the day of the week, rates of misreporting).
+\item $R_t$ and the delay can change at unknown times.
+\end{itemize}
+
+\bigskip
+{\small Extends Bajaj, Thompson \& Lambert (2025).}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Cases: Starting point: Bajaj, Thompson \& Lambert (2025)}
+\textbf{Transmission.} True cases follow a renewal process, with $R_t$
+constant within fixed windows:
+\[
+I(t)\sim\operatorname{Poisson}\Bigl(R_t\sum_{s\ge 1}\omega_s\,I(t-s)\Bigr)
+\]
+
+\textbf{Reporting.} Each case is reported after a random delay with survival
+function $S_\theta$. Cases not yet reported at $t'$ are reported by $t''$
+independently:
+\[
+C(t\given t'')-C(t\given t')\sim
+\operatorname{binomial}\Bigl(I(t)-C(t\given t'),\
+\frac{S_\theta(t'-t)-S_\theta(t''-t)}{S_\theta(t'-t)}\Bigr)
+\]
+
+\textbf{Inference.} Gibbs sampling over $I(t)$, $R_t$ and $\theta$:
+\begin{itemize}
+\item $I(t)$ from its discrete full conditional;
+\item $R_t$ from a conjugate gamma;
+\item $\theta$ by Metropolis.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Cases: Changing some things...}
+\centering
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{p{0.44\textwidth}p{0.46\textwidth}}
+\toprule
+\textbf{Original model} & \textbf{Here} \\
+\midrule
+Counts can only rise, and never exceed $I(t)$ & Records can be added in error and later removed \\
+Reporting depends only on the delay & Reports differ by day of the week \\
+One delay distribution, or periods fixed in advance & The delay can change at unknown times \\
+$R_t$ constant within fixed windows & $R_t$ can change at unknown times \\
+Series starts with the outbreak & Earlier cases enter as known \\
+\bottomrule
+\end{tabular}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Cases: The data}
+\centering
+\renewcommand{\arraystretch}{1.25}
+\resultsinput{bvd_data.tex}
+
+\medskip
+\begin{minipage}{0.8\textwidth}
+\small $^{*}$Every report gives a count for every onset day so far. For each
+onset day, we compare its count in each report with its count in the report
+before: for example, cases with onset on 1 August numbered 10 in the report
+of 3 August and 13 in the report of 4 August, so that count went up. Over all
+onset days and all pairs of consecutive reports there are this many
+comparisons.
+\end{minipage}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Cases: Transmission}
+\[
+I(t)\sim\operatorname{NB}\bigl(R_t\,\Lambda_t,\ \kappa\bigr),\qquad
+\Lambda_t=\sum_{s=1}^{40}\omega_s\,I(t-s)
+\]
+
+\bigskip
+\begin{itemize}
+\item $\omega_s$: discretised gamma serial interval (mean 15.3, sd 9.3 days;
+Zaire ebolavirus).
+\item Cases with onset \bvdDateBeforeFirst{} to \bvdDateBeforeLast{} (the 40
+days before the first report) are not modelled: their counts in the report of
+\bvdDateLatest{} enter $\Lambda_t$ as fixed values.
+\item $R_t$ is piecewise constant (next slide).
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Cases: Piecewise-constant parameters, with changes at unknown times}
+Used for $R_t$ and for the delay parameters $(\mu,\sigma)$. Onset days
+$1,\dots,T$ are split into segments; the parameter is constant within each.
+
+\medskip
+\[
+p(\tau_1,\dots,\tau_K\given p)\propto p^{K}(1-p)^{T-1-K},\qquad
+p\sim\operatorname{beta}(1,T)
+\]
+
+\begin{columns}[c]
+\begin{column}{0.5\textwidth}
+\begin{itemize}
+\item $\tau_1<\dots<\tau_K$: the days on which a new segment starts (the
+change points).
+\item Each day starts a new segment with probability $p$ (Barry \& Hartigan
+1992).
+\item Minimum segment: 7 days ($R_t$), 14 days (delay).
+\item The number of changes $K$ is inferred.
+\end{itemize}
+\end{column}
+\begin{column}{0.45\textwidth}
+\centering
+Implied prior for $R_t$
+
+\smallskip
+\begin{tabular}{lcccc}
+\toprule
+$K$ & 0 & 1 & 2 & $\ge 3$ \\
+\midrule
+Probability & 0.61 & 0.26 & 0.09 & 0.04 \\
+\bottomrule
+\end{tabular}
+\end{column}
+\end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Cases: Reporting delays}
+A case with onset on day $t$ is reported after a gamma$(\mu,\sigma)$ delay.
+$S_\theta(t\given k)$: probability it is still unreported at the end of day
+$k$. Its hazard of being reported on day $k$:
+\[
+h_\theta(t,k)=\log S_\theta(t\given k-1)-\log S_\theta(t\given k)
+\]
+
+\smallskip
+Reports differ by day of the week, so each day's hazard is multiplied by
+$m_k=\psi_w$, where $w$ is the weekday of the next report:
+\[
+S^{*}_\theta(t\given t')=S_\theta(t\given t)\,
+\exp\Bigl\{-\sum_{k=t+1}^{t'}m_k\,h_\theta(t,k)\Bigr\}
+\]
+
+{\small $S_\theta(t\given t)$: probability a case is not reported on its day
+of onset (about 0.99 here).}
+
+\smallskip
+A case unreported at report $t_{j-1}$ appears in report $t_j$ with
+probability
+$\displaystyle p(t\given t_j)=1-\frac{S^{*}_\theta(t\given t_j)}{S^{*}_\theta(t\given t_{j-1})}$.
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Cases: Misreporting: the idea}
+Counts sometimes fall, so some records in them must be wrong: duplicates,
+cases later reclassified, wrong onset dates.
+
+\bigskip
+Split the count for onset day $t$ in the report of day $t_j$ into two parts,
+neither observed:
+\[
+C(t\given t_j)=\underbrace{C^{G}(t\given t_j)}_{\substack{\text{genuine cases}\\\text{reported so far}}}
++\underbrace{E(t\given t_j)}_{\substack{\text{wrong records}\\\text{currently in the count}}}
+\]
+
+\medskip
+\begin{itemize}
+\item \textbf{Errors are made when cases are being reported.} Each genuine
+report brings, on average, $\eta$ wrong records with it.
+\item \textbf{Errors are found later.} Each wrong record is removed with
+probability $\rho$ each day.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Cases: Misreporting: the model}
+Between reports $t_{j-1}$ and $t_j$, for onset day $t$:
+
+\medskip
+\begin{align*}
+\text{genuine cases, newly reported}\quad & \Delta C^{G}(t\given t_j)\sim\operatorname{binomial}\bigl(I(t)-C^{G}(t\given t_{j-1}),\ p(t\given t_j)\bigr)\\[3pt]
+\text{wrong records added}\quad & n(t\given t_j)\sim\operatorname{Poisson}\bigl(\eta\times
+\underbrace{I(t)\,[S^{*}_\theta(t\given t_{j-1})-S^{*}_\theta(t\given t_j)]}_{\text{expected genuine reports}}\bigr)\\[3pt]
+\text{wrong records removed}\quad & e(t\given t_j)\sim\operatorname{binomial}\bigl(E(t\given t_{j-1}),\ 1-(1-\rho)^{t_j-t_{j-1}}\bigr)
+\end{align*}
+\[
+C^{G}(t\given t_j)=C^{G}(t\given t_{j-1})+\Delta C^{G}(t\given t_j),\qquad E(t\given t_j)=E(t\given t_{j-1})+n(t\given t_j)-e(t\given t_j)
+\]
+
+\smallskip
+\small
+\begin{itemize}
+\item Wrong records are added in proportion to reporting activity: many when
+an onset day is being reported, almost none once it is complete.
+\item A wrong record survives each day with probability $1-\rho$, so
+$1-(1-\rho)^{t_j-t_{j-1}}$ is the probability it is removed at some point in
+the $t_j-t_{j-1}$ days between the two reports.
+\item Only $C=C^{G}+E$ is observed. We marginalise over $E$ exactly by a forward
+recursion over reports, truncated at $E\le\bvdErroneousMax$ (one more than
+the largest fall seen in a count).
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Cases: Fitting}
+Metropolis within Gibbs.
+
+\bigskip
+\begin{itemize}
+\item $I(t)$: drawn from its discrete full conditional.
+\item $R_t$ segments: drawn exactly, with segment values integrated out.
+\item Delay segments: split, merge and shift moves.
+\item $\kappa$, $\psi_w$, $\eta$, $\rho$: random-walk Metropolis.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Cases: Past performance on cases}
+\centering
+\includegraphics[height=0.78\textheight]{bvd_changepoint_cases.png}
+
+{\small Orange: reported at the analysis date. Black: reported on
+\bvdDateLatest. Green: posterior median and 90\% interval.}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Cases: Results as of 1 October 2026}
+\begin{columns}[c]
+\begin{column}{0.68\textwidth}
+\centering
+\includegraphics[width=\textwidth]{bvd_changepoint_main.png}
+\end{column}
+\begin{column}{0.3\textwidth}
+{\small Grey: reported. Blue: estimated. Orange: projected at the latest $R_t$.}
+
+\bigskip
+$R_t$ now: \bvdRt.
+
+\bigskip
+Probability $R_t$ has not changed since \bvdDateFirst: \bvdRtNoChange{}
+(the share of posterior draws with $K=0$; prior 0.61).
+
+\bigskip
+Delay now: mean \bvdDelayMean{} days, sd \bvdDelaySd{} days.
+\end{column}
+\end{columns}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Cases: recovering changes from simulated data}
+\centering
+\includegraphics[height=0.82\textheight]{changepoint_demonstrations.png}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Cases: further estimates as of 1 October 2026}
+\centering
+\includegraphics[height=0.82\textheight]{bvd_changepoint_parameters.png}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Cases: parameter estimates as of 1 October 2026}
+\centering
+\renewcommand{\arraystretch}{1.1}
+\resultsinput{bvd_parameters.tex}
 \end{frame}
 
 \end{document}
