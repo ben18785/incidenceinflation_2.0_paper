@@ -765,6 +765,197 @@ multipliers $\psi^{d}_w$ of the delay to a death being recorded (same prior
 as $\psi_w$), and $\nu$ with prior \eqref{eq:nu}. The fractions $f_t$ and
 the distribution $h$ are inputs.
 
+\section{A backlog of deaths cleared in calendar time (proposed)}\label{sec:backlog}
+
+This section sketches a model which is not yet built. It is prompted by how
+the fitted model, set out briefly below, fails to predict the deaths later
+reports add to onset days which are weeks or months old.
+
+\subsection{What the reports show}
+
+Each report adds deaths to onset days of every age. Taking the delay of a
+death to be the time from its onset to the first report which shows it as
+dead, three things stand out (Figure~\ref{fig:backlogwave}).
+\begin{itemize}
+\item The deaths of early onset days go on being added for months, at a
+roughly steady rate and then stop. Deaths with onset in June were added at
+5.8, 3.1 and 2.9 a day by the reports of July (from 12 July), August and
+September, and at 0.4 a day by those of 1 to 7 October.
+\item The share of a cohort's deaths that is slow falls with onset date.
+Of the deaths shown within 35 days of onset, those first shown more than 21
+days after onset were 18 to 20\% for onsets from 13 July to 9 August and
+9\% for onsets from 24 August to 6 September.
+\item By month of report, the delays of the deaths added to old onset days
+move to the right one day for every day of calendar time, with the
+earliest onset days at the front. A hump at 60 to 90 days in the reports of
+August is at about 90 days in those of September: largely the same onset
+days of June, a month older.
+\end{itemize}
+The last point is what a backlog cleared in calendar time would produce. If
+each report clears some of the deaths still waiting, whatever their age,
+the delays of the deaths it adds are the report date less their onset
+dates. The distribution of delays in a report is then the profile of the
+remaining backlog over onset days, shifted by the date of the report.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{bvd_death_delays_by_report_month.png}
+\caption{Deaths first shown in the reports of each month (after the first
+report, of 12 July), by the time from onset to that report, coloured by
+month of onset.}
+\label{fig:backlogwave}
+\end{figure}
+
+\subsection{The model fitted so far, and why it fails}
+
+The fitted model (option (f) of the fits to the outbreak) differs from the
+model of \S\ref{sec:model} in its delay to a death being recorded. That
+delay is the time from onset to death, $T$, with the supplied distribution
+$h$ of \S\ref{sec:dated}, followed by a delay $R$ from death to the death
+being recorded. With $S^{R}(d\given t')$ the probability that a death on day
+$d$ is not yet recorded by day $t'$,
+\begin{equation}
+S^{D}(t\given t')=\sum_{z>t'-t}h_z+\sum_{z\le t'-t}h_z\,S^{R}(t+z\given t'),
+\label{eq:sdbacklog}
+\end{equation}
+and in option (f)
+\[
+S^{R}(d\given t')=(1-\omega^{d})\,S_{\mathrm{gamma}}(t'-d\given\mu^{d},\sigma^{d})
++\omega^{d}\exp\Bigl(-\sum_{s=d+1}^{t'}\frac{\psi^{d}_{w(j(s))}\,e^{\varepsilon_{j(s)}}}{m^{d}}\Bigr),
+\qquad \varepsilon_j\sim N(0,\sigma_\varepsilon^{2}),
+\]
+where $j(s)$ is the report whose interval contains day $s$ and $w(j)$ the
+day of the week of report $t_j$. A share
+$\omega^{d}$ of deaths are thus recorded at a rate which is constant, $1/m^{d}$,
+apart from a multiplier for each report. The gamma part and $\omega^{d}$,
+$m^{d}$ are the same for all onset days to 31 July; $(\mu^{d},\sigma^{d})$ may
+change after it.
+
+This is already a rate set by calendar time, but with two restrictions which
+the reports contradict.
+\begin{enumerate}
+\item One share $\omega^{d}$ for all onset days. Early onset days have been
+exposed to the clearing rate for longest, so in the model they have the
+least left. In the reports they had the most.
+\item Report effects that are independent around a constant rate. Nothing
+links the rate of one report to that of the next, so the model explains
+deaths added to old onset days by a few large effects (multipliers of 25
+to 60 in the fits of August and early September) which empty the backlog.
+\end{enumerate}
+The consequence is in the fits to earlier reports. Each fit from 1 August
+to 2 September puts the deaths still to be shown for onset days more than
+35 days old at about zero; the reports later added about 140 to 210. Over the
+week after each fit, the fits of 9 August to 9 September expected 28 to
+50\% of the deaths that were added, and almost none of those added more
+than 35 days after onset.
+
+\subsection{The proposed model}
+
+Each fatal case dies on day $t+T$, $T\sim h$, as now. Its death then goes
+one of two ways.
+\begin{itemize}
+\item With probability $1-b_t$ it is recorded promptly, after a gamma delay
+from death with parameters $(\mu^{d},\sigma^{d})$ and the day-of-week
+multipliers $\psi^{d}_w$, as now.
+\item With probability $b_t$ it joins a \emph{backlog}. A death in the
+backlog is recorded on day $s$ with hazard $\lambda_s$, the same for all
+onset days.
+\end{itemize}
+So, in \eqref{eq:sdbacklog},
+\begin{equation}
+S^{R}(d\given t')=(1-b_t)\,S_{\mathrm{gamma}}(t'-d\given\mu^{d},\sigma^{d})
++b_t\,e^{-\Lambda(d,t')},\qquad
+\Lambda(d,t')=\sum_{s=d+1}^{t'}\lambda_s,
+\label{eq:backlog}
+\end{equation}
+for a death on day $d$ of a case with onset on day $t$. The rest of the
+model is unchanged: \eqref{eq:sdbacklog} enters the triggered and misdated
+parts as $S^{D}$ does now, and for a case dated by death the backlog share is
+that of its day of onset.
+
+\paragraph{The backlog share.} $b_t$ varies with onset day, as a random walk
+on the logit scale over onset weeks $k$:
+\[
+\operatorname{logit} b_{(k+1)}=\operatorname{logit} b_{(k)}+\xi_k,\qquad
+\xi_k\sim N(0,\tau_b^{2}),
+\]
+with, for example, $\operatorname{logit}b_{(1)}\sim N(\operatorname{logit}0.2,\,1)$
+and $\tau_b\sim$ half-normal$(0,0.5)$. Change points in $b_t$, as for the
+other quantities of \S\ref{sec:changes}, are the alternative; the random
+walk is preferred because the reports suggest a steady fall rather than a
+step.
+
+\paragraph{The clearing rate.} $\lambda_s$ is constant between consecutive
+reports, $\lambda_s=\lambda_j$ for $t_{j-1}<s\le t_j$, and $\log\lambda_j$ is a
+random walk over reports with variance proportional to the time between
+them:
+\[
+\log\lambda_j=\log\lambda_{j-1}+\zeta_j,\qquad
+\zeta_j\sim N\bigl(0,\ \tau_\lambda^{2}\,(t_j-t_{j-1})/7\bigr).
+\]
+Before the first report a single rate $\lambda_0$ applies, with, for example,
+$\log\lambda_0\sim N(\log(1/60),\,1)$; only the first report informs it, and
+only through the share of each onset day's deaths shown by then. The rate
+can therefore rise, stay high through a period of reconciliation and fall,
+which independent effects around a constant cannot do. It replaces $m^{d}$
+and the effects $\varepsilon_j$.
+
+\paragraph{Why the two can be told apart.} Once the prompt deaths of an onset
+day are recorded, the deaths it gains between reports $t_{j-1}$ and $t_j$
+have expectation close to
+\[
+B(t\given t_{j-1})\Bigl(1-e^{-\lambda_j\,(t_j-t_{j-1})}\Bigr),\qquad
+B(t\given t')=b_t\,F(t)\sum_{z}h_z\,e^{-\Lambda(t+z,\,t')},
+\]
+where $B(t\given t')$ is the backlog of onset day $t$ left at day $t'$. This
+is a factor for the onset day times a factor for the report. Every report
+informs $\lambda_j$ through all the old onset days at once, and every onset
+day informs $b_t$ through all the reports which add to it. The travelling
+wave of Figure~\ref{fig:backlogwave} is this product: the profile of $B$ over
+onset days, read off at the delays $t_j-t$.
+
+\paragraph{Option (f) as a special case.} With $b_t=\omega^{d}$ for all $t$ and
+$\lambda_s=\psi^{d}_{w(j(s))}e^{\varepsilon_{j(s)}}/m^{d}$, \eqref{eq:backlog} is
+option (f). The proposal changes two things: the share varies with onset
+day, and the rate is persistent rather than independent from report to
+report.
+
+\paragraph{Projections.} Beyond the last report $\lambda$ follows its random
+walk from its last value. The backlog of recent onset days is the part the
+data cannot yet see: their deaths join it but are not cleared until later,
+so $b_t$ for the last few weeks rests on the random walk from earlier weeks.
+This is the main source of uncertainty in projected deaths, and the model
+states it, where option (f) states with confidence that the backlog is
+empty.
+
+\paragraph{Fitting.} Given $b$ and $\lambda$, onset days are independent, as
+now, so the sampler for the counts is unchanged. $b$ and $\lambda$ are
+updated by Metropolis given the paths, in blocks of consecutive weeks or
+reports, in place of the updates of $\omega^{d}$, $m^{d}$ and $\varepsilon_j$.
+$\Lambda$ is a cumulative sum over calendar days, computed once per update.
+
+\paragraph{An alternative not proposed first.} The deaths of June onsets
+were added at an almost constant rate and then stopped, which suggests a
+clearing capacity rather than a hazard: some number $K_j$ of backlog deaths
+cleared by each report, shared among onset days in proportion to what each
+has waiting. That links all onset days in each report and would need a new
+sampler. A hazard which rises as the backlog shrinks can imitate it, so the
+hazard model is to be tried first.
+
+\paragraph{Checks.}
+\begin{enumerate}
+\item Before building it: a Poisson log-linear model for the deaths added to
+onset days at least 35 days old, with a factor for onset week and a factor
+for report interval and an offset for the interval's length. If this
+describes the table of additions by onset week and report, the product
+structure above is adequate. If the residuals show the backlog of one cohort
+cleared before the next, the capacity model is the better description.
+\item After: one-step-ahead predictions from fits to earlier reports, of the
+deaths each later report adds and their delays from onset, and the backlog
+each fit believes remains against what was later added. These are the
+checks which option (f) fails.
+\end{enumerate}
+
 \section{Assumptions to check}\label{sec:assumptions}
 
 \begin{enumerate}
