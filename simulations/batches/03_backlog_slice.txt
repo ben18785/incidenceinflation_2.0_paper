@@ -1,0 +1,15 @@
+# The scenarios of batch 2 fitted with the backlog, again with its new
+# sampler (elliptical slice sampling of the share and rate walks,
+# non-centred moves of their standard deviations and a move along the
+# share-rate ridge). Two datasets for each scenario, three chains of 500
+# iterations, as in batch 2.
+package: ben18785/incidenceinflation_2.0@backlog
+replicates: 2
+chains: 3
+iterations: 500
+backlog
+backlog_mid
+backlog_before
+backlog_late
+backlog_steady
+backlog_none

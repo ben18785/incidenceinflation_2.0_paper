@@ -301,9 +301,12 @@ fit_misdated_chain <- function(dataset, chain, niterations,
       settings$recording_tail <- list()
     if(options$fit_report)
       settings$recording_report <- list(tail_only = TRUE)
-    if(options$fit_backlog)
-      settings$recording_backlog <- list(
-        initial_share = c(0.2, 0.15, 0.3)[k], initial_rate = c(1 / 60, 1 / 30, 1 / 100)[k])
+    # fit_backlog: TRUE, or a list of settings of the backlog
+    if(!isFALSE(options$fit_backlog))
+      settings$recording_backlog <- utils::modifyList(
+        list(initial_share = c(0.2, 0.15, 0.3)[k],
+             initial_rate = c(1 / 60, 1 / 30, 1 / 100)[k]),
+        if(is.list(options$fit_backlog)) options$fit_backlog else list())
   } else {
     settings$initial_delay <- list(list(mean = 12, sd = 9), list(mean = 14, sd = 10),
                                    list(mean = 10, sd = 8))[[k]]
