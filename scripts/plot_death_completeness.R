@@ -18,9 +18,9 @@ long <- tidyr::pivot_longer(x, c(deaths, cases, cfr_shown), names_to = "what") %
     c("Cases shown / cases on 7 Oct", "Deaths shown / deaths on 7 Oct", "Deaths shown / cases shown")))
 g <- ggplot(long, aes(age, value, colour = week, group = week)) +
   geom_line(linewidth = 0.6) + facet_wrap(~what, nrow = 1) +
-  scale_colour_viridis_c(name = "Onset fortnight from", end = 0.9, trans = "date", labels = function(d) format(d, "%d %b")) +
+  scale_colour_viridis_c(name = "Onset fortnight from", end = 0.9, trans = "date", labels = function(d) format(d, "%d %b"), breaks = as.Date(c("2026-06-01", "2026-07-01", "2026-08-01"))) +
   labs(x = "Days from onset to report", y = NULL) + theme_paper() +
-  theme(legend.position = "bottom", strip.text = element_text(size = 12))
+  theme(legend.position = "bottom", strip.text = element_text(size = 12), legend.key.width = unit(5, "cm"))
 save_plot(g, "outputs/bvd_death_completeness.png", 13, 5)
 print(as.data.frame(x %>% filter(age %in% c(7, 14, 21, 28, 35, 50)) %>%
   mutate(across(deaths:cfr_shown, ~ round(.x, 2)), week = format(week, "%d %b"))), row.names = FALSE)
