@@ -939,9 +939,10 @@ $\Lambda$ is a cumulative sum over calendar days, computed once per update.
 were added at an almost constant rate and then stopped, which suggests a
 clearing capacity rather than a hazard: some number $K_j$ of backlog deaths
 cleared by each report, shared among onset days in proportion to what each
-has waiting. That links all onset days in each report and would need a new
-sampler. A hazard which rises as the backlog shrinks can imitate it, so the
-hazard model is to be tried first.
+has waiting. In the form above that links all onset days in each report;
+it is easiest to write with the backlog made explicit
+(\S\ref{sec:backlogexplicit}). A hazard which rises as the backlog shrinks
+can imitate it, so the hazard model is to be tried first.
 
 \paragraph{Checks.}
 \begin{enumerate}
@@ -956,6 +957,85 @@ deaths each later report adds and their delays from onset, and the backlog
 each fit believes remains against what was later added. These are the
 checks which option (f) fails.
 \end{enumerate}
+
+\subsection{The backlog made explicit}\label{sec:backlogexplicit}
+
+The model above sums over which fatal cases join the backlog: every fatal
+case has the mixture \eqref{eq:backlog} as its delay. An equivalent version
+keeps that split as unobserved counts, as the exact form of
+\S\ref{sec:dated} keeps the cases dated by death. It has the same posterior
+for $b$, $\lambda$ and the counts, since given the parameters the cases are
+independent and summing over the split gives back the mixture. What changes
+is how the sampler moves, and which extensions are easy to write.
+
+\paragraph{The partition.} Of the fatal cases with onset on day $t$ which are
+dated by onset,
+\[
+F^{B}(t)\given F(t),F^{d}(t)\sim\bin\bigl(F(t)-F^{d}(t),\ b_t\bigr)
+\]
+join the backlog and the other $F^{P}(t)=F(t)-F^{d}(t)-F^{B}(t)$ are
+recorded promptly. The cases dated by death are split in the same way, with
+the share of their day of onset: each $W(t,z)$ of \eqref{eq:lags} becomes
+$W^{P}(t,z)+W^{B}(t,z)$, and the cases recorded for day $t$ dated by death are
+$G^{P}(t)+G^{B}(t)$, with $G^{B}(t)=\sum_{z\ge1}W^{B}(t-z,z)$.
+
+\paragraph{Two simpler delays.} Each group has a delay without a mixture:
+\[
+S^{D,P}(t\given t')=\sum_{z>t'-t}h_z+\sum_{z\le t'-t}h_z\,S_{\mathrm{gamma}}(t'-t-z\given\mu^{d},\sigma^{d}),
+\qquad
+S^{D,B}(t\given t')=\sum_{z>t'-t}h_z+\sum_{z\le t'-t}h_z\,e^{-\Lambda(t+z,\,t')},
+\]
+so that $S^{D}=(1-b_t)\,S^{D,P}+b_t\,S^{D,B}$. The chain of binomials of
+\S\ref{sec:model} is applied to each group with its own delay. Every hidden
+count of deaths newly shown in a report (such as $\dnew$ and $\dold$) is
+split into a prompt and a backlog part, and only their sum is constrained by
+the reports. The cases dated by death are treated the same way, with the
+delay from death of their group.
+
+\paragraph{Updating the clearing rate.} Given the split, $\lambda_j$ enters
+only the binomials of backlog deaths in the interval from $t_{j-1}$ to
+$t_j$. For an onset day more than $z_{\max}$ days old at $t_{j-1}$ every
+backlog death has already happened, and each still waiting is recorded in
+the interval with the same probability $1-e^{-\lambda_j(t_j-t_{j-1})}$. These
+days, which are most of those the backlog shows up in, enter the conditional
+of $\lambda_j$ through two totals only: the backlog deaths waiting at
+$t_{j-1}$ and those recorded by $t_j$. Younger onset days add a few terms of
+their own. An update of $\lambda_j$ then costs little, where in the summed
+form it means recomputing the delays of every onset day after $t_{j-1}$.
+
+\paragraph{Updating the backlog share.} Given $F^{B}$, $b_t$ is the
+probability of a binomial: conjugate within a segment if $b_t$ has change
+points (a beta prior gives a beta conditional), and a cheap Metropolis step
+for each week if it is a random walk on the logit scale.
+
+\paragraph{Updating the split.} The new unobserved counts are $F^{B}(t)$ (and
+$W^{B}$) and the split of each count of deaths newly shown. A proposal moves
+one fatal case of an onset day from one group to the other, together with
+the report in which its death was first shown, keeping the totals the
+reports constrain. As with the cases dated by death, these moves are where
+mixing may be slow: for an early onset day nearly all deaths are already
+shown, so which of them were in the backlog is weakly informed, and is held
+together only through $b_t$ and $\lambda$.
+
+\paragraph{The backlog as an output.} The backlog of onset day $t$ still
+waiting at day $t'$, $B(t\given t')$, is a sampled count rather than an
+expectation. It can be reported, projected and compared with the deaths
+later reports add, which is the check option (f) fails.
+
+\paragraph{A clearing capacity.} The explicit form also makes the capacity
+model of \S\ref{sec:backlog} easy to write. Take the onset days more than
+$z_{\max}$ days old at $t_{j-1}$, as above. Let $N_j$ be their backlog deaths
+waiting at $t_{j-1}$, and $K_j$ the number recorded by
+$t_j$. Under the hazard model each waiting death is recorded independently,
+so $K_j\sim\bin\bigl(N_j,\,1-e^{-\lambda_j(t_j-t_{j-1})}\bigr)$, and given
+$K_j$ the deaths recorded are spread over onset days as a draw without
+replacement from those waiting (a multivariate hypergeometric distribution,
+in proportion to what each onset day has waiting). A capacity model keeps
+that allocation and changes only the distribution of $K_j$: for example
+$K_j\sim\min\bigl\{N_j,\ \pois(\kappa_j\,(t_j-t_{j-1}))\bigr\}$ with
+$\log\kappa_j$ a random walk over reports, so that the number cleared does
+not grow with the size of the backlog. The two models then differ in a
+single term for each report, and can be compared directly.
 
 \section{Assumptions to check}\label{sec:assumptions}
 
