@@ -563,11 +563,9 @@ and wrong records shown as alive and as dead\\
 \midrule
 \multicolumn{2}{l}{\textbf{Parameters}}\\
 Transmission & $R_t$ (with change points), $\kappa$\\
-Reporting of cases, $\theta$ & $(\mu,\sigma)$ (with change points), $\psi_w$, $\eta$, $\rho$\\
+Reporting of cases, $\theta$ & as in the model of cases\\
 Fatality & $\cfr_t$ (with change points)\\
-Recording of deaths, $\phi$ & $(\mu^{d},\sigma^{d})$ (with change points),
-$\psi^{d}_w$, $\omega^{d}$, $m^{d}$, $\tau$, $f$, $\delta$; report effects
-$\varepsilon_j$ and $s$ in some options\\
+Recording of deaths, $\phi$ & the delays and shares of the previous slides\\
 \bottomrule
 \end{tabular}
 \end{center}
@@ -578,9 +576,9 @@ and of deaths for onset day $t$ in every report.
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Recovering changes from simulated data}
+\begin{frame}{Recovering changes from simulated data: the CFR}
 \centering
-\includegraphics[height=0.74\textheight]{bvd_deaths_simulation_shifts.png}
+\includegraphics[height=0.66\textheight]{bvd_deaths_simulation_cfr.png}
 
 \smallskip
 {\small Simulated outbreaks of 60 onset days, fitted with an earlier version
@@ -589,7 +587,18 @@ posterior medians and 90\% intervals.}
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{What can and cannot be learned}
+\begin{frame}{Recovering changes from simulated data: $R_t$ and the recording delay}
+\centering
+\includegraphics[height=0.66\textheight]{bvd_deaths_simulation_rt_delay.png}
+
+\smallskip
+{\small Simulated outbreaks of 60 onset days, fitted with an earlier version
+of the model of deaths. Dashed lines: the truth; solid lines and bands:
+posterior medians and 90\% intervals.}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Simulated data show limitations of our method}
 \begin{itemize}
 \setlength{\itemsep}{1.2em}
 \item A recent fall in $\cfr_t$ and deaths not yet recorded look the same.
@@ -597,10 +606,8 @@ For the last three to four weeks of onset days, $\cfr_t$ rests mostly on the
 recording delay estimated from earlier days.
 \item A change in the recording delay and in $\cfr_t$ at about the same time
 are hard to tell apart.
-\item $f$ rests on the supplied time to death, and misdated cases who have yet
-to die are in no report.
-\item Old onset days say little about the reporting delay of cases, but much
-about deaths, which go on being recorded for weeks.
+\item The share of fatal cases that are misdated rests on the supplied time
+to death, and misdated cases who have yet to die are in no report.
 \end{itemize}
 \end{frame}
 
@@ -633,10 +640,6 @@ with $w(j)$ the day of the week of report $t_j$.
 \item One effect per report, shared by all onset days.
 \item The effects act on the tail alone: a burst clears a backlog of old
 deaths without speeding up the recording of recent ones.
-\item Reports after the fit date: effects are drawn from $N(0,s^2)$ when
-projecting.
-\item Sampled in blocks with steps scaled by $s$, with $s$ by Gibbs, and a
-joint rescaling of $(\varepsilon,s)$ to cross the funnel.
 \end{itemize}
 \end{frame}
 
@@ -647,9 +650,8 @@ joint rescaling of $(\varepsilon,s)$ to cross the funnel.
 
 \smallskip
 \begin{minipage}{0.85\textwidth}
-\small $e^{\varepsilon_j}$: posterior medians and 90\% intervals. Multipliers
-of 2 to 10 on most reports from 26 August to 15 September, the bursts, and on
-29 September and 7 October; near 1 otherwise. $s=1.21$ (0.96--1.58).
+\small $e^{\varepsilon_j}$: posterior medians and 90\% intervals.
+$s=1.21$ (0.96--1.58).
 \end{minipage}
 \end{frame}
 
@@ -663,24 +665,12 @@ of 2 to 10 on most reports from 26 August to 15 September, the bursts, and on
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Estimates by onset day, fit to 7 October: cases}
+\begin{frame}{Estimates by onset day, fit to 7 October}
 \centering
-\includegraphics[width=\textwidth]{bvd_estimates_cases.png}
+\includegraphics[width=\textwidth]{bvd_estimates_rt_cfr.png}
 
 \medskip
-{\small Posterior medians and 90\% intervals. The reporting delay is the same
-for onset days to 18 July, which were first seen long after onset.}
-\end{frame}
-
-% ---------------------------------------------------------------------------
-\begin{frame}{Estimates by onset day, fit to 7 October: deaths}
-\centering
-\includegraphics[width=\textwidth]{bvd_estimates_deaths.png}
-
-\medskip
-{\small Posterior medians and 90\% intervals. B is the mean of the gamma part
-of the delay from death to recording; a third of deaths are instead recorded
-after the tail's delay, with mean about 56 days.}
+{\small Posterior medians and 90\% intervals.}
 \end{frame}
 
 % ---------------------------------------------------------------------------
