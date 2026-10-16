@@ -330,6 +330,49 @@ $[1-S^{C,F}(t\given t')]\,[1-S^{D}(t\given t')]$, the
 probability that both delays have elapsed.
 \end{itemize}
 
+\subsection{A death which brings about the report}\label{sec:triggered}
+
+The model above takes the two delays of a fatal case to be independent.
+Then, among the cases of an onset day which have been reported, the share
+shown as dead is the case fatality ratio times the probability that a death
+has been recorded, $c_t\,[1-S^{D}(t\given t')]$: it starts near zero and
+can only rise. The reports do not look like this. For onset days from 12
+July to 5 September, 43\% of the cases reported within a day of onset are
+already shown as dead; the share falls to 34\% at a week and then rises to
+46\% by two to three months. Many fatal cases, it seems, enter the records
+because they have died.
+
+As an option, a death can therefore bring about the report of its case. A
+proportion $\tau$ of fatal cases are reported when their death is recorded
+if they have not been reported by then: for such a case the time to being
+reported is $\min(X,Y)$, not $X$, and the case is shown as dead from $Y$.
+The other fatal cases are as before. A fatal case is not yet reported at
+$t'$ with probability
+\[
+M(t\given t')=S^{C,F}(t\given t')\,\bigl[(1-\tau)+\tau\,S^{D}(t\given t')\bigr],
+\]
+and this takes the place of $S^{C,F}$ in $p^{F}$ of \eqref{eq:a}. A fatal
+case new to the report of $t_j$ is shown as alive in it only if it was
+reported through its own delay and its death has not been recorded, which
+is so for both kinds of case. The probability in \eqref{eq:x} that it is
+shown as dead becomes
+\[
+1-\frac{\bigl[S^{C,F}(t\given t_{j-1})-S^{C,F}(t\given t_j)\bigr]\,S^{D}(t\given t_j)}
+       {M(t\given t_{j-1})-M(t\given t_j)}.
+\]
+Equation \eqref{eq:y} is unchanged, since a case shown as alive has yet to
+have its death recorded whichever kind it is. Nothing else in the model
+changes, and with $\tau=0$ it is the model above. The prior is
+$\tau\sim\betad(1,1)$. The cases reported early are now more often fatal
+than those reported later, so the share shown as dead can start high, fall
+as other cases are reported, and rise again as the slower deaths are
+recorded.
+
+Where it is used $\nu$ is held at zero: both let fatal cases be reported
+sooner than others, and the reports are unlikely to tell them apart. It can
+be combined with fatal cases dated by death in the approximate form of
+\S\ref{sec:dated} (see \S\ref{sec:misdated}), but not in the exact form.
+
 \subsection{Deaths recorded for the day of death}\label{sec:dated}
 
 Some of those who died may be recorded for their day of death and not their
@@ -578,6 +621,119 @@ count. But the data say nothing about it, so estimates for recent
 days lean on the supplied $f_t$ and $h$. Fitting with a range of values for
 both is therefore part of any analysis which uses them.
 
+\subsection{A supplied time from onset to death, and the fraction dated by death estimated}\label{sec:misdated}
+
+In \S\ref{sec:dated} the fraction of fatal cases dated by death is supplied,
+because the reports cannot tell such a case from one dated by onset whose
+death happened to be recorded soon after onset: the delay $Y$ is free to put
+weight near zero. The fits of \S\ref{sec:triggered} do this, with a standard
+deviation of $Y$ about equal to its mean. But a death within a day or two of
+onset is rare. A review of Ebola virus disease gives a mean time from onset
+to death of 9.3 days (95\% interval 8.5 to 10.0) over 16 studies, and the
+standard deviations within those studies, pooled, are about 5.5 days; a
+gamma distribution with that mean and standard deviation gives a probability
+of 0.5\% to death within a day of onset and 3\% within two. In the reports,
+for onset days from 12 July to 5 September, 7.8\% of the deaths recorded by
+1 October were already shown one day after the day they are counted for, and
+14\% two days after. If the time from onset to death is held to what is
+known of it, those early deaths can only be of cases counted on their day of
+death, and their number says what fraction of fatal cases are.
+
+As an option, the time from onset to death is therefore supplied, and the
+fraction dated by death is estimated.
+
+\paragraph{The delay to a death being recorded.} A fatal case with onset on
+day $t$ dies on day $t+Z$, where $Z$ is a whole number of days with the
+distribution $h_z$ of \S\ref{sec:dated}: a gamma distribution with supplied
+mean and standard deviation (here 9.3 and 5.5 days), rounded up. The death
+is recorded after a further delay $U$ counted from the day of death, with a
+gamma distribution of mean $\mu^{d}$ and standard deviation $\sigma^{d}$.
+So $Y=Z+U$, and
+\[
+S^{D}(t\given t')=\sum_{z>t'-t}h_z+\sum_{z\le t'-t}h_z\,S^{U}(t+z\given t'),
+\]
+where $S^{U}(d\given t')$ is the probability that a death on day $d$ has not
+been recorded by day $t'$. The parameters $\phi=(\mu^{d},\sigma^{d})$ are
+now those of $U$, the delay from death, and it is these which are estimated
+and which change at unknown times; $h$ does not change. The day-of-week
+multipliers $\psi^{d}_w$ apply to the hazard of $Y$ as before. Nothing else
+in \eqref{eq:x} and \eqref{eq:y} changes: they use $S^{D}$ as it now is. A
+death cannot be shown on the day of onset, since $Z\ge1$.
+
+\paragraph{Fatal cases dated by death.} These are as in \S\ref{sec:dated},
+with two of the three inputs replaced. Their time from onset to death is the
+same $Z$ as for other fatal cases. And they first appear in a report, shown
+as dead, after the delay $U$ from their day of death, so that
+$S^{C,d}(t\given t')=S^{U}(t\given t')$ with the parameters of day $t$: the
+case enters the records when its death does. The delay from death to first
+appearing is then estimated with the delay to a death being recorded, of
+which it is the same thing.
+
+\paragraph{The fraction.} The fraction dated by death is a single value $f$
+for all onset days, with prior $f\sim\betad(1,1)$. Given how many of the
+fatal cases of each onset day are dated by death, \eqref{eq:dated} makes its
+conditional distribution a beta distribution, altered slightly by the cases
+of the start of the series ($G_0$, whose expected number is proportional to
+$f$); a value is drawn from a beta distribution matched to it and accepted
+with the Metropolis--Hastings probability. Which cases are dated by death is
+updated as in \S\ref{sec:fitting}.
+
+\paragraph{With a death which brings about the report.} The two can be used
+together in the approximate form. A fatal case recorded for day $t$ is dated
+by death with probability $\tilde{f}_t$, and is otherwise dated by onset and
+is one of those reported when their death is recorded with probability
+$\tau$. The probability that it has not been reported by $t'$ is
+\[
+\tilde{M}(t\given t')=(1-\tilde{f}_t)\,M(t\given t')+\tilde{f}_t\,S^{U}(t\given t'),
+\]
+which takes the place of $\tilde{S}^{C,F}$ in \eqref{eq:amix}. A fatal case
+new to the report of $t_j$ is shown as alive in it only if it is dated by
+onset, was reported through its own delay and its death has not been
+recorded, so the probability in \eqref{eq:xdated} that it is shown as dead
+becomes
+\[
+1-\frac{(1-\tilde{f}_t)\,\bigl[S^{C,F}(t\given t_{j-1})-S^{C,F}(t\given t_j)\bigr]\,S^{D}(t\given t_j)}
+       {\tilde{M}(t\given t_{j-1})-\tilde{M}(t\given t_j)}.
+\]
+With $\tau=0$ this is \eqref{eq:xdated}, and with $\tilde{f}_t=0$ it is the
+expression of \S\ref{sec:triggered}.
+
+\paragraph{Deaths recorded long after.} With the time to death held near
+nine days, a death first shown months after onset has to be explained by
+$U$, and a gamma distribution with a mean of a few days gives it a
+probability too small for the fit to begin (for example, a death added 122
+days after onset to an onset day in May). As an option, a share $\omega^{d}$
+of deaths are therefore recorded after an exponential delay from death with
+mean $m^{d}$ in place of the gamma one,
+\[
+S^{U}(d\given t')=(1-\omega^{d})\,S_{\mathrm{gamma}}(t'-d)+\omega^{d}\,e^{-(t'-d)/m^{d}},
+\]
+as for the reporting delay of cases in \S\ref{sec:early}. For this outbreak
+$\omega^{d}\sim\betad(1,9)$ and $m^{d}\sim$ gamma with mean 40 and sd 20
+days; both are the same for all onset days and are updated by a random walk
+given the paths. The priors on the centre of $(\mu^{d},\sigma^{d})$ are
+gamma with mean 4 and sd 4 days each.
+
+\paragraph{Onset days taken as fully reported.} For an onset day old enough
+that every case is taken to have been reported, the true cases with onset on
+it are the latest count less the cases dated by death which are in that
+count, plus $F^{d}(t)$. A case dated by death whose death has yet to be
+recorded is not in the count. In the approximate form the number in the
+count is not followed, and is taken to be at most the number of fatal cases
+which could have been shown as dead in the first report they were in.
+
+\paragraph{What this assumes.} The estimate of $f$ rests on the supplied
+distribution of the time from onset to death, and most of all on its
+standard deviation: a wider distribution allows more early deaths among
+cases dated by onset and so gives a smaller $f$. A rough fit to the share of
+deaths shown by each day after the day they are counted for gave $f$ of 0.40,
+0.33, 0.26 and 0.17 for standard deviations of 4.5, 5.5, 6.5 and 8 days.
+The review is mostly of Zaire ebolavirus; its two studies of Bundibugyo
+virus give means of 10.5 and 9.9 days. Times to death measured during an
+outbreak also miss the longest. The reports describe the curve as being by
+date of onset, so that some deaths are counted on the day of death is an
+inference from these early deaths, not something the reports say.
+
 \subsection{Wrong records}\label{sec:wrong}
 
 The existing model lets records be added to a count in error and later
@@ -808,19 +964,19 @@ month of onset.}
 
 \subsection{The model fitted so far, and why it fails}
 
-The fitted model (option (f) of the fits to the outbreak) differs from the
-model of \S\ref{sec:model} in its delay to a death being recorded. That
+The fitted model (option (f) of the fits to the outbreak) has the delay to
+a death being recorded of \S\ref{sec:misdated}, with the tail of ``Deaths
+recorded long after'' there and an effect of each report on the tail. That
 delay is the time from onset to death, $T$, with the supplied distribution
-$h$ of \S\ref{sec:dated}, followed by a delay $R$ from death to the death
-being recorded. With $S^{R}(d\given t')$ the probability that a death on day
+$h$, followed by a delay $U$ from death to the death being recorded. With $S^{U}(d\given t')$ the probability that a death on day
 $d$ is not yet recorded by day $t'$,
 \begin{equation}
-S^{D}(t\given t')=\sum_{z>t'-t}h_z+\sum_{z\le t'-t}h_z\,S^{R}(t+z\given t'),
+S^{D}(t\given t')=\sum_{z>t'-t}h_z+\sum_{z\le t'-t}h_z\,S^{U}(t+z\given t'),
 \label{eq:sdbacklog}
 \end{equation}
 and in option (f)
 \[
-S^{R}(d\given t')=(1-\omega^{d})\,S_{\mathrm{gamma}}(t'-d\given\mu^{d},\sigma^{d})
+S^{U}(d\given t')=(1-\omega^{d})\,S_{\mathrm{gamma}}(t'-d\given\mu^{d},\sigma^{d})
 +\omega^{d}\exp\Bigl(-\sum_{s=d+1}^{t'}\frac{\psi^{d}_{w(j(s))}\,e^{\varepsilon_{j(s)}}}{m^{d}}\Bigr),
 \qquad \varepsilon_j\sim N(0,\sigma_\varepsilon^{2}),
 \]
@@ -863,7 +1019,7 @@ onset days.
 \end{itemize}
 So, in \eqref{eq:sdbacklog},
 \begin{equation}
-S^{R}(d\given t')=(1-b_t)\,S_{\mathrm{gamma}}(t'-d\given\mu^{d},\sigma^{d})
+S^{U}(d\given t')=(1-b_t)\,S_{\mathrm{gamma}}(t'-d\given\mu^{d},\sigma^{d})
 +b_t\,e^{-\Lambda(d,t')},\qquad
 \Lambda(d,t')=\sum_{s=d+1}^{t'}\lambda_s,
 \label{eq:backlog}
@@ -1562,8 +1718,10 @@ converge is the pair which \S\ref{sec:identifiability} warns of: the case
 fatality ratio and the delay to a death being recorded. On the reports to 1
 October one chain has a mean delay of 117 days and a case fatality ratio of
 0.54 for the first onset days, the other two 36 to 39 days and 0.36 to
-0.37, although all three started together. All five dates are being rerun
-with 3{,}000 iterations. Table~\ref{tab:nowcastestimates} gives the estimates of
+0.37, although all three started together. A rerun of all five dates with
+3{,}000 iterations was stopped before it finished; instead the parts of the
+model were fitted on their own (\S\ref{sec:parts}).
+Table~\ref{tab:nowcastestimates} gives the estimates of
 every monitored quantity at each date and Table~\ref{tab:nowcastallrhat}
 their $\hat{R}$.
 
@@ -1730,6 +1888,128 @@ ratio, the mean delays and the reproduction number by day of onset (median
 and 90\% interval, three chains pooled). Three chains of 1{,}000
 iterations, not converged.}
 \label{fig:nowcastparameters}
+\end{figure}
+
+\section{Fits of the parts of the model}\label{sec:parts}
+
+\paragraph{Why.} The joint fits of \S\ref{sec:nowcast} do not converge. To
+find which part of the model is responsible, simpler models were fitted to
+the reports up to 15 September (the date which converged worst) and up to 1
+October.
+
+\paragraph{What was run.} Five fits for each date, each of three chains of
+1{,}000 iterations with the first 500 discarded, from spread starts.
+\begin{itemize}
+\item \emph{Cases alone.} The model for a single series, fitted to the
+table of cases: a renewal model for true cases, the reporting delay with
+its long tail and changes, and wrong records. Deaths are not used.
+\item \emph{Deaths alone.} The same model for a single series, fitted to the
+table of deaths. Fatal cases have their own renewal model, the delay is
+that from onset to the death being recorded, and there is no case fatality
+ratio. The delay has the prior which the joint model gives the delay to
+death recorded (\S\ref{sec:changes}): the mean and standard deviation of
+each segment are log-normal about a centre common to the segments, with a
+spread which has a half-normal prior of standard deviation 0.5; the centre
+of the means has a gamma prior of mean 14 and standard deviation 10 days,
+and the centre of the standard deviations one of mean 8 and standard
+deviation 8 days.
+\item \emph{Deaths alone, no tail.} As deaths alone, without the long tail
+on the delay.
+\item \emph{Cases fixed.} The joint model, with true cases held at the
+posterior median from cases alone for the same date, raised to the most
+ever reported for the day where the median is below it (9 to 16 cases in
+more than 6{,}000). All other parameters are sampled as in the joint model.
+\item \emph{Cases fixed, delay rule.} As cases fixed, with the rule of
+\S\ref{sec:early} applied also to the delay to death recorded: no change
+in that delay is allowed before 12 July, which is 14 days after the last
+of the onset days for which only the reports from 6 September are used.
+\end{itemize}
+
+\paragraph{Results.} Table~\ref{tab:parts} and Figure~\ref{fig:parts}.
+\begin{itemize}
+\item \emph{The cases converge.} Cases alone has $\hat{R}$ of at most 1.02
+and 1.05. It gives 6{,}230 cases (6{,}160 to 6{,}310) from the reports to 15
+September and 6{,}900 (6{,}830 to 6{,}980) from those to 1 October, a mean
+reporting delay of 7.3 and 7.2 days and no change in it. The joint fits
+gave 6{,}850 and 7{,}280 cases.
+\item \emph{For deaths alone the long tail makes a second mode.} With the
+tail, on the reports to 15 September one chain has 3{,}310 fatal cases and
+two have about 5{,}400, with 63\% of deaths in a tail of mean 145 days.
+Without the tail all three chains have 2{,}990 to 3{,}090 fatal cases and a
+mean delay of 20 days for the first onset days and 15 days for the latest.
+The largest $\hat{R}$ falls from 4.9 to 1.41 (15 September) and from 1.9
+to 1.33 (1 October); those which remain at 1.2 or more are of the mean and
+standard deviation of the delay and, on 15 September, of fatal cases (1.26).
+\item \emph{With cases fixed, the reports to 1 October converge without the
+delay rule.} The largest $\hat{R}$ is 1.20. The case fatality ratio is 0.37
+(0.33 to 0.42) for the first onset days and 0.53 (0.43 to 0.55) for the
+latest, there are 3{,}570 fatal cases (3{,}470 to 3{,}670) against 2{,}821
+recorded, and the mean delay to death recorded is 45 days for the first
+onset days and 23 days for the latest.
+\item \emph{The delay rule does not give convergence.} On the reports to 15
+September it removes the chain with 4{,}310 fatal cases and a delay of 93
+to 134 days, but the three chains still differ in the delay for the first
+onset days (36, 43 and 52 days) and in fatal cases (3{,}340 to 3{,}580). On
+the reports to 1 October it is worse than no rule: one chain has a delay of
+63 days for the first onset days and 3{,}715 fatal cases, the other two 32
+to 34 days and 3{,}420 to 3{,}490. Since the fit without the rule agreed at
+41 to 46 days from the same data, 1{,}000 iterations from three starts is
+not enough to tell a converged fit from a lucky one.
+\item \emph{The delay to death recorded is very dispersed in the joint
+model.} With cases fixed its standard deviation is larger than its mean in
+every chain (for the first onset days, means of 32 to 63 days with standard
+deviations of 54 to 119 days), which is a gamma distribution with shape
+below 1: most deaths recorded soon and a few very late. Within a chain the
+mean and standard deviation move together (correlation up to 0.96). In
+deaths alone without the tail the standard deviation is 13 to 16 days for a
+mean of 15 to 20. The delay in the joint model is therefore doing the work
+of a long tail, and its prior does not prevent this: the centre of the
+standard deviations has a prior of mean 8 days and is estimated at 31
+to 50 days.
+\item \emph{Deaths alone and cases fixed disagree.} From the reports to 15
+September deaths alone without the tail gives about 3{,}030 fatal cases and
+cases fixed about 3{,}440; from those to 1 October 3{,}300 and 3{,}490 to
+3{,}570. The difference goes with the more dispersed delay in the joint
+model and is not yet explained.
+\end{itemize}
+
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{@{}llllll@{}}
+\toprule
+Fit & Fatal cases & Case fatality ratio, & \multicolumn{2}{l}{Mean delay to death recorded (days)} & Largest \\
+ & & latest onset day & first onset day & latest onset day & $\hat{R}$ \\
+\midrule
+\multicolumn{6}{@{}l}{\emph{Reports to 15 September}}\\
+Deaths alone & 3{,}310 / 5{,}370 / 5{,}400 & -- & 22 / 11 / 11 & 17 / 11 / 11 & \textbf{4.94} \\
+Deaths alone, no tail & 3{,}040 / 3{,}090 / 2{,}990 & -- & 20 / 21 / 19 & 15 / 16 / 14 & \textbf{1.41} \\
+Cases fixed & 3{,}590 / 4{,}310 / 3{,}510 & 0.59 / 0.71 / 0.58 & 73 / 134 / 64 & 27 / 92 / 29 & \textbf{4.52} \\
+Cases fixed, delay rule & 3{,}340 / 3{,}420 / 3{,}580 & 0.56 / 0.56 / 0.60 & 36 / 43 / 52 & 24 / 23 / 31 & \textbf{3.70} \\
+\multicolumn{6}{@{}l}{\emph{Reports to 1 October}}\\
+Deaths alone & 3{,}270 / 3{,}370 / 3{,}240 & -- & 21 / 21 / 21 & 20 / 23 / 18 & \textbf{1.90} \\
+Deaths alone, no tail & 3{,}270 / 3{,}370 / 3{,}290 & -- & 20 / 20 / 19 & 19 / 23 / 20 & \textbf{1.33} \\
+Cases fixed & 3{,}580 / 3{,}570 / 3{,}560 & 0.53 / 0.53 / 0.52 & 45 / 46 / 41 & 22 / 21 / 25 & \textbf{1.20} \\
+Cases fixed, delay rule & 3{,}490 / 3{,}420 / 3{,}720 & 0.52 / 0.50 / 0.55 & 34 / 32 / 63 & 21 / 16 / 30 & \textbf{6.47} \\
+\bottomrule
+\end{tabular}
+\caption{Fits of the parts of the model: the median in each of the three
+chains, and the largest split $\hat{R}$ over the monitored quantities (12
+for deaths alone, 16 for cases fixed); values of 1.2 or more in bold. Three
+chains of 1{,}000 iterations. Cases alone, not shown, has a largest
+$\hat{R}$ of 1.02 and 1.05.}
+\label{tab:parts}
+\end{table}
+
+\begin{figure}[p]
+\centering
+\includegraphics[width=\textwidth]{bvd_parts_second/bvd_parts.png}
+\caption{Fits of the parts of the model, by chain (median and 90\%
+interval). Top: fatal cases by day of onset, with the deaths recorded in
+the report of that date as grey bars. Middle: the mean delay from onset to
+the death being recorded. Bottom: the case fatality ratio, which deaths
+alone does not have. Three chains of 1{,}000 iterations.}
+\label{fig:parts}
 \end{figure}
 
 \end{document}
