@@ -241,37 +241,27 @@ Fatal cases reported, death recorded & $D(t\given t_j)$ & dead \\
 
 % ---------------------------------------------------------------------------
 \begin{frame}{From one report to the next}
+\small
 \begin{align*}
-\text{fatal cases new to the report}\quad
- & \Delta C^{F}(t\given t_j)\sim\bin\Bigl(\underbrace{F(t)-C^{F}(t\given t_{j-1})}_{\text{fatal cases not yet reported}},\ p^{F}(t\given t_j)\Bigr)\\[4pt]
-\text{non-fatal cases new to the report}\quad
- & \Delta C^{N}(t\given t_j)\sim\bin\Bigl(\underbrace{N(t)-C^{N}(t\given t_{j-1})}_{\text{non-fatal cases not yet reported}},\ p^{N}(t\given t_j)\Bigr)\\[4pt]
-\text{new cases already shown as dead}\quad
- & \dnew(t\given t_j)\sim\bin\Bigl(\underbrace{\Delta C^{F}(t\given t_j)}_{\text{fatal cases new to the report}},\ p^{\text{dead}}(t\given t_j)\Bigr)\\[4pt]
-\text{cases shown as alive before, now dead}\quad
+\substack{\text{fatal cases}\\\text{new to the report}}\quad
+ & \Delta C^{F}(t\given t_j)\sim\bin\Bigl(\underbrace{F(t)-C^{F}(t\given t_{j-1})}_{\text{fatal cases not yet reported}},\
+ \underbrace{p^{F}(t\given t_j)}_{\substack{\text{probability one is}\\\text{reported by }t_j}}\Bigr)\\[6pt]
+\substack{\text{non-fatal cases}\\\text{new to the report}}\quad
+ & \Delta C^{N}(t\given t_j)\sim\bin\Bigl(\underbrace{N(t)-C^{N}(t\given t_{j-1})}_{\text{non-fatal cases not yet reported}},\
+ \underbrace{p^{N}(t\given t_j)}_{\substack{\text{probability one is}\\\text{reported by }t_j}}\Bigr)\\[6pt]
+\substack{\text{new cases already}\\\text{shown as dead}}\quad
+ & \dnew(t\given t_j)\sim\bin\Bigl(\underbrace{\Delta C^{F}(t\given t_j)}_{\text{fatal cases new to the report}},\
+ \underbrace{p^{\text{dead}}(t\given t_j)}_{\substack{\text{probability one is}\\\text{already shown as dead}}}\Bigr)\\[6pt]
+\substack{\text{cases shown as alive}\\\text{before, now dead}}\quad
  & \dold(t\given t_j)\sim\bin\Bigl(\underbrace{C^{F}(t\given t_{j-1})-D(t\given t_{j-1})}_{\substack{\text{fatal cases reported before,}\\\text{shown as alive}}},\
- 1-\frac{S^{D}(t\given t_j)}{S^{D}(t\given t_{j-1})}\Bigr)
+ \underbrace{1-\frac{S^{D}(t\given t_j)}{S^{D}(t\given t_{j-1})}}_{\substack{\text{probability its death}\\\text{is recorded by }t_j}}\Bigr)
 \end{align*}
 
-\medskip
+\footnotesize
 $N(t)=I(t)-F(t)$: the non-fatal cases. Observed: $\Delta C=\Delta C^{F}+\Delta
-C^{N}$ and $\Delta D=\dnew+\dold$.
-\end{frame}
-
-% ---------------------------------------------------------------------------
-\begin{frame}{From one report to the next: the probabilities}
-\begin{itemize}
-\setlength{\itemsep}{1em}
-\item $p^{F}(t\given t_j)$: probability a fatal case not in the report of
-$t_{j-1}$ is in that of $t_j$.
-\item $p^{N}(t\given t_j)$: the same for a non-fatal case. With independent
-delays, $p^{F}=p^{N}=1-S^{C}(t\given t_j)/S^{C}(t\given t_{j-1})$.
-\item $p^{\text{dead}}(t\given t_j)$: probability a fatal case new to the
-report of $t_j$ is already shown as dead in it. With independent delays,
+C^{N}$ and $\Delta D=\dnew+\dold$. With independent delays,
+$p^{F}=p^{N}=1-S^{C}(t\given t_j)/S^{C}(t\given t_{j-1})$ and
 $p^{\text{dead}}=1-S^{D}(t\given t_j)$.
-\item $1-S^{D}(t\given t_j)/S^{D}(t\given t_{j-1})$: probability a death not
-recorded by $t_{j-1}$ is recorded by $t_j$.
-\end{itemize}
 \end{frame}
 
 % ---------------------------------------------------------------------------
