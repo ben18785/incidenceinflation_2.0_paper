@@ -24,13 +24,10 @@ panel <- function(df, colour, title, ylab, hline = NULL) {
 }
 rt <- band(g("Rt"), "Rt"); rd <- band(g("reporting_days"), "mean")
 d <- g("deaths"); cfr <- band(d, "cfr"); dd <- band(d, "delay_mean")
-p1 <- patchwork::wrap_plots(
-  panel(rt, "#0072B2", expression(bold(A.~R[t])), expression(R[t]), hline = 1),
-  panel(rd, "#E69F00", "B. Mean delay to a case being reported", "Days"), ncol = 2)
-save_plot(p1, "outputs/bvd_estimates_cases.png", 12, 4.8)
-p2 <- patchwork::wrap_plots(
-  panel(cfr, "#D55E00", "A. Case fatality ratio", "CFR") + coord_cartesian(ylim = c(0, 1)),
-  panel(dd, "#009E73", "B. Mean delay from death to recording", "Days"), ncol = 2)
-save_plot(p2, "outputs/bvd_estimates_deaths.png", 12, 4.8)
+p <- patchwork::wrap_plots(
+  panel(rt, "#0072B2", expression(bold(A.~R[t])), expression(R[t]~"(log scale)"), hline = 1) +
+    scale_y_log10(breaks = c(0.5, 0.75, 1, 1.5, 2, 3, 5, 8)),
+  panel(cfr, "#D55E00", "B. Case fatality ratio", "CFR") + coord_cartesian(ylim = c(0, 1)), ncol = 2)
+save_plot(p, "outputs/bvd_estimates_rt_cfr.png", 12, 4.8)
 f <- function(df, name) { cat(name, ":\n"); x <- df[c(1, which(diff(round(df$q50, 2)) != 0) + 1), ]; print(as.data.frame(head(x, 12)), row.names = FALSE) }
 f(rt, "Rt"); f(rd, "reporting delay"); f(cfr, "CFR"); f(dd, "recording delay")
