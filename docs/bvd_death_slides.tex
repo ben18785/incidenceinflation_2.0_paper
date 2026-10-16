@@ -483,10 +483,16 @@ G(t)=\sum_{z\ge1}F^{\mathrm{mis}}(t-z,z).
 \begin{frame}{The delay to a death being recorded}
 With onset to death supplied, $T_D=T_{\text{die}}+T_{\text{rec}}$: the time
 from onset to death, then a delay $T_{\text{rec}}$ from death to the death
-being recorded, gamma$(\mu^{d},\sigma^{d})$. With $S^{\text{rec}}$ the
-probability a death is not yet recorded:
+being recorded, gamma$(\mu^{d},\sigma^{d})$.
+
+\medskip
+$S^{D}(t\given t')$: the probability that the death of a fatal case with
+onset on day $t$ is not yet recorded by day $t'$. $S^{\text{rec}}(d\given t')$:
+the probability that a death on day $d$ is not yet recorded by day $t'$.
 \[
-S^{D}(t\given t')=\sum_{z>t'-t}p_{\text{die}}(z)+\sum_{z\le t'-t}p_{\text{die}}(z)\,S^{\text{rec}}(t+z\given t')
+S^{D}(t\given t')=\underbrace{\sum_{z>t'-t}p_{\text{die}}(z)}_{\substack{\text{not yet died}\\\text{by }t'}}
++\underbrace{\sum_{z\le t'-t}\underbrace{p_{\text{die}}(z)}_{\substack{\text{died on}\\\text{day }t+z}}\,
+\underbrace{S^{\text{rec}}(t+z\given t')}_{\substack{\text{death not yet}\\\text{recorded by }t'}}}_{\text{died by }t'\text{, but not yet recorded}}
 \]
 
 \begin{itemize}
