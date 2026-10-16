@@ -1,0 +1,20 @@
+# Fits to simulated data of the backlog of deaths cleared in calendar time
+# (docs/bvd_deaths.tex, 'A backlog of deaths cleared in calendar time'):
+# 90 onset days, the first report on day 40, a share in the backlog falling
+# from 0.4 to 0.1 and a backlog cleared mostly on days 51 to 75. Fitted with
+# the backlog and with option (f), at the end and on days 50 and 63, and three
+# checks. Two datasets for each scenario, three chains of 500 iterations.
+package: ben18785/incidenceinflation_2.0@backlog
+replicates: 2
+chains: 3
+iterations: 500
+backlog
+backlog_fit_f
+backlog_mid
+backlog_mid_fit_f
+backlog_before
+backlog_before_fit_f
+backlog_fit_tail
+backlog_late
+backlog_steady
+backlog_none
