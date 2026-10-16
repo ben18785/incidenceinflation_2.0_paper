@@ -114,8 +114,7 @@ over <- function(df) df %>% mutate(d = as.numeric(date_reported - date_onset)) %
 cat("reports:\n"); print(as.data.frame(over(obs))); cat("expected:\n"); print(as.data.frame(over(model)))
 
 # --- one panel per fit: the reports of its window against what it expected,
-# both divided by the deaths those reports added (so the line sums to
-# expected / added)
+# each as shares of its own total (shapes alone; totals in the corner)
 bin_f <- function(df) df %>% mutate(delay = as.numeric(date_reported - date_onset), bin = floor(delay / 6) * 6 + 3)
 o_f <- bin_f(obs) %>% group_by(fit, bin) %>% summarise(n = sum(added), .groups = "drop")
 e_f <- bin_f(model) %>% group_by(fit, bin) %>%
@@ -123,7 +122,7 @@ e_f <- bin_f(model) %>% group_by(fit, bin) %>%
 totals <- o_f %>% group_by(fit) %>% summarise(observed = sum(n)) %>%
   left_join(e_f %>% group_by(fit) %>% summarise(expected = sum(n)), by = "fit") %>% left_join(windows, by = "fit")
 o_f <- o_f %>% left_join(totals, by = "fit") %>% mutate(share = n / observed)
-e_f <- e_f %>% left_join(totals, by = "fit") %>% mutate(share = n / observed)
+e_f <- e_f %>% left_join(totals, by = "fit") %>% mutate(share = n / expected)
 strip <- function(f) with(totals[match(f, totals$fit), ],
   sprintf("Fit to %s: reports %s to %s", format(fit, "%d %b"), format(from, "%d %b"), format(to, "%d %b")))
 o_f$panel <- factor(strip(o_f$fit), levels = strip(sort(totals$fit)))
@@ -131,14 +130,14 @@ e_f$panel <- factor(strip(e_f$fit), levels = strip(sort(totals$fit)))
 lab_f <- totals %>% mutate(panel = factor(strip(fit), levels = strip(sort(totals$fit))),
   text = sprintf("Added: %d\nExpected: %.0f", observed, expected))
 gf <- ggplot() + geom_col(data = o_f, aes(bin, share), width = 6, fill = "grey70") +
-  geom_step(data = e_f, aes(bin - 3, share, colour = "Expected by the fit"), direction = "hv", linewidth = 0.8) +
+  geom_step(data = e_f, aes(bin - 3, share, colour = "Deaths the fit expected, as shares of its expected total"), direction = "hv", linewidth = 0.8) +
   geom_text(data = lab_f, aes(x = Inf, y = Inf, label = text), hjust = 1.05, vjust = 1.3, size = 3.4) +
   scale_colour_manual(values = "#D55E00", name = NULL) +
   facet_wrap(~panel, ncol = 3) + coord_cartesian(xlim = c(0, 150)) +
   scale_y_continuous(labels = scales::percent) +
   labs(x = "Days from onset to the report first showing the death",
-       y = "Share of the deaths the reports added",
-       title = "Grey: deaths the reports added (onset up to the fit date). Line: deaths the fit expected, on the same scale") +
+       y = "Share of the deaths added in the window",
+       title = "Grey: deaths the reports added (onset up to the fit date), as shares of their total") +
   theme_paper() + theme(legend.position = "bottom", strip.text = element_text(size = 11))
 save_plot(gf, "outputs/bvd_death_delays_fits_f_each.png", 14, 10)
 print(as.data.frame(totals %>% mutate(expected = round(expected))))
