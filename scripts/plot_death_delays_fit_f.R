@@ -82,3 +82,70 @@ tot <- function(df, w) df %>% filter(date_reported > first) %>% mutate(d = as.nu
 k <- function(df) n_distinct(paste(df$chain, df$iteration))
 print(rbind(reports = unlist(tot(obs, "added")), with_effects = unlist(tot(m_rep, "added")) / k(m_rep),
             without = unlist(tot(m_no, "added")) / k(m_no)))
+
+# --- comparable versions ------------------------------------------------------
+# (a) by month of onset: share of the eventual deaths (fit (f)) shown by each
+# number of days after onset, over the delays at which every onset day of the
+# month was covered by the reports (12 July to 7 October)
+rd <- sort(unique(snap$date_reported))
+eventual <- bind_rows(lapply(fits, function(f) f$deaths %>% select(chain, iteration, time_onset, n = deaths_recorded))) %>%
+  mutate(date_onset = day1 + time_onset - 1)
+ev_med <- eventual %>% group_by(date_onset) %>% summarise(n = median(n), .groups = "drop")
+shown_at <- function(cum_df) {  # cum_df: date_onset, date_reported, cum (one set of draws or the reports)
+  tidyr::expand_grid(date_onset = unique(cum_df$date_onset), age = 0:160) %>%
+    mutate(date = date_onset + age) %>% filter(date >= first, date <= max(rd)) %>%
+    mutate(date_reported = rd[findInterval(as.numeric(date), as.numeric(rd))]) %>%
+    left_join(cum_df, by = c("date_onset", "date_reported")) %>% mutate(cum = coalesce(cum, 0))
+}
+months <- c("May", "June", "July", "August", "September")
+covered <- function(df) {  # keep the delays at which every onset day of the month is covered
+  df <- df %>% mutate(month = factor(format(date_onset, "%B"), levels = months)) %>% filter(!is.na(month))
+  days_in <- df %>% group_by(month) %>% summarise(days_in = n_distinct(date_onset), .groups = "drop")
+  ok <- df %>% group_by(month, age) %>% summarise(k = n_distinct(date_onset), .groups = "drop") %>%
+    inner_join(days_in, by = "month") %>% filter(k == days_in) %>% select(month, age)
+  inner_join(df, ok, by = c("month", "age"))
+}
+obs_cum <- snap %>% filter(date_onset >= max(day1, as.Date("2026-05-01"))) %>% group_by(date_onset, date_reported) %>%
+  summarise(cum = sum(deaths_reported), .groups = "drop")
+o_a <- shown_at(obs_cum) %>% covered() %>% left_join(ev_med, by = "date_onset") %>%
+  group_by(month, age) %>% summarise(share = sum(cum) / sum(n), .groups = "drop") %>% mutate(what = "Reports")
+mod_a <- function(m, label) {
+  cum <- m %>% filter(date_onset >= as.Date("2026-05-01")) %>% arrange(date_reported) %>%
+    group_by(chain, iteration, date_onset) %>% mutate(cum = cumsum(added)) %>% ungroup()
+  cum %>% group_by(chain, iteration) %>% group_modify(~ shown_at(select(.x, date_onset, date_reported, cum))) %>% ungroup() %>%
+    covered() %>% left_join(eventual %>% select(chain, iteration, date_onset, ev = n),
+                                          by = c("chain", "iteration", "date_onset")) %>%
+    group_by(month, age, chain, iteration) %>% summarise(share = sum(cum) / sum(ev), .groups = "drop") %>%
+    group_by(month, age) %>% summarise(share = median(share), .groups = "drop") %>% mutate(what = label)
+}
+a_df <- bind_rows(o_a, mod_a(m_rep, "Fit (f), with the effects of each report"), mod_a(m_no, "Fit (f), without them"))
+cols3 <- c("Reports" = "black", "Fit (f), with the effects of each report" = "#D55E00", "Fit (f), without them" = "#0072B2")
+ga <- ggplot(a_df, aes(age, share, colour = what)) + geom_line(linewidth = 0.7) +
+  facet_wrap(~month, nrow = 1, labeller = as_labeller(c(May = "May (from 11 May)", June = "June", July = "July",
+                                                       August = "August", September = "September"))) +
+  scale_colour_manual(values = cols3, name = NULL) +
+  scale_y_continuous(limits = c(0, 1.05), breaks = seq(0, 1, 0.25)) +
+  labs(x = "Days from onset", y = "Share of eventual deaths shown",
+       title = "By month of onset: share of the eventual deaths (as fitted) already shown") +
+  theme_paper() + theme(legend.position = "bottom", strip.text = element_text(size = 12))
+# (b) by month of report: each month's additions as shares, by delay
+bin_b <- function(df) df %>% filter(date_reported > first) %>%
+  mutate(delay = as.numeric(date_reported - date_onset), bin = floor(delay / 6) * 6 + 3,
+         panel = factor(format(date_reported, "%B"), levels = month.name) %>% droplevels())
+o_b <- bin_b(obs) %>% group_by(panel, bin) %>% summarise(n = sum(added), .groups = "drop") %>%
+  group_by(panel) %>% mutate(share = n / sum(n))
+m_b <- function(m, label) bin_b(m) %>% group_by(panel, bin) %>% summarise(n = sum(added), .groups = "drop") %>%
+  group_by(panel) %>% mutate(share = n / sum(n), what = label)
+mb <- bind_rows(m_b(m_rep, "Fit (f), with the effects of each report"), m_b(m_no, "Fit (f), without them"))
+gb <- ggplot() + geom_col(data = o_b, aes(bin, share), width = 6, fill = "grey70") +
+  geom_step(data = mb, aes(bin - 3, share, colour = what), direction = "hv", linewidth = 0.7) +
+  scale_colour_manual(values = cols3[-1], name = NULL) +
+  facet_wrap(~panel, nrow = 1, labeller = as_labeller(c(July = "July (from 14 July)", August = "August",
+                                                        September = "September", October = "October (to 7 October)"))) +
+  scale_y_continuous(labels = scales::percent) +
+  labs(x = "Days from onset to the report first showing the death", y = "Share of the month's additions",
+       title = "By month of report: delays of the deaths each month's reports added (grey: the reports)") +
+  theme_paper() + theme(legend.position = "bottom", strip.text = element_text(size = 12))
+save_plot(ga / gb, "outputs/bvd_death_delays_fit_f_shares.png", 15, 9.5)
+print(as.data.frame(a_df %>% filter(age %in% c(30, 45, 60, 75, 90, 120)) %>%
+  tidyr::pivot_wider(names_from = what, values_from = share) %>% mutate(across(where(is.numeric) & !age, ~ round(.x, 2)))))
