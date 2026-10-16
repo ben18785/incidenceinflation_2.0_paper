@@ -811,16 +811,16 @@ month of onset.}
 The fitted model (option (f) of the fits to the outbreak) differs from the
 model of \S\ref{sec:model} in its delay to a death being recorded. That
 delay is the time from onset to death, $T$, with the supplied distribution
-$h$ of \S\ref{sec:dated}, followed by a delay $R$ from death to the death
-being recorded. With $S^{R}(d\given t')$ the probability that a death on day
+$h$ of \S\ref{sec:dated}, followed by a delay $U$ from death to the death
+being recorded. With $S^{U}(d\given t')$ the probability that a death on day
 $d$ is not yet recorded by day $t'$,
 \begin{equation}
-S^{D}(t\given t')=\sum_{z>t'-t}h_z+\sum_{z\le t'-t}h_z\,S^{R}(t+z\given t'),
+S^{D}(t\given t')=\sum_{z>t'-t}h_z+\sum_{z\le t'-t}h_z\,S^{U}(t+z\given t'),
 \label{eq:sdbacklog}
 \end{equation}
 and in option (f)
 \[
-S^{R}(d\given t')=(1-\omega^{d})\,S_{\mathrm{gamma}}(t'-d\given\mu^{d},\sigma^{d})
+S^{U}(d\given t')=(1-\omega^{d})\,S_{\mathrm{gamma}}(t'-d\given\mu^{d},\sigma^{d})
 +\omega^{d}\exp\Bigl(-\sum_{s=d+1}^{t'}\frac{\psi^{d}_{w(j(s))}\,e^{\varepsilon_{j(s)}}}{m^{d}}\Bigr),
 \qquad \varepsilon_j\sim N(0,\sigma_\varepsilon^{2}),
 \]
@@ -863,7 +863,7 @@ onset days.
 \end{itemize}
 So, in \eqref{eq:sdbacklog},
 \begin{equation}
-S^{R}(d\given t')=(1-b_t)\,S_{\mathrm{gamma}}(t'-d\given\mu^{d},\sigma^{d})
+S^{U}(d\given t')=(1-b_t)\,S_{\mathrm{gamma}}(t'-d\given\mu^{d},\sigma^{d})
 +b_t\,e^{-\Lambda(d,t')},\qquad
 \Lambda(d,t')=\sum_{s=d+1}^{t'}\lambda_s,
 \label{eq:backlog}
