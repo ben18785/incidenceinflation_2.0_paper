@@ -53,7 +53,7 @@
 \smallskip
 {\small Each situation report revises the deaths for every onset date, and
 goes on adding deaths to onset days months old: most in bursts, in early
-September. (6 September: a report which corrected many records.)}
+September.}
 \end{frame}
 
 % ---------------------------------------------------------------------------
@@ -375,7 +375,7 @@ they have not been reported by then:
 \[
 \text{time to being reported}=
 \begin{cases}
-\min(T_C,T_D) & \text{with probability } \tau\\
+\overbrace{\min(T_C,T_D)}^{\substack{\text{reported at the earlier of its}\\\text{own report and its death's recording}}} & \text{with probability } \tau\\
 T_C & \text{with probability } 1-\tau
 \end{cases}
 \]
@@ -625,8 +625,7 @@ around time to death.
 \smallskip
 \begin{minipage}{0.85\textwidth}
 \small Deaths added by each report to onset days at least 35 days old, per
-day since the report before. (6 September: a report which corrected many
-records.)
+day since the report before.
 \end{minipage}
 \end{frame}
 
@@ -883,8 +882,7 @@ Sd $s$ of the log effects of each report, $\varepsilon_j\sim N(0,s^2)$ & $s^2\si
 \includegraphics[height=0.74\textheight]{bvd_cases_increments.png}
 
 \smallskip
-{\small As the first slide, for cases. (6 September: a report which corrected
-many records.)}
+{\small As the first slide, for cases.}
 \end{frame}
 
 % ---------------------------------------------------------------------------
