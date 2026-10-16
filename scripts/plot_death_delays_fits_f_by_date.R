@@ -83,24 +83,28 @@ bin_b <- function(df) df %>% mutate(delay = as.numeric(date_reported - date_onse
 k <- n_distinct(paste(model$chain, model$iteration))
 o_b <- bin_b(obs) %>% group_by(panel, bin) %>% summarise(n = sum(added), .groups = "drop") %>%
   group_by(panel) %>% mutate(share = n / sum(n))
-m_b <- bin_b(model) %>% group_by(fit, panel, bin) %>%
-  summarise(n = sum(added) / n_distinct(paste(chain, iteration)), .groups = "drop") %>%
-  group_by(panel, bin) %>% summarise(n = sum(n), .groups = "drop") %>%
-  group_by(panel) %>% mutate(share = n / sum(n))
+m_fit <- bin_b(model) %>% group_by(fit, panel, bin) %>%
+  summarise(n = sum(added) / n_distinct(paste(chain, iteration)), .groups = "drop")
+m_b <- m_fit %>% group_by(fit, panel) %>% mutate(share = n / sum(n)) %>% ungroup()
+windows <- model %>% group_by(fit) %>% summarise(from = min(date_reported), to = max(date_reported))
+lev <- with(windows, sprintf("Fit to %s (reports %s to %s)", format(fit, "%d %b"), format(from, "%d %b"), format(to, "%d %b")))
+m_b <- m_b %>% left_join(windows, by = "fit") %>%
+  mutate(line = factor(sprintf("Fit to %s (reports %s to %s)", format(fit, "%d %b"), format(from, "%d %b"), format(to, "%d %b")), levels = lev))
 tot <- full_join(o_b %>% group_by(panel) %>% summarise(reports = sum(n)),
-                 m_b %>% group_by(panel) %>% summarise(expected = round(sum(n))), by = "panel")
+                 m_fit %>% group_by(panel) %>% summarise(expected = round(sum(n))), by = "panel")
 lab <- tot %>% mutate(text = sprintf("Reports: %d deaths\nExpected: %d", reports, expected))
 g <- ggplot() + geom_col(data = o_b, aes(bin, share), width = 6, fill = "grey70") +
-  geom_step(data = m_b, aes(bin - 3, share, colour = "Expected from the latest fit of (f) before each report"),
-            direction = "hv", linewidth = 0.8) +
+  geom_step(data = m_b, aes(bin - 3, share, colour = line, group = interaction(line, panel)),
+            direction = "hv", linewidth = 0.7) +
   geom_text(data = lab, aes(x = Inf, y = Inf, label = text), hjust = 1.05, vjust = 1.3, size = 3.6) +
-  scale_colour_manual(values = "#D55E00", name = NULL) +
-  facet_wrap(~panel, nrow = 1, labeller = as_labeller(c(August = "Reports from 2 to 31 August",
+  scale_colour_viridis_d(name = NULL, end = 0.9) +
+  guides(colour = guide_legend(ncol = 3)) +
+  facet_wrap(~panel, nrow = 1, labeller = as_labeller(c(August = "Reports from 3 to 30 August",
     September = "Reports in September", October = "Reports from 1 to 7 October"))) +
   scale_y_continuous(labels = scales::percent) +
-  labs(x = "Days from onset to the report first showing the death", y = "Share of the month's additions") +
+  labs(x = "Days from onset to the report first showing the death", y = "Share of the deaths added") +
   theme_paper() + theme(legend.position = "bottom", strip.text = element_text(size = 12))
-save_plot(g, "outputs/bvd_death_delays_fits_f_by_date.png", 14, 5)
+save_plot(g, "outputs/bvd_death_delays_fits_f_by_date.png", 14, 6)
 print(as.data.frame(tot))
 over <- function(df) df %>% mutate(d = as.numeric(date_reported - date_onset)) %>%
   group_by(panel = format(date_reported, "%B"), fit) %>%
