@@ -57,3 +57,26 @@ cmp <- grid %>% filter(added > 0, date_onset > first, date_onset <= later - 35, 
                                share_over_14 = round(sum(added[delay > 14]) / n, 2),
                                share_over_21 = round(sum(added[delay > 21]) / n, 2), .groups = "drop")
 print(as.data.frame(cmp))
+
+# c: the same delays, by month of the report that first shows the death
+c_df <- grid %>% filter(added > 0, !in_first) %>%
+  mutate(report_month = factor(format(date_reported, "%B"), levels = month.name) %>% droplevels(),
+         onset_month = factor(format(date_onset, "%B"), levels = month.name) %>% droplevels())
+c_lab <- c_df %>% group_by(report_month) %>%
+  summarise(text = sprintf("%d deaths\nmedian %g days\n%.0f%% over 21 days", sum(added),
+                           median(rep(delay, added)), 100 * sum(added[delay > 21]) / sum(added)),
+            .groups = "drop")
+gc <- ggplot(c_df, aes(delay, weight = added, fill = onset_month)) +
+  geom_histogram(binwidth = 3, boundary = 0) +
+  geom_text(data = c_lab, aes(x = Inf, y = Inf, label = text), hjust = 1.05, vjust = 1.2, size = 3.4,
+            inherit.aes = FALSE) +
+  scale_fill_viridis_d(name = "Month of onset", end = 0.9) +
+  facet_wrap(~report_month, nrow = 1, scales = "free_y",
+             labeller = as_labeller(c(July = "July (from 14 July)", August = "August",
+                                      September = "September", October = "October (to 7 October)"))) +
+  labs(x = "Days from onset to the report first showing the death", y = "Deaths") +
+  theme_paper() + theme(strip.text = element_text(size = 12), legend.position = "bottom")
+save_plot(gc, "outputs/bvd_death_delays_by_report_month.png", 14, 5)
+print(as.data.frame(c_df %>% group_by(report_month) %>% summarise(n = sum(added), reports = n_distinct(date_reported),
+  median = median(rep(delay, added)), over_21 = round(sum(added[delay > 21]) / n, 2),
+  over_60 = round(sum(added[delay > 60]) / n, 2))))
