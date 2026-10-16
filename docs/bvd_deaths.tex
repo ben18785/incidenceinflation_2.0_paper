@@ -1022,20 +1022,108 @@ waiting at day $t'$, $B(t\given t')$, is a sampled count rather than an
 expectation. It can be reported, projected and compared with the deaths
 later reports add, which is the check option (f) fails.
 
-\paragraph{A clearing capacity.} The explicit form also makes the capacity
-model of \S\ref{sec:backlog} easy to write. Take the onset days more than
-$z_{\max}$ days old at $t_{j-1}$, as above. Let $N_j$ be their backlog deaths
-waiting at $t_{j-1}$, and $K_j$ the number recorded by
-$t_j$. Under the hazard model each waiting death is recorded independently,
-so $K_j\sim\bin\bigl(N_j,\,1-e^{-\lambda_j(t_j-t_{j-1})}\bigr)$, and given
-$K_j$ the deaths recorded are spread over onset days as a draw without
-replacement from those waiting (a multivariate hypergeometric distribution,
-in proportion to what each onset day has waiting). A capacity model keeps
-that allocation and changes only the distribution of $K_j$: for example
-$K_j\sim\min\bigl\{N_j,\ \pois(\kappa_j\,(t_j-t_{j-1}))\bigr\}$ with
-$\log\kappa_j$ a random walk over reports, so that the number cleared does
-not grow with the size of the backlog. The two models then differ in a
-single term for each report, and can be compared directly.
+\paragraph{A clearing capacity: the idea.} The hazard model says that each
+death waiting in the backlog has the same chance of being recorded in a
+given interval, however many others are waiting. The number recorded is
+then proportional to the size of the backlog: if twice as many deaths are
+waiting, twice as many are recorded. An alternative is that the backlog is
+worked through by people who can enter some number of records a day,
+whatever is waiting. Then the number recorded does not depend on the size of
+the backlog, until it runs out. Under the first, the deaths added to a
+cohort fall away steadily as its backlog shrinks. Under the second they
+arrive at a near-constant rate and then stop. The deaths of June onsets look
+more like the second, those of May onsets more like the first.
+
+\paragraph{Writing the clearing of one interval in two steps.} Take one
+interval, from report $t_{j-1}$ to report $t_j$, of length
+$\Delta_j=t_j-t_{j-1}$. To keep things simple, take only the onset days more
+than $z_{\max}$ days old at $t_{j-1}$, all of whose backlog deaths have
+already happened. For each such onset day $t$ let
+\begin{itemize}
+\item $n_t$ be its backlog deaths still not recorded at $t_{j-1}$, and
+\item $k_t$ be how many of these are recorded by $t_j$,
+\end{itemize}
+and let $N_j=\sum_t n_t$ and $K_j=\sum_t k_t$ be the totals over onset
+days. In the explicit form all of these are counts the sampler keeps. Any
+model of how the backlog is cleared can be written in two steps:
+\begin{enumerate}
+\item how many deaths are cleared in all, $K_j$, given the number waiting,
+$N_j$;
+\item which onset days they come from, $(k_t)$, given $K_j$.
+\end{enumerate}
+The probability of the counts is the product of the two:
+\[
+P\bigl((k_t)\given(n_t)\bigr)=P\bigl(K_j\given N_j\bigr)\times
+P\bigl((k_t)\given(n_t),K_j\bigr).
+\]
+
+\paragraph{The hazard model in these two steps.} Under the hazard model each
+waiting death is recorded in the interval, independently, with probability
+$p_j=1-e^{-\lambda_j\Delta_j}$, so $k_t\sim\bin(n_t,p_j)$ for each onset day.
+Then:
+\begin{enumerate}
+\item the total is $K_j\sim\bin(N_j,p_j)$, with mean $p_jN_j$, proportional
+to the number waiting;
+\item given the total, the $K_j$ deaths recorded are a random draw, without
+replacement, of $K_j$ of the $N_j$ deaths waiting. So each onset day
+contributes in proportion to what it has waiting: an onset day with a third
+of the deaths waiting supplies on average a third of those recorded. This is
+the multivariate hypergeometric distribution,
+\[
+P\bigl((k_t)\given(n_t),K_j\bigr)=\prod_t\binom{n_t}{k_t}\Big/\binom{N_j}{K_j}.
+\]
+\end{enumerate}
+(This is a general property of independent binomials with a common
+probability: given their sum, they are hypergeometric, and the probability
+$p_j$ drops out.)
+
+\paragraph{The capacity model.} The capacity model keeps step 2 and changes
+step 1. The number cleared in the interval is drawn from what the capacity
+allows, and cannot exceed what is waiting:
+\[
+K_j\sim\pois(\kappa_j\Delta_j)\ \text{truncated to}\ \{0,1,\dots,N_j\},
+\]
+where $\kappa_j$ is the number of backlog deaths that can be cleared a day,
+with $\log\kappa_j$ a random walk over reports as $\log\lambda_j$ was. Its mean
+is about $\kappa_j\Delta_j$ whatever $N_j$ is, until the backlog is nearly
+empty. Which onset days the cleared deaths come from is decided as before,
+in proportion to what each has waiting.
+
+\paragraph{An example.} Suppose 30 deaths of onset day $a$ and 10 of onset
+day $b$ are waiting, so $N_j=40$, and over a week the hazard model clears a
+quarter of those waiting while the capacity model clears 10 a week. Both then
+expect $K_j=10$: 7.5 from $a$ and 2.5 from $b$. If instead 60 and 20 were
+waiting, the hazard model would expect 20 cleared (15 and 5) and the capacity
+model still 10 (7.5 and 2.5). Run forward, the hazard model clears the same
+share of the backlog each week, so the weekly numbers shrink. The capacity
+model clears the same number each week until little is left, and then stops.
+
+\paragraph{A model between the two.} The two can be joined by letting the
+expected number cleared be $\kappa_j\Delta_j N_j^{\gamma}$, with
+$\gamma$ estimated: $\gamma=1$ makes the number cleared proportional to the
+backlog, as in the hazard model, and $\gamma=0$ is the capacity model. The posterior for
+$\gamma$ then says which describes the reports better.
+
+\paragraph{Why this needs the explicit form.} In the summed form each onset
+day has its own probability of its deaths being recorded, through
+$S^{D}$, and given the parameters the onset days are independent. The
+capacity model has no such probability for one onset day: how many of its
+deaths are recorded depends on how many deaths are waiting on all the other
+onset days, since they share the same $K_j$. That is easy to write when the
+waiting counts $n_t$ are kept by the sampler, and hard when they are summed
+out. In the explicit form the two models differ only in the factor
+$P(K_j\given N_j)$ for each report, so either can be fitted with the same
+sampler and the two compared, for example by how well they predict the
+deaths added by later reports.
+
+\paragraph{Younger onset days.} For onset days less than $z_{\max}$ days old,
+some backlog deaths are still to happen, and some of those that happen in
+the interval may also be cleared in it. The simplest course is to put into
+the pool every backlog death which has happened by $t_{j-1}$, and to give
+those which happen within the interval the hazard of the clearing rate
+implied by the capacity, $\kappa_j/N_j$. Few deaths are affected, since a
+death joins the backlog only days after onset and most deaths in the
+backlog are much older.
 
 \section{Assumptions to check}\label{sec:assumptions}
 
