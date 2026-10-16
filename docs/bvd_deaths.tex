@@ -1060,22 +1060,67 @@ P\bigl((k_t)\given(n_t),K_j\bigr).
 \paragraph{The hazard model in these two steps.} Under the hazard model each
 waiting death is recorded in the interval, independently, with probability
 $p_j=1-e^{-\lambda_j\Delta_j}$, so $k_t\sim\bin(n_t,p_j)$ for each onset day.
-Then:
+The two steps are then as follows.
 \begin{enumerate}
-\item the total is $K_j\sim\bin(N_j,p_j)$, with mean $p_jN_j$, proportional
-to the number waiting;
-\item given the total, the $K_j$ deaths recorded are a random draw, without
-replacement, of $K_j$ of the $N_j$ deaths waiting. So each onset day
-contributes in proportion to what it has waiting: an onset day with a third
-of the deaths waiting supplies on average a third of those recorded. This is
-the multivariate hypergeometric distribution,
-\[
-P\bigl((k_t)\given(n_t),K_j\bigr)=\prod_t\binom{n_t}{k_t}\Big/\binom{N_j}{K_j}.
-\]
+\item The total is $K_j\sim\bin(N_j,p_j)$, with mean $p_jN_j$, proportional
+to the number waiting.
+\item Given the total, which onset days the $K_j$ deaths come from has the
+multivariate hypergeometric distribution, described next.
 \end{enumerate}
-(This is a general property of independent binomials with a common
-probability: given their sum, they are hypergeometric, and the probability
-$p_j$ drops out.)
+
+\paragraph{Step 2: the multivariate hypergeometric distribution.} Think of
+the $N_j$ deaths waiting at $t_{j-1}$ as balls in an urn, each labelled with
+its onset day: $n_t$ balls carry the label $t$. Suppose we are told that
+$K_j$ of them are recorded by $t_j$, but not which. The question is how many
+of the $K_j$ carry each label. If every set of $K_j$ balls is equally likely
+to be the one drawn, the answer is the multivariate hypergeometric
+distribution: the distribution of the labels when $K_j$ balls are drawn from
+the urn without replacement. There are $\binom{N_j}{K_j}$ possible sets of
+$K_j$ balls, all equally likely, and of these
+$\prod_t\binom{n_t}{k_t}$ have exactly $k_t$ balls with label $t$ for every
+$t$ (choose $k_t$ of the $n_t$ balls of each onset day separately). So
+\[
+P\bigl((k_t)\given(n_t),K_j\bigr)=\frac{\prod_t\binom{n_t}{k_t}}{\binom{N_j}{K_j}},
+\qquad
+E\bigl[k_t\given(n_t),K_j\bigr]=K_j\,\frac{n_t}{N_j}.
+\]
+On average, an onset day supplies the share of the deaths recorded that it
+has of the deaths waiting.
+
+\paragraph{A small example.} Two onset days, $a$ with $n_a=3$ deaths waiting
+and $b$ with $n_b=1$, so $N_j=4$, and $K_j=2$ are recorded. There are
+$\binom{4}{2}=6$ possible pairs of deaths. Three of them are two deaths of
+$a$ ($\binom32\binom10=3$), and three are one death of each
+($\binom31\binom11=3$); two deaths of $b$ is impossible. So $(k_a,k_b)$ is
+$(2,0)$ or $(1,1)$, each with probability one half, and on average
+$k_a=1.5$ and $k_b=0.5$: three quarters and one quarter of the two recorded,
+as $a$ and $b$ have three quarters and one quarter of the deaths waiting.
+
+\paragraph{Why the hazard model gives this.} Under the hazard model every
+waiting death has the same probability $p_j$ of being recorded, whatever its
+onset day, and deaths are recorded independently. So no set of $K_j$ deaths
+is more likely than another to be the one recorded, which is the condition
+above. In symbols, the probability of the counts for each onset day is
+\[
+\prod_t\binom{n_t}{k_t}p_j^{k_t}(1-p_j)^{n_t-k_t}
+=p_j^{K_j}(1-p_j)^{N_j-K_j}\prod_t\binom{n_t}{k_t},
+\]
+and the probability of the total is
+$\binom{N_j}{K_j}p_j^{K_j}(1-p_j)^{N_j-K_j}$. Dividing the first by the second
+gives the multivariate hypergeometric probability: $p_j$ cancels. Everything
+the data say about $p_j$, and so about $\lambda_j$, is therefore in step 1,
+the total. Step 2 says only how the total is shared among onset days, and
+under the hazard model it has no parameters.
+
+\paragraph{Why the split helps.} Writing the hazard model in two steps does
+not change it. It separates the two questions a model of clearing has to
+answer, how many and from where, so that each can be changed on its own. The
+capacity model below changes how many and keeps from where. A model which
+cleared the oldest deaths first (the front of the travelling wave of
+Figure~\ref{fig:backlogwave}) would change from where: step 2 would be
+replaced by a draw which favours earlier onset days, for example a weighted
+form of the hypergeometric distribution in which a death waiting from an
+earlier onset day is more likely to be drawn, with the weight estimated.
 
 \paragraph{The capacity model.} The capacity model keeps step 2 and changes
 step 1. The number cleared in the interval is drawn from what the capacity
