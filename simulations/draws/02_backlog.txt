@@ -1,0 +1,3 @@
+# Thinned draws of simulations batch 2 (the backlog of deaths), for plots of the estimates beside the truth.
+run: 38906654310
+dir: simulations/2026-10-16_2_02_backlog

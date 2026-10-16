@@ -1,0 +1,78 @@
+# Keeps thinned draws of the fits to simulated data of an earlier run of
+# the simulations workflow, for plots made elsewhere. A file of
+# simulations/draws/ with lines
+#   run: <id of the run (the number in its address)>
+#   dir: <its folder of experiment-results, such as simulations/2026-10-16_2_02_backlog>
+# starts it when pushed; the draws go to <dir>/draws on experiment-results.
+name: simulation-draws
+run-name: ${{ github.event.head_commit.message }}
+
+on:
+  push:
+    paths:
+      - simulations/draws/*.txt
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  draws:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: plan
+        run: |
+          files=$(git diff --name-only --diff-filter=AM HEAD^ HEAD -- 'simulations/draws/*.txt')
+          f_value() { cat $files | sed -n "s/^$1:[[:space:]]*\([A-Za-z0-9_.\/-]*\).*/\1/p" | head -n 1; }
+          echo "run=$(f_value run)" >> "$GITHUB_OUTPUT"
+          echo "dir=$(f_value dir)" >> "$GITHUB_OUTPUT"
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"hard"'
+          packages: any::dplyr
+      # one at a time: fetching them all at once from another run trips the
+      # secondary rate limit of the API
+      - name: Fetch the fits of the earlier run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RUN: ${{ steps.plan.outputs.run }}
+        run: |
+          mkdir -p fits
+          gh api --paginate "repos/$GITHUB_REPOSITORY/actions/runs/$RUN/artifacts?per_page=100" \
+            --jq '.artifacts[] | select(.name | startswith("fits-")) | "\(.id) \(.name)"' > artifacts.txt
+          echo "$(wc -l < artifacts.txt) files of fits to fetch"
+          while read -r id name; do
+            for attempt in 1 2 3 4 5; do
+              if gh api "repos/$GITHUB_REPOSITORY/actions/artifacts/$id/zip" > a.zip; then break; fi
+              echo "retrying $name"; sleep $((attempt * 20))
+            done
+            unzip -oq a.zip -d fits && rm a.zip
+            sleep 1
+          done < artifacts.txt
+          ls -la fits
+      - name: Thin the draws
+        run: Rscript scripts/extract_simulation_draws.R fits draws
+      - name: Save to the branch experiment-results
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DIR: ${{ steps.plan.outputs.dir }}
+        run: |
+          url="https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git clone --quiet --depth 1 --branch experiment-results "$url" "$RUNNER_TEMP/results"
+          mkdir -p "$RUNNER_TEMP/results/$DIR"
+          cp -r draws "$RUNNER_TEMP/results/$DIR/draws"
+          cd "$RUNNER_TEMP/results"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit --quiet -m "Draws of $DIR"
+          for attempt in 1 2 3; do
+            git push --quiet origin experiment-results && break
+            git pull --quiet --rebase origin experiment-results
+          done
