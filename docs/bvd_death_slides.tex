@@ -461,9 +461,9 @@ true onset on day $t$,
 \[
 F^{\mathrm{mis}}(t)\sim\bin\bigl(F(t),\ f\bigr),
 \]
-are misdated: recorded on their day of death, $Z$ days later, with
+are misdated: recorded on their day of death, $T_{\text{die}}$ days later, with
 \[
-P(Z=z)=h_z\propto H(z)-H(z-1),\qquad z=1,2,\dots,
+p_{\text{die}}(z)=P(T_{\text{die}}=z)\propto H(z)-H(z-1),\qquad z=1,2,\dots,
 \]
 $H$ the distribution function of a gamma with mean 9.3 and sd 5.5 days (the
 time from onset to death, from the review). $F^{\mathrm{mis}}(t,z)$: those
@@ -480,68 +480,38 @@ G(t)=\sum_{z\ge1}F^{\mathrm{mis}}(t-z,z).
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Misdated cases: an approximation}
-The exact likelihood would follow correctly dated and misdated fatal cases
-($C^{F,\mathrm{onset}}$ and $C^{F,\mathrm{mis}}$) separately: two hidden
-counts per day and report, and several times slower.
-
-\bigskip
-Instead, each of the $\tilde{F}(t)$ fatal cases recorded for day $t$ is
-taken to be misdated with probability $\tilde{f}_t=G(t)/\tilde{F}(t)$,
-independently. Not yet reported at $t'$:
-\[
-\tilde{M}(t\given t')=(1-\tilde{f}_t)\,M(t\given t')+\tilde{f}_t\,S^{U}(t\given t')
-\]
-
-\begin{itemize}
-\item A misdated case enters the records when its death does ($S^{U}$, next
-slides), and is shown as dead from the start.
-\item The hidden count stays $C^{F}$ alone.
-\item Expected counts in each report are the same as in the exact version;
-the approximation allows somewhat more variation about them. Checked on
-data simulated exactly.
-\end{itemize}
-\end{frame}
-
-% ---------------------------------------------------------------------------
 \begin{frame}{The delay to a death being recorded}
-With onset to death supplied, $T_D=Z+U$: the time to death, then a delay $U$
-from death to the death being recorded, gamma$(\mu^{d},\sigma^{d})$:
+With onset to death supplied, $T_D=T_{\text{die}}+T_{\text{rec}}$: the time
+from onset to death, then a delay $T_{\text{rec}}$ from death to the death
+being recorded, gamma$(\mu^{d},\sigma^{d})$. With $S^{\text{rec}}$ the
+probability a death is not yet recorded:
 \[
-S^{D}(t\given t')=\sum_{z>t'-t}h_z+\sum_{z\le t'-t}h_z\,S^{U}(t+z\given t')
+S^{D}(t\given t')=\sum_{z>t'-t}p_{\text{die}}(z)+\sum_{z\le t'-t}p_{\text{die}}(z)\,S^{\text{rec}}(t+z\given t')
 \]
 
 \begin{itemize}
 \item $(\mu^{d},\sigma^{d})$ are estimated, and can change at unknown
-times; $h$ is fixed.
+times; $p_{\text{die}}$ is fixed.
 \item Effects of the day of the week act on the hazard of recording.
-\item A death cannot be shown on the day of onset.
 \end{itemize}
-
-\bigskip
-\textbf{What $f$ rests on.} Mostly the sd of the time to death: a wider $h$
-allows more early deaths among correctly dated cases. A rough fit gives
-$f$ of 0.40, 0.33, 0.26 and 0.17 for sds of 4.5, 5.5, 6.5 and 8 days.
 \end{frame}
 
 % ---------------------------------------------------------------------------
 \begin{frame}{Deaths recorded long after}
 With the time to death near nine days, a death first shown months after
-onset must be explained by a long delay $U$ from death to the death being
-recorded. A gamma with a mean of a few days makes such
-deaths all but impossible.
+onset must be explained by a long delay $T_{\text{rec}}$ from death to the
+death being recorded.
 
 \bigskip
 So a share $\omega^{d}$ of deaths are recorded after an exponential delay
 with mean $m^{d}$ instead (the \emph{recording tail}):
 \[
-S^{U}(d\given t')=(1-\omega^{d})\,S_{\mathrm{gamma}}(t'-d\given\mu^{d},\sigma^{d})
+S^{\text{rec}}(d\given t')=(1-\omega^{d})\,S_{\mathrm{gamma}}(t'-d\given\mu^{d},\sigma^{d})
 +\omega^{d}\,e^{-(t'-d)/m^{d}}
 \]
 
 \begin{itemize}
 \item $\omega^{d}$ and $m^{d}$ are the same for all onset days.
-\item This is where most of the difficulty lies (later slides).
 \end{itemize}
 \end{frame}
 
@@ -608,66 +578,14 @@ and of deaths for onset day $t$ in every report.
 \end{frame}
 
 % ---------------------------------------------------------------------------
-\begin{frame}{Inference method}
-\textbf{The counts of each onset day.} We can calculate
-$p\bigl(y_t\given I(t),F(t),\theta,\phi\bigr)$ exactly, summing over the hidden
-counts $C^{F}$, $E^{A}$, $E^{D}$ in every report. Each sweep, for each $t$:
+\begin{frame}{Recovering changes from simulated data}
+\centering
+\includegraphics[height=0.74\textheight]{bvd_deaths_simulation_shifts.png}
 
-\medskip
-\begin{enumerate}
-\item $F(t)$, with the hidden counts summed out: propose $F'=F(t)\pm k$, $k\in\{1,2,3\}$,
-and accept with probability
-\[
-\min\Bigl\{1,\ \frac{p(y_t\given I(t),F')\,\bin\bigl(F'\given I(t),\cfr_t\bigr)\,
-\bin\bigl(F^{\mathrm{mis}}(t)\given F',f\bigr)}
-{p(y_t\given I(t),F(t))\,\bin\bigl(F(t)\given I(t),\cfr_t\bigr)\,
-\bin\bigl(F^{\mathrm{mis}}(t)\given F(t),f\bigr)}\Bigr\}.
-\]
-\item The hidden counts are drawn exactly from their conditional given $y_t$,
-$I(t)$ and $F(t)$: those in the last report first, then those in each
-earlier report given the later ones.
-\item $I(t)$ is drawn exactly from its discrete conditional, with $F(t)$
-summed out:
-\begin{align*}
-p\bigl(I(t)\given\cdot\bigr)\propto{}&\prod_{s\ge t}\operatorname{NB}\bigl(I(s)\given R_s\Lambda_s,\kappa\bigr)\\
-&\times\sum_{F}\bin\bigl(F\given I(t),\cfr_t\bigr)\,\bin\bigl(F^{\mathrm{mis}}(t)\given F,f\bigr)\,
-p\bigl(y_t,C^{F},E^{A},E^{D}\given I(t),F\bigr).
-\end{align*}
-\item $F(t)$ is drawn exactly given $I(t)$ and the hidden counts: the summand above,
-normalised over $F$.
-\end{enumerate}
-\end{frame}
-
-% ---------------------------------------------------------------------------
-\begin{frame}{Inference method}
-\textbf{Which fatal cases are misdated.} Metropolis proposals change the
-counts $F^{\mathrm{mis}}(t,z)$ by one, keeping the number of fatal cases
-recorded for each day, $\tilde{F}$, fixed:
-\begin{itemize}
-\item one of the fatal cases recorded for day $s$ switches between ``onset on
-day $s$'' and ``onset on day $s-z$, misdated to its day of death $s$'': $I$ and
-$F$ change by one on both days;
-\item one misdated to its day of death $s$ is given a different time to death
-$z'$: it moves from onset day $s-z$ to $s-z'$.
-\end{itemize}
-The ratio includes the renewal model, $h$, $\bin(F^{\mathrm{mis}}\given F,f)$ and
-$p(y\given I,F)$ for the days changed.
-
-\medskip
-\textbf{Parameters.}
-\begin{itemize}
-\item $\cfr_t$: change points drawn with the values integrated out
-(beta-binomial), as for $R_t$; then for each segment $k$,
-$\cfr_k\sim\operatorname{beta}\bigl(1+\sum_{t\in k}F(t),\ 1+\sum_{t\in k}[I(t)-F(t)]\bigr)$.
-\item $f$: close to $\operatorname{beta}\bigl(1+\sum_tF^{\mathrm{mis}}(t),\
-1+\sum_t[F(t)-F^{\mathrm{mis}}(t)]\bigr)$; drawn from a beta matched to its conditional,
-with a Metropolis--Hastings correction.
-\item $\delta$ and $\eta$: conjugate (beta and gamma), given the wrong records.
-\item $(\mu,\sigma)$ and $(\mu^{d},\sigma^{d})$: split, merge and shift moves
-of change points.
-\item $\kappa$, $\rho$, $\tau$, $\omega^{d}$, $m^{d}$, $\psi_w$, $\psi^{d}_w$:
-random-walk Metropolis.
-\end{itemize}
+\smallskip
+{\small Simulated outbreaks of 60 onset days, fitted with an earlier version
+of the model of deaths. Dashed lines: the truth; solid lines and bands:
+posterior medians and 90\% intervals.}
 \end{frame}
 
 % ---------------------------------------------------------------------------
@@ -827,6 +745,93 @@ Probability a wrong record is shown as dead, $\delta$ & 0.43 & 0.34 to 0.54 \\
 
 % ---------------------------------------------------------------------------
 \appendix
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Appendix: misdated cases, an approximation}
+The exact likelihood would follow correctly dated and misdated fatal cases
+($C^{F,\mathrm{onset}}$ and $C^{F,\mathrm{mis}}$) separately: two hidden
+counts per day and report, and several times slower.
+
+\bigskip
+Instead, each of the $\tilde{F}(t)$ fatal cases recorded for day $t$ is
+taken to be misdated with probability $\tilde{f}_t=G(t)/\tilde{F}(t)$,
+independently. Not yet reported at $t'$:
+\[
+\tilde{M}(t\given t')=(1-\tilde{f}_t)\,M(t\given t')+\tilde{f}_t\,S^{\text{rec}}(t\given t')
+\]
+
+\begin{itemize}
+\item A misdated case enters the records when its death does ($S^{\text{rec}}$),
+and is shown as dead from the start.
+\item The hidden count stays $C^{F}$ alone.
+\item Expected counts in each report are the same as in the exact version;
+the approximation allows somewhat more variation about them. Checked on
+data simulated exactly.
+\end{itemize}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Appendix: inference method, the counts of each onset day}
+\textbf{The counts of each onset day.} We can calculate
+$p\bigl(y_t\given I(t),F(t),\theta,\phi\bigr)$ exactly, summing over the hidden
+counts $C^{F}$, $E^{A}$, $E^{D}$ in every report. Each sweep, for each $t$:
+
+\medskip
+\begin{enumerate}
+\item $F(t)$, with the hidden counts summed out: propose $F'=F(t)\pm k$, $k\in\{1,2,3\}$,
+and accept with probability
+\[
+\min\Bigl\{1,\ \frac{p(y_t\given I(t),F')\,\bin\bigl(F'\given I(t),\cfr_t\bigr)\,
+\bin\bigl(F^{\mathrm{mis}}(t)\given F',f\bigr)}
+{p(y_t\given I(t),F(t))\,\bin\bigl(F(t)\given I(t),\cfr_t\bigr)\,
+\bin\bigl(F^{\mathrm{mis}}(t)\given F(t),f\bigr)}\Bigr\}.
+\]
+\item The hidden counts are drawn exactly from their conditional given $y_t$,
+$I(t)$ and $F(t)$: those in the last report first, then those in each
+earlier report given the later ones.
+\item $I(t)$ is drawn exactly from its discrete conditional, with $F(t)$
+summed out:
+\begin{align*}
+p\bigl(I(t)\given\cdot\bigr)\propto{}&\prod_{s\ge t}\operatorname{NB}\bigl(I(s)\given R_s\Lambda_s,\kappa\bigr)\\
+&\times\sum_{F}\bin\bigl(F\given I(t),\cfr_t\bigr)\,\bin\bigl(F^{\mathrm{mis}}(t)\given F,f\bigr)\,
+p\bigl(y_t,C^{F},E^{A},E^{D}\given I(t),F\bigr).
+\end{align*}
+\item $F(t)$ is drawn exactly given $I(t)$ and the hidden counts: the summand above,
+normalised over $F$.
+\end{enumerate}
+\end{frame}
+
+% ---------------------------------------------------------------------------
+\begin{frame}{Appendix: inference method, the other unknowns}
+\textbf{Which fatal cases are misdated.} Metropolis proposals change the
+counts $F^{\mathrm{mis}}(t,z)$ by one, keeping the number of fatal cases
+recorded for each day, $\tilde{F}$, fixed:
+\begin{itemize}
+\item one of the fatal cases recorded for day $s$ switches between ``onset on
+day $s$'' and ``onset on day $s-z$, misdated to its day of death $s$'': $I$ and
+$F$ change by one on both days;
+\item one misdated to its day of death $s$ is given a different time to death
+$z'$: it moves from onset day $s-z$ to $s-z'$.
+\end{itemize}
+The ratio includes the renewal model, $p_{\text{die}}$, $\bin(F^{\mathrm{mis}}\given F,f)$ and
+$p(y\given I,F)$ for the days changed.
+
+\medskip
+\textbf{Parameters.}
+\begin{itemize}
+\item $\cfr_t$: change points drawn with the values integrated out
+(beta-binomial), as for $R_t$; then for each segment $k$,
+$\cfr_k\sim\operatorname{beta}\bigl(1+\sum_{t\in k}F(t),\ 1+\sum_{t\in k}[I(t)-F(t)]\bigr)$.
+\item $f$: close to $\operatorname{beta}\bigl(1+\sum_tF^{\mathrm{mis}}(t),\
+1+\sum_t[F(t)-F^{\mathrm{mis}}(t)]\bigr)$; drawn from a beta matched to its conditional,
+with a Metropolis--Hastings correction.
+\item $\delta$ and $\eta$: conjugate (beta and gamma), given the wrong records.
+\item $(\mu,\sigma)$ and $(\mu^{d},\sigma^{d})$: split, merge and shift moves
+of change points.
+\item $\kappa$, $\rho$, $\tau$, $\omega^{d}$, $m^{d}$, $\psi_w$, $\psi^{d}_w$:
+random-walk Metropolis.
+\end{itemize}
+\end{frame}
 
 % ---------------------------------------------------------------------------
 \begin{frame}{Appendix: priors, transmission and cases}
