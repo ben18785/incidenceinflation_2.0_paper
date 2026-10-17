@@ -1,0 +1,18 @@
+# The backlog with a holding period of 21 days before deaths in it can be
+# cleared, simulated and fitted, beside option (f) on the same datasets, a
+# dataset without a backlog and one whose backlog has no holding period.
+# Two datasets for each scenario, three chains of 500 iterations, as in
+# batches 2 and 3.
+package: ben18785/incidenceinflation_2.0@backlog
+replicates: 2
+chains: 3
+iterations: 500
+hold
+hold_fit_f
+hold_mid
+hold_mid_fit_f
+hold_before
+hold_late
+hold_steady
+hold_none
+hold_not_simulated
