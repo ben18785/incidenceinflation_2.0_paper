@@ -172,6 +172,22 @@ deaths_priors:
     recording_report: {tail_only: true}
     label: "counted on day of death, deaths bring reports, recording delay fixed to 31 July, report effects on recording tail"
 
+  # the recording delay fixed to 31 July and free to change after, as (f),
+  # with a backlog of deaths cleared in calendar time in place of the tail
+  # and its report effects: a share of deaths (a random walk over onset
+  # weeks) join a backlog, from which they can be recorded 21 days after
+  # death, with a hazard which is a random walk over reports
+  misdated_triggered_july_backlog: &misdated_triggered_july_backlog
+    onset_to_death: {mean: 9.3, sd: 5.5}
+    dated_by_death: {fraction: {alpha: 1, beta: 1, initial: 0.25}, n_moves: 1500}
+    initial_delay: {mean: 3, sd: 2.5}
+    delay_prior: {mean_mu: 4, mean_sigma: 4, sd_mu: 4, sd_sigma: 4}
+    triggered: {alpha: 1, beta: 1}
+    fatal_delay: false
+    recording_fixed_until: 2026-07-31
+    recording_backlog: {hold_days: 21}
+    label: "counted on day of death, deaths bring reports, recording delay fixed to 31 July, backlog held 21 days"
+
 experiments:
   # reports to 5 September, deaths alone with no heavier tail
   deaths_0905: {model: deaths, tail: false}
@@ -289,6 +305,10 @@ experiments:
   joint_no_tail_misdated_triggered_july_tail_reports_0924: {model: joint, date: 2026-09-24, tail: false, deaths_prior: *misdated_triggered_july_tail_reports, iterations: 1500}
   joint_no_tail_misdated_triggered_july_tail_reports_1001: {model: joint, date: 2026-10-01, tail: false, deaths_prior: *misdated_triggered_july_tail_reports, iterations: 1500}
   joint_no_tail_misdated_triggered_july_tail_reports_1007: {model: joint, date: 2026-10-07, tail: false, deaths_prior: *misdated_triggered_july_tail_reports, iterations: 1500}
+
+  # the backlog held 21 days in place of (f)'s tail, early and late
+  joint_no_tail_misdated_triggered_july_backlog_0801: {model: joint, date: 2026-08-01, tail: false, deaths_prior: *misdated_triggered_july_backlog, iterations: 1500}
+  joint_no_tail_misdated_triggered_july_backlog_1007: {model: joint, date: 2026-10-07, tail: false, deaths_prior: *misdated_triggered_july_backlog, iterations: 1500}
 
   # cases and deaths together
   joint_1001: {model: joint, date: 2026-10-01, iterations: 800}

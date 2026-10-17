@@ -1,0 +1,7 @@
+# The backlog of deaths cleared in calendar time, held 21 days after death,
+# in place of option (f)'s tail and its report effects (the recording delay
+# fixed to 31 July, free after, as in (f)): reports to 1 August and to
+# 7 October.
+package: ben18785/incidenceinflation_2.0@backlog
+joint_no_tail_misdated_triggered_july_backlog_0801
+joint_no_tail_misdated_triggered_july_backlog_1007

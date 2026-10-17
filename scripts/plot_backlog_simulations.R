@@ -1,5 +1,5 @@
 # Plots of the fits to simulated data of the backlog of deaths (simulations
-# batch 2) beside the truth: the fatal cases of each onset day, the share in
+# batches 2 to 4) beside the truth: the fatal cases of each onset day, the share in
 # the backlog, the rate at which it is cleared and the totals.
 # Usage: Rscript scripts/plot_backlog_simulations.R <folder of results of the batch> [folder of plots]
 # where the folder (of experiment-results) holds by_dataset.csv and draws/.
@@ -17,7 +17,17 @@ labels <- c(
   backlog_before_fit_f = "Option (f)\nfit on day 50",
   backlog_fit_tail = "Tail alone\nfit on day 90",
   backlog_late = "Backlog cleared\nfrom day 80", backlog_steady = "Constant share\nand rate",
-  backlog_none = "No backlog")
+  backlog_none = "No backlog",
+  hold = "Held backlog\nfit on day 90", hold_fit_f = "Option (f)\nfit on day 90",
+  hold_mid = "Held backlog\nfit on day 63", hold_mid_fit_f = "Option (f)\nfit on day 63",
+  hold_before = "Held backlog\nfit on day 50",
+  hold_late = "Held, cleared\nfrom day 80", hold_steady = "Held, constant\nshare and rate",
+  hold_none = "No backlog\n(fit with hold)",
+  hold_not_simulated = "Backlog not held\n(fit with hold)")
+# the main scenarios (fits on days 90, 63 and 50) and the checks
+main_names <- c("backlog", "backlog_fit_f", "backlog_mid", "backlog_mid_fit_f", "backlog_before",
+                "backlog_before_fit_f", "hold", "hold_fit_f", "hold_mid", "hold_mid_fit_f",
+                "hold_before")
 # the scenarios of the batch
 scenarios <- intersect(names(labels),
                        utils::read.csv(file.path(folder, "by_dataset.csv"))$scenario)
@@ -80,10 +90,13 @@ f_fatal <- function(wanted, file, ncol = 2, height = 8) {
     theme_bw() + theme(legend.position = "bottom", strip.text.y = element_text(size = 8))
   ggsave(file.path(out, file), g, width = 9, height = height, dpi = 150)
 }
-main <- intersect(names(labels)[1:6], scenarios)
-checks <- intersect(names(labels)[7:10], scenarios)
-f_fatal(main, "fatal_by_onset_backlog_vs_f.png", height = 1.7 * length(main))
-f_fatal(checks, "fatal_by_onset_checks.png", height = 1.9 * length(checks))
+main <- intersect(main_names, scenarios)
+checks <- setdiff(scenarios, main_names)
+# named for what they show: option (f) only when it was fitted
+main_file <- if(any(grepl("_fit_f$", main))) "fatal_by_onset_backlog_vs_f.png" else
+  "fatal_by_onset_fit_days.png"
+if(length(main) > 0) f_fatal(main, main_file, height = 1.7 * length(main))
+if(length(checks) > 0) f_fatal(checks, "fatal_by_onset_checks.png", height = 1.9 * length(checks))
 
 # the share in the backlog by onset day
 share <- f_band(deaths %>% dplyr::filter(!is.na(.data$backlog_share)), "backlog_share",
