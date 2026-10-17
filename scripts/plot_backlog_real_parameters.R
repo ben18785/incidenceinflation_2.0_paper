@@ -103,6 +103,24 @@ g <- ggplot(rt, aes(x = date, fill = model, colour = model)) +
   theme_paper() + theme(legend.position = "bottom")
 save_plot(g, file.path(out, "Rt.png"), 11, 5)
 
+# the case fatality ratio by onset day beside option (f)
+cfr <- dplyr::bind_rows(lapply(names(fits), function(key) {
+  parts <- strsplit(key, " ")[[1]]
+  f_band(f_rows(fits[[key]], "deaths"), "cfr", time_onset) %>%
+    dplyr::left_join(f_dates(fits[[key]]), by = "time_onset") %>%
+    dplyr::mutate(model = factor(models[[parts[1]]], levels = models), fit = fit_dates[[parts[2]]])
+}))
+g <- ggplot(cfr, aes(x = date, fill = model, colour = model)) +
+  geom_ribbon(aes(ymin = lo, ymax = hi), alpha = 0.25, colour = NA) +
+  geom_line(aes(y = mid)) +
+  scale_fill_manual(NULL, values = c("Option (f)" = "#E69F00", "Held backlog" = "#3B7DD8")) +
+  scale_colour_manual(NULL, values = c("Option (f)" = "#B07800", "Held backlog" = "#1F4E9C")) +
+  facet_wrap(~fit, nrow = 1, scales = "free_x") +
+  labs(x = "Onset date", y = "Case fatality ratio") +
+  theme_paper() + theme(legend.position = "bottom")
+save_plot(g, file.path(out, "cfr.png"), 11, 5)
+utils::write.csv(cfr, file.path(out, "cfr.csv"), row.names = FALSE)
+
 # every parameter, with its split R-hat
 tables <- c("overdispersion", "revisions", "Rt_changepoints", "reporting_changepoints",
             "reporting_effects", "deaths_parameters")
