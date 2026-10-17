@@ -59,7 +59,17 @@ misdated_scenarios <- function() {
     "hold_late", "Backlog held 21 days and cleared only from day 80", "A backlog with a holding period", "Little of the backlog has been seen by the end.",
     "hold_steady", "Backlog held 21 days, constant share (0.2) and rate (1/40)", "A backlog with a holding period", "A constant backlog.",
     "hold_none", "No backlog, fitted with the holding period", "A backlog with a holding period", "Is a backlog found where there is none?",
-    "hold_not_simulated", "Backlog with no holding period, fitted with one of 21 days", "A backlog with a holding period", "Deaths of the backlog cleared within 21 days are put in the ordinary delay.")
+    "hold_not_simulated", "Backlog with no holding period, fitted with one of 21 days", "A backlog with a holding period", "Deaths of the backlog cleared within 21 days are put in the ordinary delay.",
+    "hold_truth_start", "Backlog held 21 days, chains started at the true share and rate", "Is the backlog identified?", "Do chains started at the truth stay there (the posterior supports it) or leave it?",
+    "hold_mid_truth_start", "Backlog held 21 days, fitted on day 63, started at the truth", "Is the backlog identified?", "The same, part way through the clearing.",
+    "hold_before_truth_start", "Backlog held 21 days, fitted on day 50, started at the truth", "Is the backlog identified?", "The same, before the clearing.",
+    "hold_cfr_fixed", "Backlog held 21 days, CFR held near its true value", "Is the backlog identified?", "Is the CFR the missing anchor of the share and rate?",
+    "hold_mid_cfr_fixed", "Backlog held 21 days, fitted on day 63, CFR held near its true value", "Is the backlog identified?", "The same, part way through the clearing.",
+    "hold_before_cfr_fixed", "Backlog held 21 days, fitted on day 50, CFR held near its true value", "Is the backlog identified?", "The same, before the clearing.",
+    "cleared", "Backlog held 21 days, constant rate 0.04 a day, fitted on day 90", "Is the backlog identified?", "The early onset days' backlogs are mostly cleared: are the share and rate recovered?",
+    "cleared_early", "Backlog held 21 days, constant rate 0.04 a day, fitted on day 55", "Is the backlog identified?", "The same data before the early backlogs are cleared.",
+    "real_like", "Like the outbreak (the fit to 7 October as truth), fitted to all reports", "Like the outbreak", "How well are the share and rate recovered in the outbreak's setting?",
+    "real_like_0801", "Like the outbreak, fitted to the reports to 1 August (day 83)", "Like the outbreak", "The same at the stage of the fit to 1 August.")
 }
 
 #' How each scenario is simulated and fitted
@@ -75,12 +85,17 @@ misdated_scenarios <- function() {
 #' from death to its being recorded), 'fraction' (counted on their day of
 #' death) and 'triggered' (reported when their death is recorded);
 #' 'onset_to_death'; 'fatal_ratio'; 'recording_tail'; 'wrong';
-#' 'first_report'; 'correction') and of how the model is fitted
+#' 'first_report'; 'report_days', the days of the reports if not every day
+#' from first_report; 'cases_by_day', the expected cases of each onset day,
+#' drawn as Poisson counts in place of the renewal model; 'correction') and of
+#' how the model is fitted
 #' ('fit_onset_to_death', NULL for the earlier model with a free delay from
 #' onset; 'fit_dated', TRUE if the fraction is estimated, FALSE if no cases
 #' are taken to be counted on their day of death, or a value at which the
 #' fraction is held; 'fit_triggered';
-#' 'fit_tail'; 'fit_fatal_delay')
+#' 'fit_tail'; 'fit_fatal_delay'; 'fit_cfr', NULL or a named list of 'alpha'
+#' and 'beta' of a beta prior for a case fatality ratio which does not
+#' change; 'fit_start_truth', TRUE to start the backlog at its truth)
 misdated_scenario_settings <- function(scenario) {
   f_constant <- function(value) function(t) value + 0 * t
   f_step <- function(day, before, after) function(t) ifelse(t < day, before, after)
@@ -95,9 +110,11 @@ misdated_scenario_settings <- function(scenario) {
     fraction = f_constant(0.3), triggered = f_constant(0.5),
     onset_to_death = onset_to_death, fatal_ratio = 1, recording_tail = NULL,
     recording_backlog = NULL,
-    wrong = NULL, first_report = 1, correction = NULL, fit_until = NULL,
+    wrong = NULL, first_report = 1, report_days = NULL, cases_by_day = NULL,
+    correction = NULL, fit_until = NULL,
     fit_onset_to_death = onset_to_death, fit_dated = TRUE, fit_triggered = TRUE,
-    fit_tail = FALSE, fit_report = FALSE, fit_backlog = FALSE, fit_fatal_delay = FALSE)
+    fit_tail = FALSE, fit_report = FALSE, fit_backlog = FALSE, fit_fatal_delay = FALSE,
+    fit_cfr = NULL, fit_start_truth = FALSE)
   tail <- list(weight = 0.15, mean = 40)
   correction <- list(time_reported = 45, onset_times = 1:20, wrong = 0.08,
                      missing = 0.03, misdated = 0.1)
@@ -122,6 +139,12 @@ misdated_scenario_settings <- function(scenario) {
     truth$recording_backlog$hold_days <- 21
     c(truth, fitted)
   }
+  # the case fatality ratio held near its truth (0.48, sd 0.005)
+  cfr_fixed <- list(fit_cfr = list(alpha = 4800, beta = 5200))
+  # a backlog cleared at a constant rate from the start, so that by day 90 the
+  # backlogs of the early onset days are mostly cleared
+  cleared <- f_hold(c(backlog_days, list(recording_backlog = list(
+    share = backlog$recording_backlog$share, rate = rep(0.04, 90)))), fit)
   changes <- list(
     base = list(),
     tau_0 = list(triggered = f_constant(0)),
@@ -180,13 +203,57 @@ misdated_scenario_settings <- function(scenario) {
     hold_steady = f_hold(c(backlog_days, list(recording_backlog = list(
       share = f_constant(0.2), rate = rep(1 / 40, 90)))), fit),
     hold_none = c(backlog_days, fit),
-    hold_not_simulated = c(backlog, fit))
+    hold_not_simulated = c(backlog, fit),
+    hold_truth_start = f_hold(backlog, c(fit, list(fit_start_truth = TRUE))),
+    hold_mid_truth_start = f_hold(backlog, c(fit, list(fit_start_truth = TRUE, fit_until = 63))),
+    hold_before_truth_start = f_hold(backlog, c(fit, list(fit_start_truth = TRUE, fit_until = 50))),
+    hold_cfr_fixed = f_hold(backlog, c(fit, cfr_fixed)),
+    hold_mid_cfr_fixed = f_hold(backlog, c(fit, cfr_fixed, list(fit_until = 63))),
+    hold_before_cfr_fixed = f_hold(backlog, c(fit, cfr_fixed, list(fit_until = 50))),
+    cleared = cleared,
+    cleared_early = c(cleared, list(fit_until = 55)),
+    real_like = if(startsWith(scenario, "real_like")) real_like_settings(),
+    real_like_0801 = if(startsWith(scenario, "real_like"))
+      c(real_like_settings(), list(fit_until = 83)))
   if(!scenario %in% names(changes))
     stop(paste0("Unknown scenario: ", scenario, "."))
   out <- defaults
   for(name in names(changes[[scenario]]))
     out[name] <- list(changes[[scenario]][[name]])
   out
+}
+
+#' How the scenarios like the outbreak are simulated
+#'
+#' The truth is the fit of the backlog held 21 days to the reports of 7
+#' October (posterior medians, made by scripts/make_real_like_truth.R): 150
+#' onset days, the reports on the days the outbreak's were made, the expected
+#' cases of each day, the case fatality ratio, both delays, the backlog's
+#' share and rate, the fraction counted on the day of death, the share
+#' reported when the death is recorded and wrong records.
+#'
+#' @param folder the folder of the truth
+#' @return the settings which differ from the defaults of
+#' misdated_scenario_settings()
+real_like_settings <- function(folder = "simulations/truth") {
+  by_day <- utils::read.csv(file.path(folder, "real_like_by_day.csv"))
+  scalars <- utils::read.csv(file.path(folder, "real_like_scalars.csv"))
+  value <- stats::setNames(scalars$value, scalars$name)
+  f_day <- function(column) function(t) by_day[[column]][t]
+  f_delay <- function(prefix) function(t)
+    list(mean = by_day[[paste0(prefix, "_mean")]][t], sd = by_day[[paste0(prefix, "_sd")]][t])
+  report_days <- by_day$time_onset[by_day$is_report]
+  list(
+    n_days = nrow(by_day), cases_by_day = by_day$cases_mean,
+    first_report = min(report_days), report_days = report_days,
+    Rt = function(t) NA_real_ + 0 * t, cfr = f_day("cfr"),
+    reporting = f_delay("reporting"), recording = f_delay("recording"),
+    fraction = function(t) value[["fraction"]] + 0 * t,
+    triggered = function(t) value[["triggered"]] + 0 * t,
+    wrong = list(eta = value[["eta"]], rho = value[["rho"]], delta = value[["delta"]]),
+    recording_backlog = list(share = f_day("backlog_share"), rate = by_day$backlog_rate,
+                             hold_days = 21),
+    fit_backlog = list(hold_days = 21))
 }
 
 #' Simulates an outbreak and the reports of its cases and deaths
@@ -205,16 +272,20 @@ simulate_misdated_dataset <- function(scenario, replicate) {
   n_days <- settings$n_days
   set.seed(replicate)
   serial <- list(mean = 5, sd = 3)
-  cases_all <- incidenceinflation::true_cases(
+  cases_all <- if(!is.null(settings$cases_by_day))
+    c(rep(0, 40), stats::rpois(n_days, settings$cases_by_day))
+  else incidenceinflation::true_cases(
     n_days + 40, function(t) settings$Rt(t - 40), kappa = 1000, serial,
     initial_parameters = list(mean = settings$cases_mean, length = 10))
+  report_days <- if(is.null(settings$report_days)) settings$first_report:n_days
+    else settings$report_days
   days <- seq_len(n_days)
   reporting <- settings$reporting(days)
   recording <- settings$recording(days)
   fraction <- settings$fraction(days)
   triggered <- settings$triggered(days)
   sim <- incidenceinflation::simulate_cases_deaths(
-    cases_all[41:(n_days + 40)], settings$first_report:n_days, reporting,
+    cases_all[41:(n_days + 40)], report_days, reporting,
     settings$cfr(days), recording,
     fatal_reporting_parameters = if(settings$fatal_ratio != 1)
       list(mean = reporting$mean * settings$fatal_ratio,
@@ -316,6 +387,9 @@ fit_misdated_chain <- function(dataset, chain, niterations,
     delay_changepoints = list(min_length = 14, n_partition_moves = 20),
     fatal_delay = if(options$fit_fatal_delay) list() else FALSE,
     triggered = if(options$fit_triggered) list(initial = c(0.5, 0.4, 0.6)[k]) else FALSE)
+  if(!is.null(options$fit_cfr))
+    settings[c("cfr_alpha", "cfr_beta", "cfr_changepoints")] <-
+      list(options$fit_cfr$alpha, options$fit_cfr$beta, FALSE)
   if(is_new) {
     settings$onset_to_death <- options$fit_onset_to_death
     settings$initial_delay <- list(list(mean = 3, sd = 2.5), list(mean = 4, sd = 3),
@@ -335,11 +409,21 @@ fit_misdated_chain <- function(dataset, chain, niterations,
         list(initial_share = c(0.2, 0.15, 0.3)[k],
              initial_rate = c(1 / 60, 1 / 30, 1 / 100)[k]),
         if(is.list(options$fit_backlog)) options$fit_backlog else list())
+    # started at the truth: its share for each onset day and rate for each day
+    if(isTRUE(options$fit_start_truth)) {
+      settings$recording_backlog$initial_share <-
+        options$recording_backlog$share(seq_len(dataset$n_days))
+      settings$recording_backlog$initial_rate <- options$recording_backlog$rate
+    }
   } else {
     settings$initial_delay <- list(list(mean = 12, sd = 9), list(mean = 14, sd = 10),
                                    list(mean = 10, sd = 8))[[k]]
   }
 
+  # a limit on the minutes of a chain (PIPELINE_TIME_LIMIT_MISDATED), after
+  # which the iterations made so far are kept
+  time_limit <- as.numeric(Sys.getenv("PIPELINE_TIME_LIMIT_MISDATED", ""))
+  is_backlog_check <- !isFALSE(options$fit_backlog) && !is.null(options$recording_backlog)
   time_start <- Sys.time()
   fit <- tryCatch(
     incidenceinflation::mcmc_single(
@@ -363,21 +447,74 @@ fit_misdated_chain <- function(dataset, chain, niterations,
       progress_file = file.path(progress_dir, sprintf(
         "%s_%d_%d.txt", dataset$scenario, dataset$replicate, chain)),
       progress_every = 10,
+      time_limit = if(is.finite(time_limit)) time_limit,
+      return_state = is_backlog_check,
       deaths = list(snapshot = snapshots %>%
                       dplyr::select("time_onset", "time_reported", "deaths_reported"),
                     settings = settings)),
     error = function(e) list(error = conditionMessage(e)))
+  iterations_done <- if(is.null(fit$iterations_done)) niterations else fit$iterations_done
   out <- list(scenario = dataset$scenario, replicate = dataset$replicate,
-              chain = chain, niterations = niterations,
+              chain = chain, niterations = iterations_done,
               minutes = as.numeric(Sys.time() - time_start, units = "mins"),
               error = fit$error)
-  warmup <- niterations / 2
+  if(is_backlog_check && !is.null(fit$state))
+    out$backlog_check <- tryCatch(
+      backlog_truth_check(fit$state$variables$deaths_state, dataset, settings$recording_backlog),
+      error = function(e) dplyr::tibble(error = conditionMessage(e)))
+  warmup <- floor(iterations_done / 2)
   for(name in intersect(names(fit), c(
     "cases", "Rt", "reporting_days", "deaths", "deaths_parameters", "revisions")))
     out[[name]] <- fit[[name]] %>%
     dplyr::filter(.data$iteration > warmup) %>%
     dplyr::mutate(chain = chain)
   out
+}
+
+#' The fit of the deaths with the backlog at its truth beside its value at
+#' the end of a chain
+#'
+#' With every other part of the state of the deaths held at the end of the
+#' chain, the log-likelihood of the deaths shown in the reports and the
+#' log-prior of the two random walks (with the standard deviations of the
+#' chain) are found for the backlog of the chain and for the truth: the true
+#' share averaged over each onset week and the true rate over each report
+#' interval. The counts held are those sampled with the backlog of the chain,
+#' which favours it.
+#'
+#' @param state the state of the deaths at the end of a chain
+#' @param dataset as returned by simulate_misdated_dataset()
+#' @param supplied the settings of the backlog the chain was fitted with
+#' @return a tibble with one row: 'logl_fitted', 'logl_truth',
+#' 'log_prior_fitted' and 'log_prior_truth'
+backlog_truth_check <- function(state, dataset, supplied) {
+  ii <- asNamespace("incidenceinflation")
+  effects <- state$recording_effects
+  fitted <- effects$backlog
+  truth_backlog <- dataset$settings$recording_backlog
+  share_day <- truth_backlog$share(seq_along(fitted$week_of_day))
+  truth <- fitted
+  truth$logit_share <- stats::qlogis(as.numeric(tapply(share_day, fitted$week_of_day, mean)))
+  bounds <- c(0, fitted$report_days)
+  truth$log_rate <- log(vapply(seq_along(fitted$report_days), function(r)
+    mean(truth_backlog$rate[(bounds[r] + 1):bounds[r + 1]]), numeric(1)))
+  truth <- ii$refresh_backlog(truth)
+  delays <- ii$deaths_delay_by_onset(state)
+  f_logl <- function(backlog) {
+    effects$backlog <- backlog
+    sum(vapply(seq_along(state$onset_times), function(k)
+      ii$deaths_recording_day_logp(state, k, ii$delay_of_onset(delays, k), effects),
+      numeric(1)))
+  }
+  s <- ii$backlog_settings(supplied)
+  gaps <- diff(fitted$report_days)
+  f_prior <- function(b)
+    stats::dnorm(b$logit_share[1], s$share_mu, s$share_sd, log = TRUE) +
+    sum(stats::dnorm(diff(b$logit_share), 0, fitted$share_rw_sd, log = TRUE)) +
+    stats::dnorm(b$log_rate[1], s$rate_mu, s$rate_sd, log = TRUE) +
+    sum(stats::dnorm(diff(b$log_rate), 0, fitted$rate_rw_sd * sqrt(gaps / 7), log = TRUE))
+  dplyr::tibble(logl_fitted = f_logl(fitted), logl_truth = f_logl(truth),
+                log_prior_fitted = f_prior(fitted), log_prior_truth = f_prior(truth))
 }
 
 #' Measures of how well the fits of one dataset recover the simulated truth
@@ -460,9 +597,10 @@ misdated_fit_measures <- function(dataset, fits) {
   days_old <- seq_len(first_report - 1)
   backlog_measures <- list()
   if("backlog_share" %in% names(deaths)) {
-    backlog_measures <- f_days(deaths_day_summary(deaths, "backlog_share",
-                                                  truth$backlog_share),
-                               days_middle, "share")
+    share_summary <- deaths_day_summary(deaths, "backlog_share", truth$backlog_share)
+    backlog_measures <- c(f_days(share_summary, days_middle, "share"),
+                          f_days(share_summary, days_old, "share_old"),
+                          f_days(share_summary, days_recent, "share_recent"))
     rate_truth <- dataset$settings$recording_backlog$rate
     columns <- grep("^backlog_rate_[0-9]+$", names(parameters), value = TRUE)
     report_days <- as.integer(sub("backlog_rate_", "", columns))
@@ -476,6 +614,27 @@ misdated_fit_measures <- function(dataset, fits) {
       hi <- apply(log(parameters[, columns]), 2, stats::quantile, 0.95)
       backlog_measures$rate_log_error <- mean(abs(mid - log(truth_rate)))
       backlog_measures$rate_coverage <- mean(log(truth_rate) >= lo & log(truth_rate) <= hi)
+    }
+    # the ridge: the correlation, within chains, of the mean logit share of the
+    # onset days before the first report and the mean log rate
+    if(length(columns) > 0 && length(days_old) > 0) {
+      ridge <- deaths %>%
+        dplyr::filter(.data$time_onset %in% days_old) %>%
+        dplyr::group_by(.data$chain, .data$iteration) %>%
+        dplyr::summarise(share = mean(stats::qlogis(.data$backlog_share)), .groups = "drop") %>%
+        dplyr::inner_join(dplyr::tibble(chain = parameters$chain, iteration = parameters$iteration,
+                                        rate = rowMeans(log(parameters[, columns, drop = FALSE]))),
+                          by = c("chain", "iteration")) %>%
+        dplyr::group_by(.data$chain) %>%
+        dplyr::summarise(r = suppressWarnings(stats::cor(.data$share, .data$rate)), .groups = "drop")
+      backlog_measures$share_rate_cor <- mean(ridge$r, na.rm = TRUE)
+    }
+    # the truth beside the end of each chain (backlog_truth_check)
+    check <- fitted$draws("backlog_check")
+    if(nrow(check) > 0 && "logl_truth" %in% names(check)) {
+      backlog_measures$truth_logl_gain <- mean(check$logl_truth - check$logl_fitted)
+      backlog_measures$truth_logpost_gain <- mean(
+        check$logl_truth + check$log_prior_truth - check$logl_fitted - check$log_prior_fitted)
     }
   }
   dplyr::bind_cols(
@@ -556,7 +715,9 @@ misdated_summary_text <- function(summary, by_dataset) {
   f_pair <- function(x, truth, digits = 2)
     ifelse(is.na(x), "", paste0(f(x, digits), " (", f(truth, digits), ")"))
   for(name in c("deaths_old", "deaths_old_true", "deaths_old_inside", "share_error",
-                "share_coverage", "rate_log_error", "rate_coverage"))
+                "share_coverage", "rate_log_error", "rate_coverage", "share_old_error",
+                "share_old_coverage", "share_recent_error", "share_recent_coverage",
+                "share_rate_cor", "truth_logl_gain", "truth_logpost_gain"))
     if(!name %in% names(summary))
       summary[[name]] <- NA_real_
   rhat <- summary %>%
@@ -579,6 +740,11 @@ misdated_summary_text <- function(summary, by_dataset) {
       deaths_old_inside = f(.data$deaths_old_inside),
       backlog_share = paste(f(.data$share_error), f(.data$share_coverage), sep = " / "),
       backlog_rate = paste(f(.data$rate_log_error), f(.data$rate_coverage), sep = " / "),
+      backlog_share_old = paste(f(.data$share_old_error), f(.data$share_old_coverage), sep = " / "),
+      backlog_share_recent = paste(f(.data$share_recent_error), f(.data$share_recent_coverage),
+                                   sep = " / "),
+      ridge = f(.data$share_rate_cor),
+      truth_gain = paste(f(.data$truth_logl_gain, 1), f(.data$truth_logpost_gain, 1), sep = " / "),
       shown = f(.data$deaths_shown_at_end, 0),
       rhat = f(ifelse(is.finite(.data$rhat), .data$rhat, NA)),
       minutes = f(.data$minutes, 0))
@@ -589,6 +755,10 @@ misdated_summary_text <- function(summary, by_dataset) {
               "Fatal cases, latest 14 days: estimate (truth)", "Truth inside",
               "Fatal cases, onset before the first report: estimate (truth)", "Truth inside",
               "Backlog share: error / coverage", "Clearing rate: log error / coverage",
+              "Share, onsets before the first report: error / coverage",
+              "Share, latest 14 days: error / coverage",
+              "Correlation of share and rate (within chains)",
+              "Truth less end of chain: log-likelihood / log-posterior",
               "Deaths shown in the last report", "Worst R-hat", "Minutes per chain")
   errors <- by_dataset[!is.na(by_dataset$error) & by_dataset$error != "", ]
   c("# Fits to simulated data",

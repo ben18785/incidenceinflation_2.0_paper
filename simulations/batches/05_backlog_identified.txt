@@ -1,0 +1,18 @@
+# Is the backlog identified? Chains started at the true share and rate (do
+# they stay there?), the case fatality ratio held near its truth (is it the
+# missing anchor?), and a backlog cleared at a constant rate whose early
+# onset days' backlogs are mostly cleared by day 90 but not by day 55. The
+# datasets of the hold scenarios are those of batch 4.
+package: ben18785/incidenceinflation_2.0@backlog
+replicates: 2
+chains: 3
+iterations: 500
+time_limit: 160
+hold_truth_start
+hold_mid_truth_start
+hold_before_truth_start
+hold_cfr_fixed
+hold_mid_cfr_fixed
+hold_before_cfr_fixed
+cleared
+cleared_early

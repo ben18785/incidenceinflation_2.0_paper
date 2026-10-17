@@ -1,5 +1,5 @@
 # Plots of the fits to simulated data of the backlog of deaths (simulations
-# batches 2 to 4) beside the truth: the fatal cases of each onset day, the share in
+# batches 2 to 6) beside the truth: the fatal cases of each onset day, the share in
 # the backlog, the rate at which it is cleared and the totals.
 # Usage: Rscript scripts/plot_backlog_simulations.R <folder of results of the batch> [folder of plots]
 # where the folder (of experiment-results) holds by_dataset.csv and draws/.
@@ -23,7 +23,19 @@ labels <- c(
   hold_before = "Held backlog\nfit on day 50",
   hold_late = "Held, cleared\nfrom day 80", hold_steady = "Held, constant\nshare and rate",
   hold_none = "No backlog\n(fit with hold)",
-  hold_not_simulated = "Backlog not held\n(fit with hold)")
+  hold_not_simulated = "Backlog not held\n(fit with hold)",
+  hold_truth_start = "Started at truth\nfit on day 90", hold_mid_truth_start = "Started at truth\nfit on day 63",
+  hold_before_truth_start = "Started at truth\nfit on day 50",
+  hold_cfr_fixed = "CFR held\nfit on day 90", hold_mid_cfr_fixed = "CFR held\nfit on day 63",
+  hold_before_cfr_fixed = "CFR held\nfit on day 50",
+  cleared = "Cleared backlog\nfit on day 90", cleared_early = "Cleared backlog\nfit on day 55",
+  real_like = "Like the outbreak\nfit to 7 October", real_like_0801 = "Like the outbreak\nfit to 1 August")
+# groups of scenarios plotted on their own
+groups <- list(
+  fatal_by_onset_truth_start.png = c("hold_truth_start", "hold_mid_truth_start", "hold_before_truth_start"),
+  fatal_by_onset_cfr_fixed.png = c("hold_cfr_fixed", "hold_mid_cfr_fixed", "hold_before_cfr_fixed"),
+  fatal_by_onset_cleared.png = c("cleared", "cleared_early"),
+  fatal_by_onset_real_like.png = c("real_like", "real_like_0801"))
 # the main scenarios (fits on days 90, 63 and 50) and the checks
 main_names <- c("backlog", "backlog_fit_f", "backlog_mid", "backlog_mid_fit_f", "backlog_before",
                 "backlog_before_fit_f", "hold", "hold_fit_f", "hold_mid", "hold_mid_fit_f",
@@ -91,7 +103,11 @@ f_fatal <- function(wanted, file, ncol = 2, height = 8) {
   ggsave(file.path(out, file), g, width = 9, height = height, dpi = 150)
 }
 main <- intersect(main_names, scenarios)
-checks <- setdiff(scenarios, main_names)
+checks <- setdiff(scenarios, c(main_names, unlist(groups)))
+for(file in names(groups)) {
+  wanted <- intersect(groups[[file]], scenarios)
+  if(length(wanted) > 0) f_fatal(wanted, file, height = 1.9 * length(wanted) + 1)
+}
 # named for what they show: option (f) only when it was fitted
 main_file <- if(any(grepl("_fit_f$", main))) "fatal_by_onset_backlog_vs_f.png" else
   "fatal_by_onset_fit_days.png"
@@ -112,13 +128,14 @@ g <- ggplot(share, aes(x = time_onset)) +
   facet_grid(label ~ replicate) +
   labs(x = "Day of onset", y = "Share of deaths in the backlog") +
   theme_bw() + theme(strip.text.y = element_text(size = 8))
-ggsave(file.path(out, "backlog_share.png"), g, width = 8, height = 9, dpi = 150)
+ggsave(file.path(out, "backlog_share.png"), g, width = 8, height = 1.2 * length(scenarios) + 1.5,
+       dpi = 150, limitsize = FALSE)
 
 # the rate the backlog is cleared at: each rate holds from the report before
 # to its report
 columns <- grep("^backlog_rate_[0-9]+$", names(parameters), value = TRUE)
 rate_draws <- parameters %>%
-  dplyr::select("scenario", "replicate", dplyr::all_of(columns)) %>%
+  dplyr::select("scenario", "replicate", "chain", "iteration", dplyr::all_of(columns)) %>%
   tidyr::pivot_longer(dplyr::all_of(columns), names_to = "report", values_to = "rate") %>%
   dplyr::filter(!is.na(.data$rate)) %>%
   dplyr::mutate(report = as.integer(sub("backlog_rate_", "", .data$report)))
@@ -146,10 +163,53 @@ g <- ggplot(rate_days, aes(x = day)) +
   geom_step(data = rate_truth, aes(y = rate), colour = "black", direction = "mid") +
   scale_y_log10() +
   facet_grid(label ~ replicate) +
-  labs(x = "Day (a report each day from day 40; the first rate covers days 1 to 40)",
+  labs(x = "Day (the first rate covers the days to the first report)",
        y = "Rate the backlog is cleared at (per day)") +
   theme_bw() + theme(strip.text.y = element_text(size = 8))
-ggsave(file.path(out, "backlog_rate.png"), g, width = 8, height = 9, dpi = 150)
+ggsave(file.path(out, "backlog_rate.png"), g, width = 8, height = 1.2 * length(scenarios) + 1.5,
+       dpi = 150, limitsize = FALSE)
+
+# the ridge: for each iteration, the mean logit share of the onset days
+# before the first report against the mean log rate, beside the truth
+first_reports <- shown %>% dplyr::distinct(.data$scenario, .data$replicate, .data$first_report)
+ridge <- deaths %>%
+  dplyr::filter(!is.na(.data$backlog_share)) %>%
+  dplyr::inner_join(first_reports, by = c("scenario", "replicate")) %>%
+  dplyr::filter(.data$time_onset < .data$first_report) %>%
+  dplyr::group_by(.data$scenario, .data$replicate, .data$chain, .data$iteration) %>%
+  dplyr::summarise(share = mean(stats::qlogis(.data$backlog_share)), .groups = "drop") %>%
+  dplyr::inner_join(rate_draws %>%
+                      dplyr::group_by(.data$scenario, .data$replicate, .data$chain, .data$iteration) %>%
+                      dplyr::summarise(rate = mean(log(.data$rate)), .groups = "drop"),
+                    by = c("scenario", "replicate", "chain", "iteration"))
+truth_share <- truth %>%
+  dplyr::inner_join(first_reports, by = c("scenario", "replicate")) %>%
+  dplyr::filter(.data$time_onset < .data$first_report, .data$backlog_share > 0) %>%
+  dplyr::group_by(.data$scenario, .data$replicate) %>%
+  dplyr::summarise(share = mean(stats::qlogis(.data$backlog_share)), .groups = "drop")
+# the true rate of each interval between the reports fitted, averaged on the log scale
+truth_rate <- rate_band %>%
+  dplyr::inner_join(rates, by = c("scenario", "replicate"), relationship = "many-to-many") %>%
+  dplyr::filter(.data$day > .data$start, .data$day <= .data$report) %>%
+  dplyr::group_by(.data$scenario, .data$replicate, .data$report) %>%
+  dplyr::summarise(rate = mean(.data$rate), .groups = "drop") %>%
+  dplyr::group_by(.data$scenario, .data$replicate) %>%
+  dplyr::summarise(rate = mean(log(.data$rate)), .groups = "drop")
+ridge_truth <- dplyr::inner_join(truth_share, truth_rate, by = c("scenario", "replicate")) %>%
+  dplyr::mutate(label = f_label(.data$scenario), replicate = paste("Dataset", .data$replicate))
+if(nrow(ridge) > 0) {
+  g <- ggplot(dplyr::mutate(ridge, label = f_label(.data$scenario),
+                            replicate = paste("Dataset", .data$replicate)),
+              aes(x = share, y = rate)) +
+    geom_point(aes(colour = factor(chain)), size = 0.5, alpha = 0.5) +
+    geom_point(data = ridge_truth, shape = 4, size = 3, stroke = 1.2) +
+    facet_grid(label ~ replicate) +
+    labs(x = "Mean logit share, onset days before the first report",
+         y = "Mean log clearing rate over the reports", colour = "Chain") +
+    theme_bw() + theme(strip.text.y = element_text(size = 8), legend.position = "bottom")
+  ggsave(file.path(out, "ridge.png"), g, width = 7, height = 1.6 * length(scenarios) + 1.5,
+         dpi = 150, limitsize = FALSE)
+}
 
 # the totals of fatal cases: all days and onsets before the first report
 by_dataset <- utils::read.csv(file.path(folder, "by_dataset.csv")) %>%
