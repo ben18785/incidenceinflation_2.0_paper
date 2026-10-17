@@ -1028,7 +1028,10 @@ S^{U}(d\given t')=(1-b_t)\,S_{\mathrm{gamma}}(t'-d\given\mu^{d},\sigma^{d})
 for a death on day $d$ of a case with onset on day $t$. The rest of the
 model is unchanged: \eqref{eq:sdbacklog} enters the triggered and misdated
 parts as $S^{D}$ does now, and for a case dated by death the backlog share is
-that of its day of onset.
+that of the day it is recorded for, its day of death, not that of its day of
+onset. A case with onset on day $t$ which dies on day $d$ and is dated by
+death joins the backlog with probability $b_d$, the share of the day the
+reports count it on.
 
 \paragraph{The backlog share.} $b_t$ varies with onset day, as a random walk
 on the logit scale over onset weeks $k$:
@@ -1156,8 +1159,9 @@ F^{B}(t)\given F(t),F^{d}(t)\sim\bin\bigl(F(t)-F^{d}(t),\ b_t\bigr)
 \]
 join the backlog and the other $F^{P}(t)=F(t)-F^{d}(t)-F^{B}(t)$ are
 recorded promptly. The cases dated by death are split in the same way, with
-the share of their day of onset: each $W(t,z)$ of \eqref{eq:lags} becomes
-$W^{P}(t,z)+W^{B}(t,z)$, and the cases recorded for day $t$ dated by death are
+the share of the day they are recorded for, their day of death: each
+$W(t,z)$ of \eqref{eq:lags} becomes $W^{P}(t,z)+W^{B}(t,z)$, with
+$W^{B}(t,z)\given W(t,z)\sim\bin\bigl(W(t,z),\ b_{t+z}\bigr)$, and the cases recorded for day $t$ dated by death are
 $G^{P}(t)+G^{B}(t)$, with $G^{B}(t)=\sum_{z\ge1}W^{B}(t-z,z)$.
 
 \paragraph{Two simpler delays.} Each group has a delay without a mixture:
