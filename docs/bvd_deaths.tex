@@ -1145,7 +1145,8 @@ case has the mixture \eqref{eq:backlog} as its delay. An equivalent version
 keeps that split as unobserved counts, as the exact form of
 \S\ref{sec:dated} keeps the cases dated by death. It has the same posterior
 for $b$, $\lambda$ and the counts, since given the parameters the cases are
-independent and summing over the split gives back the mixture. What changes
+independent and summing over the split gives back the mixture (derived
+below). What changes
 is how the sampler moves, and which extensions are easy to write.
 
 \paragraph{The partition.} Of the fatal cases with onset on day $t$ which are
@@ -1171,6 +1172,121 @@ count of deaths newly shown in a report (such as $\dnew$ and $\dold$) is
 split into a prompt and a backlog part, and only their sum is constrained by
 the reports. The cases dated by death are treated the same way, with the
 delay from death of their group.
+
+\subsubsection*{Why the two forms have the same posterior}
+
+The summed form is the hazard model of this subsection with the split
+$F^{B}$, $W^{B}$ and the prompt and backlog parts of each hidden count
+summed out. So the two have the same posterior for everything they share:
+$b$, $\lambda$, the standard deviations of their walks, the true cases and
+fatal cases, and every other parameter and hidden count. The argument has
+three steps.
+
+\paragraph{Step 1: one fatal case.} Take a fatal case of onset day $t$
+dated by onset. Given the parameters it has
+\begin{itemize}
+\item a delay $R$ to its being reported, with survival $S^{C,F}$, and, if a
+death can bring about the report of its case, an indicator of whether its
+death would bring its report;
+\item a group $Z$, backlog ($Z=B$) with probability $b_t$ and prompt ($Z=P$)
+otherwise;
+\item a delay $D$ to its death being recorded, with survival $S^{D,B}$ if
+$Z=B$ and $S^{D,P}$ if $Z=P$.
+\end{itemize}
+Two assumptions are made: $Z$ is independent of $R$ and of the indicator,
+and, given $Z$, $D$ is independent of both. The reports show the case
+through its history, $H=(k,l)$: the report in which it first appears, $k$,
+and the report in which it is first shown as dead, $l\ge k$ (with $l=\infty$
+if not yet). $H$ is a function of $R$, $D$ and the indicator, and not of $Z$.
+So
+\[
+P(H=h)=(1-b_t)\,P(H=h\given Z=P)+b_t\,P(H=h\given Z=B).
+\]
+Every probability of $H$ is the expectation, over $D$, of a probability
+which does not involve $Z$. For example, without triggering and for $l>k$,
+\[
+P(H=(k,l))=\bigl[S^{C,F}(t\given t_{k-1})-S^{C,F}(t\given t_k)\bigr]
+\bigl[S^{D}(t\given t_{l-1})-S^{D}(t\given t_l)\bigr].
+\]
+A probability of this kind is linear in the distribution of $D$. Mixing the
+two groups' probabilities of $H$ therefore gives the probability computed
+from the mixture $S^{D}=(1-b_t)S^{D,P}+b_tS^{D,B}$ of
+\eqref{eq:sdbacklog} and \eqref{eq:backlog}. That probability is what the
+summed form uses. The same holds with triggering, where $H$ depends on $D$
+through $\min(R,D)$ as well, and for the cases dated by death.
+
+\paragraph{Step 2: the chain of binomials is the probability of the
+histories.} The binomials \eqref{eq:a}, \eqref{eq:x} and \eqref{eq:y}
+factorise the probability of the histories report by report, and this
+factorisation holds whatever the distribution of $D$. Take a case first
+reported in report $k$ and first shown dead in report $l>k$. The chain gives
+it
+\begin{itemize}
+\item the probability of being reported in report $k$;
+\item $S^{D}(t\given t_k)$ for being shown alive there;
+\item $S^{D}(t\given t_m)/S^{D}(t\given t_{m-1})$ for each report $m=k+1$ to
+$l-1$ in which it stays alive;
+\item $1-S^{D}(t\given t_l)/S^{D}(t\given t_{l-1})$ for report $l$.
+\end{itemize}
+The product telescopes to the probability above. The binomial in
+\eqref{eq:y} uses a ratio of mixtures, not a mixture of the two groups'
+ratios:
+\[
+1-\frac{S^{D}(t\given t_j)}{S^{D}(t\given t_{j-1})}
+=(1-w_j)\Bigl[1-\frac{S^{D,P}(t\given t_j)}{S^{D,P}(t\given t_{j-1})}\Bigr]
++w_j\Bigl[1-\frac{S^{D,B}(t\given t_j)}{S^{D,B}(t\given t_{j-1})}\Bigr],
+\qquad
+w_j=\frac{b_t\,S^{D,B}(t\given t_{j-1})}{S^{D}(t\given t_{j-1})}.
+\]
+$w_j$ is the probability that a death not recorded by $t_{j-1}$ is in the
+backlog. It rises towards one as the prompt deaths are recorded. It is the
+same for every case shown as alive at $t_{j-1}$, since it depends on the case
+only through the fact that its death had not been recorded by then. Those
+cases are therefore exchangeable, each recorded by $t_j$ with the same
+probability, and the binomial for their number is exact. The summed form
+does not lose track of how many of those waiting are in the backlog: it
+carries the expected share, $w_j$, through the ratio of mixtures.
+
+\paragraph{Step 3: summing out the split.} Given the parameters, the fatal
+cases are independent, each with its own $(R,Z,D)$. The hidden counts of the
+explicit form are the numbers of cases in each group with each history. The
+counts of the summed form are the sums of these over the two groups. Both
+are therefore summaries of the same per-case variables, the second coarser
+than the first. The probability of the summed counts is the sum of the
+probability of the explicit counts over the splits which add up to them:
+\[
+P_{\mathrm{summed}}(\text{counts}\given\text{parameters})
+=\sum_{\text{splits}}P_{\mathrm{explicit}}(\text{counts},\text{split}\given\text{parameters}).
+\]
+The priors are the same, so
+\[
+p_{\mathrm{summed}}(\text{parameters},\text{counts}\given\text{reports})
+=\sum_{\text{splits}}p_{\mathrm{explicit}}(\text{parameters},\text{counts},\text{split}\given\text{reports}).
+\]
+The posterior of the summed form is the marginal posterior of the explicit
+form, which has the posterior of the split besides.
+
+\paragraph{What this rests on.}
+\begin{itemize}
+\item \emph{Independence of the cases given the parameters.} The hazard
+model has it: whether one death waiting is recorded does not depend on how
+many others are waiting. The capacity model does not: all the deaths waiting
+share the $K_j$ cleared. It has no mixture for a single case to sum to,
+which is why it can only be written in the explicit form.
+\item \emph{The group independent of the rest of the case.} The share $b_t$
+does not depend on how fast the case was reported or on whether its death
+brought its report.
+\item \emph{The same share and delays in both forms.} This includes the share
+used for the cases dated by death.
+\item \emph{The uncorrected series} (\S\ref{sec:correction}). Each series is summed on its own, so the group of a
+case in one series is not tied to its group in the other, as its delay is
+not. An explicit form gives the same posterior only if it splits each
+series on its own as well.
+\end{itemize}
+Since the posteriors are the same, a choice between the two forms of the
+hazard model is a choice of sampler: their effective samples per second for
+$b$ and $\lambda$ are the measure. The extensions below, which change how
+many deaths are cleared, are not equivalent to any summed form.
 
 \paragraph{Updating the clearing rate.} Given the split, $\lambda_j$ enters
 only the binomials of backlog deaths in the interval from $t_{j-1}$ to
