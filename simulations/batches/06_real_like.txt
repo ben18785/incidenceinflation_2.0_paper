@@ -1,0 +1,11 @@
+# Like the outbreak: the fit of the backlog held 21 days to the reports of 7
+# October taken as the truth (simulations/truth/), simulated on the
+# outbreak's onset and report days, and fitted to all reports and to those to
+# 1 August. One dataset, three chains, each stopped after 300 minutes.
+package: ben18785/incidenceinflation_2.0@backlog
+replicates: 1
+chains: 3
+iterations: 500
+time_limit: 300
+real_like
+real_like_0801
