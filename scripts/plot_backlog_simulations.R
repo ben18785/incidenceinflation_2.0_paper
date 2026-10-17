@@ -31,7 +31,7 @@ main_names <- c("backlog", "backlog_fit_f", "backlog_mid", "backlog_mid_fit_f", 
 # the scenarios of the batch
 scenarios <- intersect(names(labels),
                        utils::read.csv(file.path(folder, "by_dataset.csv"))$scenario)
-f_label <- function(x) factor(labels[x], levels = labels)
+f_label <- function(x) factor(labels[x], levels = unique(labels[scenarios]))
 
 # the truth: the datasets are made again from their seeds
 datasets <- tidyr::expand_grid(scenario = scenarios, replicate = 1:2)
@@ -164,7 +164,7 @@ totals <- dplyr::bind_rows(
   by_dataset %>% dplyr::transmute(scenario, replicate, what = "Latest 14 onset days",
                                   truth = deaths_recent_true, mid = deaths_recent,
                                   lo = deaths_recent_lo, hi = deaths_recent_hi)) %>%
-  dplyr::mutate(label = factor(labels[.data$scenario], levels = rev(labels)),
+  dplyr::mutate(label = factor(labels[.data$scenario], levels = rev(unique(labels[scenarios]))),
                 what = factor(.data$what, levels = c("All onset days",
                                                      "Onsets before the first report",
                                                      "Latest 14 onset days")),

@@ -35,6 +35,9 @@ bvd_projection_draws <- function(fits, snapshots_all, date_later, n_draws = 100,
     snapshots_all$date_reported > analysis$date_now &
       snapshots_all$date_reported <= date_later]) - day_first) + 1
   is_misdated <- "dated_fraction" %in% names(fits[[1]]$deaths_parameters)
+  # the holding period of a backlog, which its label gives ("backlog held 21 days")
+  held <- regmatches(fits[[1]]$model, regexpr("backlog held [0-9]+ days", fits[[1]]$model))
+  backlog_hold_days <- if(length(held) == 1) as.numeric(gsub("[^0-9]", "", held)) else 0
   lags <- ii$lag_probabilities_gamma(onset_to_death$mean, onset_to_death$sd)
   # the probability, from the fit date to the later report, that one of a set
   # of kinds of case not shown yet is shown
@@ -72,6 +75,26 @@ bvd_projection_draws <- function(fits, snapshots_all, date_later, n_draws = 100,
           report_log_effects = c(log(unlist(parameters[columns])),
                                  stats::rnorm(length(days_later), 0,
                                               parameters$recording_report_sd)))))
+      }
+      # where deaths join a backlog: its share for each onset day and its
+      # hazard for each report interval fitted, and for the reports after the
+      # fit date, hazards drawn from its random walk
+      if(is_misdated && !is.null(parameters$backlog_rate_rw_sd)) {
+        columns <- grep("^backlog_rate_[0-9]+$", names(parameters), value = TRUE)
+        days_fitted <- as.numeric(sub("backlog_rate_", "", columns))
+        days_later <- sort(setdiff(t_later_reports, days_fitted))
+        gaps <- diff(c(max(days_fitted), days_later))
+        log_rate <- log(unlist(parameters[columns]))
+        log_rate_later <- log_rate[length(log_rate)] +
+          cumsum(stats::rnorm(length(days_later), 0,
+                              parameters$backlog_rate_rw_sd * sqrt(gaps / 7)))
+        recording_effects$tail <- NULL
+        recording_effects$backlog <- ii$refresh_backlog(list(
+          logit_share = stats::qlogis(deaths$backlog_share),
+          week_of_day = seq_len(nrow(deaths)),
+          log_rate = c(log_rate, log_rate_later),
+          report_days = c(days_fitted, days_later),
+          hold_days = backlog_hold_days))
       }
       tau <- parameters$triggered
       F <- t(vapply(seq_len(t_now), function(t) {
