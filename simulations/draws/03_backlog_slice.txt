@@ -1,0 +1,3 @@
+# Thinned draws of simulations batch 3 (the backlog with its new sampler).
+run: 38945715276
+dir: simulations/2026-10-16_3_03_backlog_slice
