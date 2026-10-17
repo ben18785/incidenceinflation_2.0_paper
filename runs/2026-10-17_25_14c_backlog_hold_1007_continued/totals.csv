@@ -1,0 +1,7 @@
+"experiment","model","date_now","count","onset_days","median","lo","hi","rhat","recorded_07Oct"
+"joint_no_tail_misdated_triggered_july_backlog_1007","joint, no tail, counted on day of death, deaths bring reports, recording delay fixed to 31 July, backlog held 21 days",2026-10-07,"cases","all",7203,7144,7278.05,1.06329937237993,6782
+"joint_no_tail_misdated_triggered_july_backlog_1007","joint, no tail, counted on day of death, deaths bring reports, recording delay fixed to 31 July, backlog held 21 days",2026-10-07,"cases","latest 28",1439,1381,1513.05,1.06224734841165,1018
+"joint_no_tail_misdated_triggered_july_backlog_1007","joint, no tail, counted on day of death, deaths bring reports, recording delay fixed to 31 July, backlog held 21 days",2026-10-07,"cases","latest 14",742,689,809.1,1.04040018587207,363
+"joint_no_tail_misdated_triggered_july_backlog_1007","joint, no tail, counted on day of death, deaths bring reports, recording delay fixed to 31 July, backlog held 21 days",2026-10-07,"deaths","all",3337,3285,3388.05,1.1951105352504,3031
+"joint_no_tail_misdated_triggered_july_backlog_1007","joint, no tail, counted on day of death, deaths bring reports, recording delay fixed to 31 July, backlog held 21 days",2026-10-07,"deaths","latest 28",674.5,629,719.05,1.15824403292121,382
+"joint_no_tail_misdated_triggered_july_backlog_1007","joint, no tail, counted on day of death, deaths bring reports, recording delay fixed to 31 July, backlog held 21 days",2026-10-07,"deaths","latest 14",350,317,386,1.07838686624249,120
