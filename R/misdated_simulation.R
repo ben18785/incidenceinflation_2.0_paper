@@ -50,7 +50,16 @@ misdated_scenarios <- function() {
     "backlog_fit_tail", "Backlog, fitted with a tail alone", "A backlog of deaths", "A tail with a constant rate and share.",
     "backlog_late", "Backlog cleared only from day 80", "A backlog of deaths", "Little of the backlog has been seen by the end.",
     "backlog_steady", "Backlog with a constant share (0.2) and rate (1/40), fitted with the backlog", "A backlog of deaths", "The exponential tail as a special case: is anything lost?",
-    "backlog_none", "No backlog, fitted with the backlog", "A backlog of deaths", "Is a backlog found where there is none?")
+    "backlog_none", "No backlog, fitted with the backlog", "A backlog of deaths", "Is a backlog found where there is none?",
+    "hold", "Backlog held 21 days after death, fitted with the holding period", "A backlog with a holding period", "Are the share, the clearing rate and the deaths still to be recorded recovered?",
+    "hold_fit_f", "Backlog held 21 days, fitted with option f", "A backlog with a holding period", "The same, with the model fitted to the outbreak.",
+    "hold_mid", "Backlog held 21 days, fitted on day 63 with the holding period", "A backlog with a holding period", "Part way through the clearing.",
+    "hold_mid_fit_f", "Backlog held 21 days, fitted on day 63 with option f", "A backlog with a holding period", "The same, with the model fitted to the outbreak.",
+    "hold_before", "Backlog held 21 days, fitted on day 50 with the holding period", "A backlog with a holding period", "Before the clearing.",
+    "hold_late", "Backlog held 21 days and cleared only from day 80", "A backlog with a holding period", "Little of the backlog has been seen by the end.",
+    "hold_steady", "Backlog held 21 days, constant share (0.2) and rate (1/40)", "A backlog with a holding period", "A constant backlog.",
+    "hold_none", "No backlog, fitted with the holding period", "A backlog with a holding period", "Is a backlog found where there is none?",
+    "hold_not_simulated", "Backlog with no holding period, fitted with one of 21 days", "A backlog with a holding period", "Deaths of the backlog cleared within 21 days are put in the ordinary delay.")
 }
 
 #' How each scenario is simulated and fitted
@@ -107,6 +116,12 @@ misdated_scenario_settings <- function(scenario) {
       share = function(t) pmin(0.4, pmax(0.1, 0.4 - 0.3 * (t - 30) / 30)),
       rate = f_rate(list(days = 1:50, rate = 0.003), list(days = 51:75, rate = 0.05),
                     list(days = 76:90, rate = 0.015)))))
+  # a backlog held 21 days after death, fitted with the holding period
+  fit <- list(fit_backlog = list(hold_days = 21))
+  f_hold <- function(truth, fitted) {
+    truth$recording_backlog$hold_days <- 21
+    c(truth, fitted)
+  }
   changes <- list(
     base = list(),
     tau_0 = list(triggered = f_constant(0)),
@@ -153,7 +168,19 @@ misdated_scenario_settings <- function(scenario) {
     backlog_steady = c(backlog_days, list(
       recording_backlog = list(share = f_constant(0.2), rate = rep(1 / 40, 90)),
       fit_backlog = TRUE)),
-    backlog_none = c(backlog_days, list(fit_backlog = TRUE)))
+    backlog_none = c(backlog_days, list(fit_backlog = TRUE)),
+    hold = f_hold(backlog, fit),
+    hold_fit_f = f_hold(backlog, list(fit_tail = TRUE, fit_report = TRUE)),
+    hold_mid = f_hold(backlog, c(fit, list(fit_until = 63))),
+    hold_mid_fit_f = f_hold(backlog, list(fit_tail = TRUE, fit_report = TRUE, fit_until = 63)),
+    hold_before = f_hold(backlog, c(fit, list(fit_until = 50))),
+    hold_late = f_hold(c(backlog_days, list(recording_backlog = list(
+      share = backlog$recording_backlog$share,
+      rate = f_rate(list(days = 1:79, rate = 0.003), list(days = 80:90, rate = 0.05))))), fit),
+    hold_steady = f_hold(c(backlog_days, list(recording_backlog = list(
+      share = f_constant(0.2), rate = rep(1 / 40, 90)))), fit),
+    hold_none = c(backlog_days, fit),
+    hold_not_simulated = c(backlog, fit))
   if(!scenario %in% names(changes))
     stop(paste0("Unknown scenario: ", scenario, "."))
   out <- defaults
@@ -199,7 +226,8 @@ simulate_misdated_dataset <- function(scenario, replicate) {
     recording_tail = settings$recording_tail,
     recording_backlog = if(!is.null(settings$recording_backlog))
       list(share = settings$recording_backlog$share(days),
-           rate = settings$recording_backlog$rate))
+           rate = settings$recording_backlog$rate,
+           hold_days = settings$recording_backlog$hold_days))
   if(!is.null(settings$fit_until)) {
     keep <- seq_len(settings$fit_until)
     sim$snapshots <- dplyr::filter(sim$snapshots, .data$time_reported <= settings$fit_until,

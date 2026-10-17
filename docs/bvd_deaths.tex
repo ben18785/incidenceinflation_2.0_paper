@@ -1071,6 +1071,23 @@ day informs $b_t$ through all the reports which add to it. The travelling
 wave of Figure~\ref{fig:backlogwave} is this product: the profile of $B$ over
 onset days, read off at the delays $t_j-t$.
 
+\paragraph{A holding period.} Without more structure, a backlog cleared
+within a few days cannot be told from the prompt delay. A fit can move deaths
+of recent onset days into a backlog with a high clearing rate, and the same
+high rate then empties the backlog of old onset days too soon. In fits to
+simulated data this made the clearing rate rise over the latest reports
+whatever its true course, and the deaths still to be recorded for old onset
+days were undercounted. A holding period of $m$ days removes this: a death in
+the backlog cannot be recorded until $m$ days after the death, so that in
+\eqref{eq:backlog} $\Lambda(d,t')$ is replaced by
+\[
+\Lambda_m(d,t')=\sum_{s=d+m+1}^{t'}\lambda_s,
+\]
+which is zero for $t'\le d+m$. With $m$ beyond nearly all of the prompt delay
+(say $m=21$ days), the clearing rate is informed only by deaths at least $m$
+days old, which is what the backlog is meant to describe. $m=0$ is the model
+above.
+
 \paragraph{Option (f) as a special case.} With $b_t=\omega^{d}$ for all $t$ and
 $\lambda_s=\psi^{d}_{w(j(s))}e^{\varepsilon_{j(s)}}/m^{d}$, \eqref{eq:backlog} is
 option (f). The proposal changes two things: the share varies with onset
@@ -1086,9 +1103,16 @@ states it, where option (f) states with confidence that the backlog is
 empty.
 
 \paragraph{Fitting.} Given $b$ and $\lambda$, onset days are independent, as
-now, so the sampler for the counts is unchanged. $b$ and $\lambda$ are
-updated by Metropolis given the paths, in blocks of consecutive weeks or
-reports, in place of the updates of $\omega^{d}$, $m^{d}$ and $\varepsilon_j$.
+now, so the sampler for the counts is unchanged. In place of the updates of
+$\omega^{d}$, $m^{d}$ and $\varepsilon_j$, each random walk ($\operatorname{logit}b$
+and $\log\lambda$) is drawn whole by elliptical slice sampling given its
+standard deviation. Each standard deviation is then updated twice: with its
+walk held, and with the steps of its walk scaled with it (a non-centred
+update). A last move raises the shares and lowers the rates together, along
+the ridge on which the trickle of deaths cleared early is little changed.
+Metropolis updates in blocks of weeks or reports were tried first; they left
+the standard deviation of the rate walk near zero and the rate path flat,
+because a walk and its standard deviation cannot move far one at a time.
 $\Lambda$ is a cumulative sum over calendar days, computed once per update.
 
 \paragraph{An alternative not proposed first.} The deaths of June onsets
