@@ -1,13 +1,13 @@
 # Plots of the fits to simulated data of the backlog of deaths (simulations
 # batch 2) beside the truth: the fatal cases of each onset day, the share in
 # the backlog, the rate at which it is cleared and the totals.
-# Usage: Rscript scripts/plot_backlog_simulations.R <folder of results of the batch>
+# Usage: Rscript scripts/plot_backlog_simulations.R <folder of results of the batch> [folder of plots]
 # where the folder (of experiment-results) holds by_dataset.csv and draws/.
 args <- commandArgs(trailingOnly = TRUE)
 suppressMessages({library(dplyr); library(tidyr); library(ggplot2); library(targets)})
 tar_source("R")
 folder <- args[1]
-out <- "outputs/backlog_simulations"
+out <- if(length(args) > 1) args[2] else "outputs/backlog_simulations"
 dir.create(out, recursive = TRUE, showWarnings = FALSE)
 
 labels <- c(
@@ -18,7 +18,9 @@ labels <- c(
   backlog_fit_tail = "Tail alone\nfit on day 90",
   backlog_late = "Backlog cleared\nfrom day 80", backlog_steady = "Constant share\nand rate",
   backlog_none = "No backlog")
-scenarios <- names(labels)
+# the scenarios of the batch
+scenarios <- intersect(names(labels),
+                       utils::read.csv(file.path(folder, "by_dataset.csv"))$scenario)
 f_label <- function(x) factor(labels[x], levels = labels)
 
 # the truth: the datasets are made again from their seeds
@@ -78,8 +80,10 @@ f_fatal <- function(wanted, file, ncol = 2, height = 8) {
     theme_bw() + theme(legend.position = "bottom", strip.text.y = element_text(size = 8))
   ggsave(file.path(out, file), g, width = 9, height = height, dpi = 150)
 }
-f_fatal(scenarios[1:6], "fatal_by_onset_backlog_vs_f.png", height = 10)
-f_fatal(scenarios[7:10], "fatal_by_onset_checks.png", height = 7.5)
+main <- intersect(names(labels)[1:6], scenarios)
+checks <- intersect(names(labels)[7:10], scenarios)
+f_fatal(main, "fatal_by_onset_backlog_vs_f.png", height = 1.7 * length(main))
+f_fatal(checks, "fatal_by_onset_checks.png", height = 1.9 * length(checks))
 
 # the share in the backlog by onset day
 share <- f_band(deaths %>% dplyr::filter(!is.na(.data$backlog_share)), "backlog_share",
