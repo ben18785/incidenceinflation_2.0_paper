@@ -73,6 +73,13 @@ misdated_scenarios <- function() {
     "cleared_no_triggered", "Cleared backlog, no death brings the report", "Is the backlog identified?", "Do the reports brought by deaths bias the clearing rate?",
     "cleared_dated_relaxed", "Cleared backlog, no death brings the report, fitted without", "Is the backlog identified?", "The cases dated by death alone, in the usual (relaxed) form.",
     "cleared_dated_exact", "The same, fitted with the exact form of the cases dated by death", "Is the backlog identified?", "Is the bias that of the relaxed form?",
+    "cleared_exact", "Cleared backlog, fitted with the exact form of the cases dated by death", "Is the backlog identified?", "With the reports brought by deaths too: is the bias gone?",
+    "hold_exact", "Backlog held 21 days, fitted with the holding period and the exact form", "The exact form", "Are the share, the clearing rate and the deaths still to be recorded recovered?",
+    "hold_mid_exact", "Backlog held 21 days, fitted on day 63 in the exact form", "The exact form", "Part way through the clearing.",
+    "hold_before_exact", "Backlog held 21 days, fitted on day 50 in the exact form", "The exact form", "Before the clearing.",
+    "hold_none_exact", "No backlog, fitted with the holding period in the exact form", "The exact form", "Is a backlog found where there is none?",
+    "real_like_exact", "Like the outbreak, fitted to all reports in the exact form", "The exact form", "The fit to 7 October as the truth.",
+    "real_like_0801_exact", "Like the outbreak, fitted to the reports to 1 August in the exact form", "The exact form", "Part way through the clearing.",
     "real_like", "Like the outbreak (the fit to 7 October as truth), fitted to all reports", "Like the outbreak", "How well are the share and rate recovered in the outbreak's setting?",
     "real_like_0801", "Like the outbreak, fitted to the reports to 1 August (day 83)", "Like the outbreak", "The same at the stage of the fit to 1 August.")
 }
@@ -147,6 +154,8 @@ misdated_scenario_settings <- function(scenario) {
   }
   # the case fatality ratio held near its truth (0.48, sd 0.005)
   cfr_fixed <- list(fit_cfr = list(alpha = 4800, beta = 5200))
+  # the exact form of the fatal cases dated by death
+  exact <- list(fit_dated_exact = TRUE)
   # a backlog cleared at a constant rate from the start, so that by day 90 the
   # backlogs of the early onset days are mostly cleared
   cleared <- f_hold(c(backlog_days, list(recording_backlog = list(
@@ -224,6 +233,14 @@ misdated_scenario_settings <- function(scenario) {
     cleared_dated_relaxed = c(cleared, list(triggered = f_constant(0), fit_triggered = FALSE)),
     cleared_dated_exact = c(cleared, list(triggered = f_constant(0), fit_triggered = FALSE,
                                           fit_dated_exact = TRUE)),
+    cleared_exact = c(cleared, list(fit_dated_exact = TRUE)),
+    hold_exact = f_hold(backlog, c(fit, exact)),
+    hold_mid_exact = f_hold(backlog, c(fit, exact, list(fit_until = 63))),
+    hold_before_exact = f_hold(backlog, c(fit, exact, list(fit_until = 50))),
+    hold_none_exact = c(backlog_days, fit, exact),
+    real_like_exact = if(startsWith(scenario, "real_like")) c(real_like_settings(), exact),
+    real_like_0801_exact = if(startsWith(scenario, "real_like"))
+      c(real_like_settings(), exact, list(fit_until = 83)),
     real_like = if(startsWith(scenario, "real_like")) real_like_settings(),
     real_like_0801 = if(startsWith(scenario, "real_like"))
       c(real_like_settings(), list(fit_until = 83)))

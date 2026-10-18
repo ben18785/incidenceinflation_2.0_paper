@@ -1,0 +1,17 @@
+# The exact form of the fatal cases dated by death (package commit 2510bac,
+# which makes it work with a backlog and with reports brought by deaths). In
+# the relaxed form the clearing rate was too high wherever cases are dated by
+# death (batches 5, 7 and 8). The held backlog fitted on days 90, 63 and 50,
+# no backlog, and the backlog cleared at a constant rate with and without
+# reports brought by deaths. The datasets are those of batches 4, 7 and 8.
+package: ben18785/incidenceinflation_2.0@backlog
+replicates: 2
+chains: 3
+iterations: 500
+time_limit: 240
+hold_exact
+hold_mid_exact
+hold_before_exact
+hold_none_exact
+cleared_exact
+cleared_dated_exact

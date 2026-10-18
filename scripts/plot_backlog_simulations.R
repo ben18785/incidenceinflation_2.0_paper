@@ -32,6 +32,10 @@ labels <- c(
   cleared_plain = "Cleared, no dated\nor triggered", cleared_no_dated = "Cleared, none\ndated by death",
   cleared_no_triggered = "Cleared, none\ntriggered",
   cleared_dated_relaxed = "Dated by death,\nrelaxed form", cleared_dated_exact = "Dated by death,\nexact form",
+  cleared_exact = "Cleared backlog,\nexact form",
+  hold_exact = "Exact form\nfit on day 90", hold_mid_exact = "Exact form\nfit on day 63",
+  hold_before_exact = "Exact form\nfit on day 50", hold_none_exact = "No backlog,\nexact form",
+  real_like_exact = "Like the outbreak,\nexact, 7 October", real_like_0801_exact = "Like the outbreak,\nexact, 1 August",
   real_like = "Like the outbreak\nfit to 7 October", real_like_0801 = "Like the outbreak\nfit to 1 August")
 # groups of scenarios plotted on their own
 groups <- list(
@@ -40,6 +44,9 @@ groups <- list(
   fatal_by_onset_cleared.png = c("cleared", "cleared_early"),
   fatal_by_onset_cleared_parts.png = c("cleared_plain", "cleared_no_dated", "cleared_no_triggered"),
   fatal_by_onset_dated_form.png = c("cleared_dated_relaxed", "cleared_dated_exact"),
+  fatal_by_onset_exact.png = c("hold_exact", "hold_mid_exact", "hold_before_exact"),
+  fatal_by_onset_exact_checks.png = c("cleared_exact", "cleared_dated_exact", "hold_none_exact"),
+  fatal_by_onset_real_like_exact.png = c("real_like_exact", "real_like_0801_exact"),
   fatal_by_onset_real_like.png = c("real_like", "real_like_0801"))
 # the main scenarios (fits on days 90, 63 and 50) and the checks
 main_names <- c("backlog", "backlog_fit_f", "backlog_mid", "backlog_mid_fit_f", "backlog_before",
