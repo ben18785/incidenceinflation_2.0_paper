@@ -433,7 +433,14 @@ fit_misdated_chain <- function(dataset, chain, niterations,
   time_limit <- as.numeric(Sys.getenv("PIPELINE_TIME_LIMIT_MISDATED", ""))
   is_backlog_check <- !isFALSE(options$fit_backlog) && !is.null(options$recording_backlog)
   time_start <- Sys.time()
-  fit <- tryCatch(
+  # the error, with the innermost functions it arose in
+  calls <- NULL
+  f_where <- function() {
+    names <- vapply(calls, function(x) paste(deparse(x[[1]]), collapse = ""), "")
+    names <- names[nchar(names) < 60 & !names %in% c(".handleSimpleError", "h", "stop")]
+    paste(utils::tail(names, 6), collapse = " > ")
+  }
+  fit <- tryCatch(withCallingHandlers(
     incidenceinflation::mcmc_single(
       niterations = niterations,
       snapshot_with_Rt_index_df = snapshots %>%
@@ -460,7 +467,8 @@ fit_misdated_chain <- function(dataset, chain, niterations,
       deaths = list(snapshot = snapshots %>%
                       dplyr::select("time_onset", "time_reported", "deaths_reported"),
                     settings = settings)),
-    error = function(e) list(error = conditionMessage(e)))
+    error = function(e) calls <<- sys.calls()),
+    error = function(e) list(error = paste0(conditionMessage(e), " (in ", f_where(), ")")))
   iterations_done <- if(is.null(fit$iterations_done)) niterations else fit$iterations_done
   out <- list(scenario = dataset$scenario, replicate = dataset$replicate,
               chain = chain, niterations = iterations_done,

@@ -2,6 +2,8 @@
 # October taken as the truth (simulations/truth/), simulated on the
 # outbreak's onset and report days, and fitted to all reports and to those to
 # 1 August. One dataset, three chains, each stopped after 300 minutes.
+# Run again: the cap on downward revisions is now found as the package
+# checks it, and the error of a failed chain says where it arose.
 package: ben18785/incidenceinflation_2.0@backlog
 replicates: 1
 chains: 3
