@@ -1,0 +1,7 @@
+# As batch 14 (the backlog of deaths held 21 days), in the exact form of the
+# fatal cases dated by death, with the fatal cases of each kind drawn given
+# the wrong records and then the wrong records given them (package 053b89c):
+# reports to 1 August and to 7 October.
+package: ben18785/incidenceinflation_2.0@backlog
+joint_no_tail_misdated_triggered_july_backlog_exact_0801
+joint_no_tail_misdated_triggered_july_backlog_exact_1007

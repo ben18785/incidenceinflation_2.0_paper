@@ -188,6 +188,21 @@ deaths_priors:
     recording_backlog: {hold_days: 21}
     label: "counted on day of death, deaths bring reports, recording delay fixed to 31 July, backlog held 21 days"
 
+  # as the last, in the exact form of the fatal cases dated by death: how
+  # many of the fatal cases recorded for each day are dated by death is
+  # fixed, not a probability for each (with the usual number of changes to
+  # them in each iteration)
+  misdated_triggered_july_backlog_exact: &misdated_triggered_july_backlog_exact
+    onset_to_death: {mean: 9.3, sd: 5.5}
+    dated_by_death: {fraction: {alpha: 1, beta: 1, initial: 0.25}, exact: true}
+    initial_delay: {mean: 3, sd: 2.5}
+    delay_prior: {mean_mu: 4, mean_sigma: 4, sd_mu: 4, sd_sigma: 4}
+    triggered: {alpha: 1, beta: 1}
+    fatal_delay: false
+    recording_fixed_until: 2026-07-31
+    recording_backlog: {hold_days: 21}
+    label: "counted on day of death (exact form), deaths bring reports, recording delay fixed to 31 July, backlog held 21 days"
+
 experiments:
   # reports to 5 September, deaths alone with no heavier tail
   deaths_0905: {model: deaths, tail: false}
@@ -309,6 +324,8 @@ experiments:
   # the backlog held 21 days in place of (f)'s tail, early and late
   joint_no_tail_misdated_triggered_july_backlog_0801: {model: joint, date: 2026-08-01, tail: false, deaths_prior: *misdated_triggered_july_backlog, iterations: 1500}
   joint_no_tail_misdated_triggered_july_backlog_1007: {model: joint, date: 2026-10-07, tail: false, deaths_prior: *misdated_triggered_july_backlog, iterations: 1500}
+  joint_no_tail_misdated_triggered_july_backlog_exact_0801: {model: joint, date: 2026-08-01, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1500}
+  joint_no_tail_misdated_triggered_july_backlog_exact_1007: {model: joint, date: 2026-10-07, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1500}
 
   # cases and deaths together
   joint_1001: {model: joint, date: 2026-10-01, iterations: 800}
