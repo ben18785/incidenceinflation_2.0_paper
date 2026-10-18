@@ -1,0 +1,10 @@
+# Like the outbreak (as batch 6), fitted in the exact form of the cases dated
+# by death: to all reports and to those to 1 August. One dataset, three
+# chains, each stopped after 330 minutes.
+package: ben18785/incidenceinflation_2.0@backlog
+replicates: 1
+chains: 3
+iterations: 500
+time_limit: 330
+real_like_exact
+real_like_0801_exact
