@@ -68,6 +68,9 @@ misdated_scenarios <- function() {
     "hold_before_cfr_fixed", "Backlog held 21 days, fitted on day 50, CFR held near its true value", "Is the backlog identified?", "The same, before the clearing.",
     "cleared", "Backlog held 21 days, constant rate 0.04 a day, fitted on day 90", "Is the backlog identified?", "The early onset days' backlogs are mostly cleared: are the share and rate recovered?",
     "cleared_early", "Backlog held 21 days, constant rate 0.04 a day, fitted on day 55", "Is the backlog identified?", "The same data before the early backlogs are cleared.",
+    "cleared_plain", "Cleared backlog, none counted on day of death and no death brings the report", "Is the backlog identified?", "Is the clearing rate still too high without these two mechanisms?",
+    "cleared_no_dated", "Cleared backlog, none counted on day of death", "Is the backlog identified?", "Do the cases dated by death bias the clearing rate?",
+    "cleared_no_triggered", "Cleared backlog, no death brings the report", "Is the backlog identified?", "Do the reports brought by deaths bias the clearing rate?",
     "real_like", "Like the outbreak (the fit to 7 October as truth), fitted to all reports", "Like the outbreak", "How well are the share and rate recovered in the outbreak's setting?",
     "real_like_0801", "Like the outbreak, fitted to the reports to 1 August (day 83)", "Like the outbreak", "The same at the stage of the fit to 1 August.")
 }
@@ -212,6 +215,9 @@ misdated_scenario_settings <- function(scenario) {
     hold_before_cfr_fixed = f_hold(backlog, c(fit, cfr_fixed, list(fit_until = 50))),
     cleared = cleared,
     cleared_early = c(cleared, list(fit_until = 55)),
+    cleared_plain = c(cleared, list(fraction = f_constant(0), triggered = f_constant(0))),
+    cleared_no_dated = c(cleared, list(fraction = f_constant(0))),
+    cleared_no_triggered = c(cleared, list(triggered = f_constant(0))),
     real_like = if(startsWith(scenario, "real_like")) real_like_settings(),
     real_like_0801 = if(startsWith(scenario, "real_like"))
       c(real_like_settings(), list(fit_until = 83)))
@@ -364,11 +370,13 @@ fit_misdated_chain <- function(dataset, chain, niterations,
     dplyr::mutate(cases_true = ceiling(
       .data$cases_true * (1 + c(2, 1.5, 2.5)[k] * exp(-days_before_end / 4)) +
         5 * (days_before_end < 5)))
+  # the largest fall of the count of an onset day below its largest earlier
+  # count, as checked by the package
   f_largest_fall <- function(column) {
     falls <- snapshots %>%
       dplyr::group_by(.data$time_onset) %>%
       dplyr::arrange(.data$time_reported, .by_group = TRUE) %>%
-      dplyr::summarise(fall = max(c(0, -diff(.data[[column]]))))
+      dplyr::summarise(fall = max(cummax(.data[[column]]) - .data[[column]]))
     max(falls$fall)
   }
   max_erroneous <- max(2, f_largest_fall("cases_reported") + 1,

@@ -1,0 +1,13 @@
+# Why is the clearing rate too high? In batch 5 it was two to five times its
+# truth in every scenario, even with chains started at the truth, the case
+# fatality ratio held and a constant rate. The backlog cleared at a constant
+# rate, with the cases dated by death, the reports brought by deaths, or both
+# taken out of the simulation (the fit is unchanged).
+package: ben18785/incidenceinflation_2.0@backlog
+replicates: 2
+chains: 3
+iterations: 500
+time_limit: 160
+cleared_plain
+cleared_no_dated
+cleared_no_triggered
