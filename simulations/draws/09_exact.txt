@@ -1,0 +1,2 @@
+run: 39120114761
+dir: simulations/2026-10-18_10_09_exact
