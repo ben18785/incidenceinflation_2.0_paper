@@ -1,0 +1,2 @@
+run: 39086023613
+dir: simulations/2026-10-18_8_06_real_like
