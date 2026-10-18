@@ -71,6 +71,8 @@ misdated_scenarios <- function() {
     "cleared_plain", "Cleared backlog, none counted on day of death and no death brings the report", "Is the backlog identified?", "Is the clearing rate still too high without these two mechanisms?",
     "cleared_no_dated", "Cleared backlog, none counted on day of death", "Is the backlog identified?", "Do the cases dated by death bias the clearing rate?",
     "cleared_no_triggered", "Cleared backlog, no death brings the report", "Is the backlog identified?", "Do the reports brought by deaths bias the clearing rate?",
+    "cleared_dated_relaxed", "Cleared backlog, no death brings the report, fitted without", "Is the backlog identified?", "The cases dated by death alone, in the usual (relaxed) form.",
+    "cleared_dated_exact", "The same, fitted with the exact form of the cases dated by death", "Is the backlog identified?", "Is the bias that of the relaxed form?",
     "real_like", "Like the outbreak (the fit to 7 October as truth), fitted to all reports", "Like the outbreak", "How well are the share and rate recovered in the outbreak's setting?",
     "real_like_0801", "Like the outbreak, fitted to the reports to 1 August (day 83)", "Like the outbreak", "The same at the stage of the fit to 1 August.")
 }
@@ -98,7 +100,8 @@ misdated_scenarios <- function() {
 #' fraction is held; 'fit_triggered';
 #' 'fit_tail'; 'fit_fatal_delay'; 'fit_cfr', NULL or a named list of 'alpha'
 #' and 'beta' of a beta prior for a case fatality ratio which does not
-#' change; 'fit_start_truth', TRUE to start the backlog at its truth)
+#' change; 'fit_start_truth', TRUE to start the backlog at its truth;
+#' 'fit_dated_exact', TRUE for the exact form of the cases dated by death)
 misdated_scenario_settings <- function(scenario) {
   f_constant <- function(value) function(t) value + 0 * t
   f_step <- function(day, before, after) function(t) ifelse(t < day, before, after)
@@ -117,7 +120,7 @@ misdated_scenario_settings <- function(scenario) {
     correction = NULL, fit_until = NULL,
     fit_onset_to_death = onset_to_death, fit_dated = TRUE, fit_triggered = TRUE,
     fit_tail = FALSE, fit_report = FALSE, fit_backlog = FALSE, fit_fatal_delay = FALSE,
-    fit_cfr = NULL, fit_start_truth = FALSE)
+    fit_cfr = NULL, fit_start_truth = FALSE, fit_dated_exact = FALSE)
   tail <- list(weight = 0.15, mean = 40)
   correction <- list(time_reported = 45, onset_times = 1:20, wrong = 0.08,
                      missing = 0.03, misdated = 0.1)
@@ -218,6 +221,9 @@ misdated_scenario_settings <- function(scenario) {
     cleared_plain = c(cleared, list(fraction = f_constant(0), triggered = f_constant(0))),
     cleared_no_dated = c(cleared, list(fraction = f_constant(0))),
     cleared_no_triggered = c(cleared, list(triggered = f_constant(0))),
+    cleared_dated_relaxed = c(cleared, list(triggered = f_constant(0), fit_triggered = FALSE)),
+    cleared_dated_exact = c(cleared, list(triggered = f_constant(0), fit_triggered = FALSE,
+                                          fit_dated_exact = TRUE)),
     real_like = if(startsWith(scenario, "real_like")) real_like_settings(),
     real_like_0801 = if(startsWith(scenario, "real_like"))
       c(real_like_settings(), list(fit_until = 83)))
@@ -404,7 +410,8 @@ fit_misdated_chain <- function(dataset, chain, niterations,
                                    list(mean = 2.5, sd = 2))[[k]]
     if(isTRUE(options$fit_dated))
       settings$dated_by_death <- list(
-        fraction = list(alpha = 1, beta = 1, initial = c(0.25, 0.15, 0.35)[k]))
+        fraction = list(alpha = 1, beta = 1, initial = c(0.25, 0.15, 0.35)[k]),
+        exact = isTRUE(options$fit_dated_exact))
     else if(is.numeric(options$fit_dated))
       settings$dated_by_death <- list(fraction = options$fit_dated)
     if(options$fit_tail)

@@ -1,0 +1,12 @@
+# Batch 7 found the clearing rate too high only where some fatal cases are
+# dated by death. Is it the relaxed form of those cases (each fatal case of a
+# day taken to be dated by death independently)? The backlog cleared at a
+# constant rate with no death bringing the report, fitted without it in the
+# relaxed form and in the exact form.
+package: ben18785/incidenceinflation_2.0@backlog
+replicates: 2
+chains: 3
+iterations: 500
+time_limit: 200
+cleared_dated_relaxed
+cleared_dated_exact
