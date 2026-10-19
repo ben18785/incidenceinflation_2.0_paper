@@ -1,4 +1,4 @@
-# Batch 16c carried on 200 iterations more (to 1700), with the version of the
+# Batch 16c carried on 50 iterations more (to 1550), with the version of the
 # package which records the terms of the log-likelihood at the end of each
 # iteration, to see whether the chains which disagree are in regions which
 # explain the reports equally well.
