@@ -1,0 +1,7 @@
+# A check that runs carry on by themselves: chains of the short experiment
+# stopped after a few seconds, lengthened to 30 iterations, with up to 3 more
+# runs to finish them.
+time_limit: 0.3
+iterations: 30
+rounds: 3
+check
