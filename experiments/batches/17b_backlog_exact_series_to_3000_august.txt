@@ -1,0 +1,11 @@
+# The exact form of the backlog held 21 days, fits to the reports to 9, 19
+# and 26 August, carried on from batch 16 to 3000 iterations, with further
+# runs started automatically until the chains finish, and the
+# log-likelihood recorded.
+package: ben18785/incidenceinflation_2.0@logl-trace
+iterations: 3000
+rounds: 3
+continue: 39211135915
+joint_no_tail_misdated_triggered_july_backlog_exact_0809
+joint_no_tail_misdated_triggered_july_backlog_exact_0819
+joint_no_tail_misdated_triggered_july_backlog_exact_0826
