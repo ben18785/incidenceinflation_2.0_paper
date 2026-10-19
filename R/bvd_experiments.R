@@ -35,6 +35,24 @@ bvd_experiments <- function(path = "experiments/experiments.yml") {
   experiments
 }
 
+#' The experiments with the iterations of each replaced (by a batch's line
+#' 'iterations: <n>'), to lengthen chains without changing their definitions
+#'
+#' @param experiments as bvd_experiments returns them
+#' @param iterations the iterations every chain is to have, or NULL to keep
+#'   those of each experiment
+bvd_experiments_iterations <- function(experiments, iterations = NULL) {
+  if(is.null(iterations))
+    return(experiments)
+  iterations <- suppressWarnings(as.integer(iterations))
+  if(length(iterations) != 1 || is.na(iterations) || iterations < 1)
+    stop("The iterations asked for must be one positive whole number.")
+  lapply(experiments, function(experiment) {
+    experiment$iterations <- iterations
+    experiment
+  })
+}
+
 #' One row for each chain of each experiment, with the name of its target
 #'
 #' @param names names of the experiments wanted (all if NULL)

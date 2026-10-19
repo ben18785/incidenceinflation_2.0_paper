@@ -5,6 +5,7 @@
 # choose which chains are in the pipeline. A chain stops after
 # BVD_TIME_LIMIT minutes if that is set, and is carried on from the file of
 # its progress in the folder BVD_RESUME_DIR (default states/) if there is one.
+# BVD_ITERATIONS, if set, replaces the iterations of every experiment.
 
 library(targets)
 library(tarchetypes)
@@ -24,7 +25,8 @@ f_env <- function(name) {
   value <- trimws(strsplit(Sys.getenv(name, ""), ",")[[1]])
   if(length(value) == 0 || all(value == "")) NULL else value
 }
-experiments <- bvd_experiments()
+experiments <- bvd_experiments_iterations(bvd_experiments(),
+                                          f_env("BVD_ITERATIONS"))
 chain_wanted <- f_env("BVD_CHAIN")
 grid <- bvd_experiment_chains(experiments, f_env("BVD_EXPERIMENTS"),
                               if(!is.null(chain_wanted)) as.integer(chain_wanted))
