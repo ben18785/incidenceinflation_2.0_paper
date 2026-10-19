@@ -1,0 +1,9 @@
+# The exact form of the backlog held 21 days, fit to the reports to 7
+# October, started afresh: its chains of batches 15 and 15c were fit before
+# the report of 4 October was added to the data, so cannot be carried on
+# (batch 17c). 3000 iterations, with further runs started automatically
+# until the chains finish, and the log-likelihood recorded.
+package: ben18785/incidenceinflation_2.0@logl-trace
+iterations: 3000
+rounds: 4
+joint_no_tail_misdated_triggered_july_backlog_exact_1007
