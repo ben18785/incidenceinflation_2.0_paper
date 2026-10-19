@@ -329,12 +329,12 @@ experiments:
   joint_no_tail_misdated_triggered_july_backlog_exact_0809: {model: joint, date: 2026-08-09, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1500}
   joint_no_tail_misdated_triggered_july_backlog_exact_0819: {model: joint, date: 2026-08-19, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1500}
   joint_no_tail_misdated_triggered_july_backlog_exact_0826: {model: joint, date: 2026-08-26, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1500}
-  joint_no_tail_misdated_triggered_july_backlog_exact_0902: {model: joint, date: 2026-09-02, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1700}
-  joint_no_tail_misdated_triggered_july_backlog_exact_0909: {model: joint, date: 2026-09-09, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1700}
-  joint_no_tail_misdated_triggered_july_backlog_exact_0916: {model: joint, date: 2026-09-16, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1700}
-  joint_no_tail_misdated_triggered_july_backlog_exact_0924: {model: joint, date: 2026-09-24, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1700}
-  joint_no_tail_misdated_triggered_july_backlog_exact_0930: {model: joint, date: 2026-09-30, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1700}
-  joint_no_tail_misdated_triggered_july_backlog_exact_1014: {model: joint, date: 2026-10-14, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1700}
+  joint_no_tail_misdated_triggered_july_backlog_exact_0902: {model: joint, date: 2026-09-02, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1550}
+  joint_no_tail_misdated_triggered_july_backlog_exact_0909: {model: joint, date: 2026-09-09, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1550}
+  joint_no_tail_misdated_triggered_july_backlog_exact_0916: {model: joint, date: 2026-09-16, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1550}
+  joint_no_tail_misdated_triggered_july_backlog_exact_0924: {model: joint, date: 2026-09-24, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1550}
+  joint_no_tail_misdated_triggered_july_backlog_exact_0930: {model: joint, date: 2026-09-30, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1550}
+  joint_no_tail_misdated_triggered_july_backlog_exact_1014: {model: joint, date: 2026-10-14, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1550}
 
   # cases and deaths together
   joint_1001: {model: joint, date: 2026-10-01, iterations: 800}
