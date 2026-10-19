@@ -1,0 +1,12 @@
+# Batch 16c carried on 200 iterations more (to 1700), with the version of the
+# package which records the terms of the log-likelihood at the end of each
+# iteration, to see whether the chains which disagree are in regions which
+# explain the reports equally well.
+package: ben18785/incidenceinflation_2.0@logl-trace
+continue: 39252745786
+joint_no_tail_misdated_triggered_july_backlog_exact_0902
+joint_no_tail_misdated_triggered_july_backlog_exact_0909
+joint_no_tail_misdated_triggered_july_backlog_exact_0916
+joint_no_tail_misdated_triggered_july_backlog_exact_0924
+joint_no_tail_misdated_triggered_july_backlog_exact_0930
+joint_no_tail_misdated_triggered_july_backlog_exact_1014
