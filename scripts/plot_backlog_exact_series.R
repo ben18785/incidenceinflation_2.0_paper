@@ -120,6 +120,38 @@ g_week <- ggplot(weekly, aes(x = week + 3)) +
   theme_paper() + theme(legend.position = "bottom")
 save_plot(g_week, file.path(out, "deaths_weekly.png"), 12, 11)
 
+# the fatal cases by onset day of each fit, as the plots of the fits to
+# simulated data (fatal_by_onset_*.png of plot_backlog_simulations.R), with
+# the last report in place of the truth: one plot for each fit and one of all
+daily <- f_band(draws, "deaths", .data$fit_date, .data$date) %>%
+  dplyr::left_join(shown %>%
+                     dplyr::select("fit_date", "date", "when", "deaths_reported") %>%
+                     tidyr::pivot_wider(names_from = "when", values_from = "deaths_reported"),
+                   by = c("fit_date", "date")) %>%
+  dplyr::mutate(fit = f_label(.data$fit_date))
+first_report <- min(snap$date_reported)
+lab_last <- format(last, "Reported on %d %B")
+f_daily <- function(df) ggplot(df, aes(x = date)) +
+  geom_col(aes(y = now, fill = "Shown in the last report fitted"), width = 1, alpha = 0.5) +
+  geom_ribbon(aes(ymin = p05, ymax = p95, fill = "Estimate (90% interval)"), alpha = 0.4) +
+  geom_line(aes(y = p50, colour = "Estimate (median)")) +
+  geom_line(aes(y = last, colour = lab_last)) +
+  geom_vline(xintercept = first_report, linetype = 2, colour = "grey40") +
+  scale_fill_manual(NULL, values = c("Shown in the last report fitted" = "grey70",
+                                     "Estimate (90% interval)" = "#3B7DD8")) +
+  scale_colour_manual(NULL, values = setNames(c("#1F4E9C", "black"), c("Estimate (median)", lab_last))) +
+  labs(x = "Onset date", y = "Fatal cases") +
+  theme_bw() + theme(legend.position = "bottom")
+for(d in fit_dates)
+  ggsave(file.path(out, format(as.Date(d), "fatal_by_onset_%m%d.png")),
+         f_daily(dplyr::filter(daily, .data$fit_date == d)) +
+           scale_x_date(limits = range(daily$date) + c(-1, 1)) +
+           labs(title = format(as.Date(d), "Fit to the reports to %d %B")),
+         width = 9, height = 4, dpi = 150)
+ggsave(file.path(out, "fatal_by_onset_all.png"),
+       f_daily(daily) + facet_wrap(~fit, ncol = 2) + theme(strip.text = element_text(size = 8)),
+       width = 11, height = 2.2 * ceiling(length(fit_dates) / 2) + 1, dpi = 150)
+
 # the case fatality ratio and Rt by onset date of each fit
 f_by_onset <- function(table, column) dplyr::bind_rows(lapply(seq_along(fits), function(k)
   f_band(f_rows(fits[[k]], table), column, .data$time_onset) %>%
