@@ -1,0 +1,10 @@
+# Batch 16 carried on: the chains of the fits to the reports to 2 September
+# and later stopped at the time limit (733 to 1446 of 1500 iterations).
+package: ben18785/incidenceinflation_2.0@backlog
+continue: 39211135915
+joint_no_tail_misdated_triggered_july_backlog_exact_0902
+joint_no_tail_misdated_triggered_july_backlog_exact_0909
+joint_no_tail_misdated_triggered_july_backlog_exact_0916
+joint_no_tail_misdated_triggered_july_backlog_exact_0924
+joint_no_tail_misdated_triggered_july_backlog_exact_0930
+joint_no_tail_misdated_triggered_july_backlog_exact_1014
