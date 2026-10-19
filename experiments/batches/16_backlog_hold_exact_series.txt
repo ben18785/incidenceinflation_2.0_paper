@@ -1,0 +1,13 @@
+# The exact form of batch 15 (the backlog of deaths held 21 days) fitted to
+# the reports to each of a series of dates about a week apart, from 9 August
+# to 14 October; batch 15 has the fits to 1 August and 7 October.
+package: ben18785/incidenceinflation_2.0@backlog
+joint_no_tail_misdated_triggered_july_backlog_exact_0809
+joint_no_tail_misdated_triggered_july_backlog_exact_0819
+joint_no_tail_misdated_triggered_july_backlog_exact_0826
+joint_no_tail_misdated_triggered_july_backlog_exact_0902
+joint_no_tail_misdated_triggered_july_backlog_exact_0909
+joint_no_tail_misdated_triggered_july_backlog_exact_0916
+joint_no_tail_misdated_triggered_july_backlog_exact_0924
+joint_no_tail_misdated_triggered_july_backlog_exact_0930
+joint_no_tail_misdated_triggered_july_backlog_exact_1014
