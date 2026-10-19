@@ -1,0 +1,4 @@
+"experiment","model","date_now","count","onset_days","median","lo","hi","rhat","recorded_05Sep","recorded_15Sep","recorded_14Oct"
+"check","deaths, no tail, drift",2026-09-05,"deaths","all",2696,2505.6,2780,NA,2111,2407,2604
+"check","deaths, no tail, drift",2026-09-05,"deaths","latest 28",1029,840.6,1102.1,NA,499,720,847
+"check","deaths, no tail, drift",2026-09-05,"deaths","latest 14",569,428,641.8,NA,169,344,438

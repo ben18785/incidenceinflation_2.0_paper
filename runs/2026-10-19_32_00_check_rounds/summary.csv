@@ -1,0 +1,11 @@
+"experiment","model","date_now","n_chains","quantity","median","lo","hi","rhat","chain_1","chain_2"
+"check","deaths, no tail, drift",2026-09-05,2,"Changes in the delay",7,7,7,NA,7,7
+"check","deaths, no tail, drift",2026-09-05,2,"Fatal cases, all onset days",2696,2505.6,2780,NA,2750,2528
+"check","deaths, no tail, drift",2026-09-05,2,"Fatal cases, latest 14 onset days",569,428,641.8,NA,612,456
+"check","deaths, no tail, drift",2026-09-05,2,"Mean delay to death recorded, first onset day",15.8874155046152,13.9121583485916,18.3994771547047,NA,15.521240534468,15.9533632280683
+"check","deaths, no tail, drift",2026-09-05,2,"Mean delay to death recorded, latest onset day",17.2133916952459,13.4123697236736,18.141789663839,NA,17.9060757695904,13.7979162480923
+"check","deaths, no tail, drift",2026-09-05,2,"Overdispersion",21.2489401856272,16.4755427797655,40.3574856844759,NA,17.6727158872493,35.2109112523337
+"check","deaths, no tail, drift",2026-09-05,2,"Removal of wrong records per report (rho)",0.0555511704297406,0.0352312134713498,0.0806620091772665,NA,0.0494551443880589,0.0564130647307389
+"check","deaths, no tail, drift",2026-09-05,2,"Reproduction number, latest onset day",1.19222086217658,1.10918158203687,1.2489853514117,NA,1.21087694052413,1.12627220850357
+"check","deaths, no tail, drift",2026-09-05,2,"Sd of delay to death recorded, latest onset day",14.3576126333926,13.553224412081,14.943169594503,NA,14.5598074771383,14.2999373500049
+"check","deaths, no tail, drift",2026-09-05,2,"Wrong records per case and report (eta)",0.0303452373040793,0.0248654353062649,0.0417130623155964,NA,0.0324423330163201,0.0284253818583622
