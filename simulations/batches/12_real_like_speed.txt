@@ -1,0 +1,10 @@
+# A check of the faster package (sampler-speed, 341b4dc) on simulated data
+# like the outbreak (as batch 11): the exact form fitted to all reports, the
+# same dataset, three chains to 1500 iterations (batch 11 ran 500), each
+# stopped after 330 minutes if it has not finished.
+package: ben18785/incidenceinflation_2.0@sampler-speed
+replicates: 1
+chains: 3
+iterations: 1500
+time_limit: 330
+real_like_exact
