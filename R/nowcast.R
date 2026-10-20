@@ -58,7 +58,7 @@ nowcast_stan_data <- function(snapshots, column, day_target = 0L, days_per_knot 
     Bt = splines::bs(seq_len(n_days), df = Kt, degree = 3, intercept = TRUE),
     Bd = splines::bs(log1p(0:delay_max), df = Kd, degree = 3, intercept = TRUE),
     R = length(reports), N = nrow(tri), t = tri$t, lo = tri$lo, hi = tri$hi,
-    r = match(tri$time_reported, reports), n = tri$n,
+    r = match(tri$time_reported, reports), report_day = as.integer(reports), n = tri$n,
     # removals at a rate up to about a twentieth of the additions
     w_max = pmax(0L, -tri$n) + 4L + as.integer(ceiling(0.08 * abs(tri$n))),
     count_last = last$count, delay_last = last$hi,
@@ -67,8 +67,34 @@ nowcast_stan_data <- function(snapshots, column, day_target = 0L, days_per_knot 
 
 #' Prior scales of the nowcast (half-normal)
 nowcast_priors <- function()
-  list(sigma_lambda_scale = 0.3, tau_t_scale = 0.2, sigma_u_scale = 0.5,
-       rho_scale = 0.05)
+  list(sigma_lambda_scale = 0.3, sigma_g_scale = 0.03, tau_s_scale = 0.05,
+       kappa_scale = 2, tau_t_scale = 0.2, sigma_u_scale = 0.5, rho_scale = 0.05)
+
+#' Initial values of the nowcast
+#'
+#' Stan's default (uniform on (-2, 2) unconstrained) can start the walk of
+#' the growth rate with a sd of several per day, which summed twice over the
+#' onset days overflows lambda; so the chains start near the level of the
+#' first counts, with the scales at their prior scales and small z.
+#'
+#' @param data as nowcast_stan_data
+#' @param chains the number of chains
+#' @param seed for the jitter
+#' @return a list of lists, one for each chain
+nowcast_inits <- function(data, chains, seed = 1) {
+  withr::with_seed(seed, lapply(seq_len(chains), function(k) {
+    f_z <- function(n) stats::rnorm(n, 0, 0.1)
+    first <- data$n[data$t <= 7 & data$lo == 0]
+    list(log_lambda_1 = log(mean(c(first, 1)) + 1), g_1 = 0,
+         z_lambda = f_z(data$T - 1), z_g = f_z(data$T - 2),
+         sigma_lambda = data$sigma_lambda_scale / 2, sigma_g = data$sigma_g_scale / 2,
+         beta_g_free = f_z(data$Kd - 1),
+         z_h = matrix(f_z(data$Kt * (data$Kd - 1)), data$Kt),
+         tau_t = data$tau_t_scale / 2, z_s = f_z(data$R - 1),
+         tau_s = data$tau_s_scale / 2, z_u = f_z(data$R),
+         sigma_u = data$sigma_u_scale / 2, kappa = 1, rho = 0.02)
+  }))
+}
 
 #' Fits the nowcast to the reports up to a date
 #'
@@ -88,6 +114,7 @@ fit_nowcast <- function(analysis, column, date_target, chains = 4,
   time_start <- Sys.time()
   fit <- model$sample(data = data, chains = chains, parallel_chains = chains,
                       iter_warmup = iter_warmup, iter_sampling = iter_sampling,
+                      init = nowcast_inits(data, chains, seed),
                       seed = seed, refresh = 0, show_messages = FALSE,
                       output_dir = output_dir)
   if(any(fit$return_codes() != 0))
@@ -116,9 +143,9 @@ summarise_nowcast <- function(fit, data, analysis, column, date_target, minutes 
     p95 = f_q(draws_projected, 0.95),
     mean_delay = f_q(draws_delay, 0.5), mean_delay_p05 = f_q(draws_delay, 0.05),
     mean_delay_p95 = f_q(draws_delay, 0.95))
-  scalars <- c("sigma_lambda", "tau_t", "sigma_u", "phi", "rho")
+  scalars <- c("sigma_lambda", "sigma_g", "tau_t", "tau_s", "sigma_u", "kappa", "rho")
   diagnostics <- fit$diagnostic_summary(quiet = TRUE)
-  summary_all <- fit$summary(c(scalars, "log_lambda", "z_h"))
+  summary_all <- fit$summary(c(scalars, "log_lambda", "z_h", "s"))
   list(column = column, date_now = analysis$date_now, date_target = as.Date(date_target),
        by_day = by_day,
        parameters = fit$summary(scalars),
