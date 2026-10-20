@@ -1,0 +1,5 @@
+"experiment","model","date_now","chain","niterations","niterations_target","minutes","error"
+"joint_no_tail_misdated_triggered_july_backlog_exact_0801","joint, no tail, counted on day of death (exact form), deaths bring reports, recording delay fixed to 31 July, backlog held 21 days",2026-08-01,1,3000,3000,236,""
+"joint_no_tail_misdated_triggered_july_backlog_exact_0801","joint, no tail, counted on day of death (exact form), deaths bring reports, recording delay fixed to 31 July, backlog held 21 days",2026-08-01,2,3000,3000,236,""
+"joint_no_tail_misdated_triggered_july_backlog_exact_0801","joint, no tail, counted on day of death (exact form), deaths bring reports, recording delay fixed to 31 July, backlog held 21 days",2026-08-01,3,3000,3000,302,""
+"joint_no_tail_misdated_triggered_july_backlog_exact_0801","joint, no tail, counted on day of death (exact form), deaths bring reports, recording delay fixed to 31 July, backlog held 21 days",2026-08-01,4,3000,3000,187,""
