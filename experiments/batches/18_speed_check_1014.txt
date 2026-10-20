@@ -1,0 +1,8 @@
+# A check of the faster package (sampler-speed, 341b4dc): the exact form of
+# the backlog held 21 days, fit to the reports to 14 October from the start
+# to 1500 iterations. With the same seeds its chains should be those of
+# batches 16 and 16c (package 053b89c), draw for draw, in less time.
+package: ben18785/incidenceinflation_2.0@sampler-speed
+iterations: 1500
+rounds: 1
+joint_no_tail_misdated_triggered_july_backlog_exact_1014
