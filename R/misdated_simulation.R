@@ -79,6 +79,7 @@ misdated_scenarios <- function() {
     "hold_before_exact", "Backlog held 21 days, fitted on day 50 in the exact form", "The exact form", "Before the clearing.",
     "hold_none_exact", "No backlog, fitted with the holding period in the exact form", "The exact form", "Is a backlog found where there is none?",
     "real_like_exact", "Like the outbreak, fitted to all reports in the exact form", "The exact form", "The fit to 7 October as the truth.",
+    "real_like_exact_triggered_fixed", "Like the outbreak in the exact form, the share reported when the death is recorded held at 0.95", "The exact form", "Are the fraction dated by death and the totals recovered once the share is fixed?",
     "real_like_0801_exact", "Like the outbreak, fitted to the reports to 1 August in the exact form", "The exact form", "Part way through the clearing.",
     "real_like", "Like the outbreak (the fit to 7 October as truth), fitted to all reports", "Like the outbreak", "How well are the share and rate recovered in the outbreak's setting?",
     "real_like_0801", "Like the outbreak, fitted to the reports to 1 August (day 83)", "Like the outbreak", "The same at the stage of the fit to 1 August.")
@@ -104,7 +105,9 @@ misdated_scenarios <- function() {
 #' ('fit_onset_to_death', NULL for the earlier model with a free delay from
 #' onset; 'fit_dated', TRUE if the fraction is estimated, FALSE if no cases
 #' are taken to be counted on their day of death, or a value at which the
-#' fraction is held; 'fit_triggered';
+#' fraction is held; 'fit_triggered', TRUE if the share reported when the
+#' death is recorded is estimated, FALSE if none are, or a value at which
+#' the share is held;
 #' 'fit_tail'; 'fit_fatal_delay'; 'fit_cfr', NULL or a named list of 'alpha'
 #' and 'beta' of a beta prior for a case fatality ratio which does not
 #' change; 'fit_start_truth', TRUE to start the backlog at its truth;
@@ -239,6 +242,8 @@ misdated_scenario_settings <- function(scenario) {
     hold_before_exact = f_hold(backlog, c(fit, exact, list(fit_until = 50))),
     hold_none_exact = c(backlog_days, fit, exact),
     real_like_exact = if(startsWith(scenario, "real_like")) c(real_like_settings(), exact),
+    real_like_exact_triggered_fixed = if(startsWith(scenario, "real_like"))
+      c(real_like_settings(), exact, list(fit_triggered = 0.95)),
     real_like_0801_exact = if(startsWith(scenario, "real_like"))
       c(real_like_settings(), exact, list(fit_until = 83)),
     real_like = if(startsWith(scenario, "real_like")) real_like_settings(),
@@ -417,7 +422,9 @@ fit_misdated_chain <- function(dataset, chain, niterations,
     initial_cfr = c(0.45, 0.4, 0.5)[k],
     delay_changepoints = list(min_length = 14, n_partition_moves = 20),
     fatal_delay = if(options$fit_fatal_delay) list() else FALSE,
-    triggered = if(options$fit_triggered) list(initial = c(0.5, 0.4, 0.6)[k]) else FALSE)
+    triggered = if(is.numeric(options$fit_triggered))
+      list(initial = options$fit_triggered, n_steps = 0)
+    else if(options$fit_triggered) list(initial = c(0.5, 0.4, 0.6)[k]) else FALSE)
   if(!is.null(options$fit_cfr))
     settings[c("cfr_alpha", "cfr_beta", "cfr_changepoints")] <-
       list(options$fit_cfr$alpha, options$fit_cfr$beta, FALSE)
