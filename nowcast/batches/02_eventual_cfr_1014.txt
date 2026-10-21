@@ -1,0 +1,8 @@
+# The nowcast fitted to all reports (to 14 October), cases and deaths
+# separately, with counts projected until every delay has elapsed, for the
+# eventual case fatality ratio by onset week.
+dates: 2026-10-14
+columns: cases_reported,deaths_reported
+iterations: 500
+model: stan/nowcast_simple.stan
+target: eventual
