@@ -80,8 +80,10 @@ nowcast_priors <- function()
 #' @param data as nowcast_stan_data
 #' @param chains the number of chains
 #' @param seed for the jitter
+#' @param parameters the names of the model's parameters: the values of
+#'   others are left out (stan/nowcast_simple.stan has fewer)
 #' @return a list of lists, one for each chain
-nowcast_inits <- function(data, chains, seed = 1) {
+nowcast_inits <- function(data, chains, seed = 1, parameters = NULL) {
   withr::with_seed(seed, lapply(seq_len(chains), function(k) {
     f_z <- function(n) stats::rnorm(n, 0, 0.1)
     first <- data$n[data$t <= 7 & data$lo == 0]
@@ -92,8 +94,8 @@ nowcast_inits <- function(data, chains, seed = 1) {
          z_h = matrix(f_z(data$Kt * (data$Kd - 1)), data$Kt),
          tau_t = data$tau_t_scale / 2, z_s = f_z(data$R - 1),
          tau_s = data$tau_s_scale / 2, z_u = f_z(data$R),
-         sigma_u = data$sigma_u_scale / 2, kappa = 1, rho = 0.02)
-  }))
+         sigma_u = data$sigma_u_scale / 2, kappa = 1, inv_sqrt_phi = 0.1, rho = 0.02)
+  }) %>% lapply(function(x) if(is.null(parameters)) x else x[intersect(names(x), parameters)]))
 }
 
 #' Fits the nowcast to the reports up to a date
@@ -114,7 +116,7 @@ fit_nowcast <- function(analysis, column, date_target, chains = 4,
   time_start <- Sys.time()
   fit <- model$sample(data = data, chains = chains, parallel_chains = chains,
                       iter_warmup = iter_warmup, iter_sampling = iter_sampling,
-                      init = nowcast_inits(data, chains, seed),
+                      init = nowcast_inits(data, chains, seed, names(model$variables()$parameters)),
                       seed = seed, refresh = 0, show_messages = FALSE,
                       output_dir = output_dir)
   if(any(fit$return_codes() != 0))
@@ -143,13 +145,22 @@ summarise_nowcast <- function(fit, data, analysis, column, date_target, minutes 
     p95 = f_q(draws_projected, 0.95),
     mean_delay = f_q(draws_delay, 0.5), mean_delay_p05 = f_q(draws_delay, 0.05),
     mean_delay_p95 = f_q(draws_delay, 0.95))
-  scalars <- c("sigma_lambda", "sigma_g", "tau_t", "tau_s", "sigma_u", "kappa", "rho")
+  # the forms of the model have different parameters
+  variables <- fit$metadata()$stan_variables
+  scalars <- intersect(c("sigma_lambda", "sigma_g", "tau_t", "tau_s", "sigma_u", "kappa",
+                         "phi", "rho"), variables)
   diagnostics <- fit$diagnostic_summary(quiet = TRUE)
-  summary_all <- fit$summary(c(scalars, "log_lambda", "z_h", "s"))
+  summary_all <- fit$summary(intersect(c(scalars, "log_lambda", "z_h", "s"), variables))
+  # the projected count of each onset week (weeks from Monday), for the case
+  # fatality ratio
+  week <- as.Date(cut(analysis$dates$date[seq_len(data$T)], "week"))
+  draws_weekly <- t(rowsum(t(unclass(draws_projected)), week))
+  colnames(draws_weekly) <- as.character(sort(unique(week)))
   list(column = column, date_now = analysis$date_now, date_target = as.Date(date_target),
        by_day = by_day,
        parameters = fit$summary(scalars),
        draws_total = rowSums(draws_projected),
+       draws_weekly = draws_weekly,
        diagnostics = list(minutes = minutes,
                           divergences = sum(diagnostics$num_divergent),
                           max_treedepth = sum(diagnostics$num_max_treedepth),
@@ -218,5 +229,74 @@ write_nowcast_outputs <- function(scores, out) {
     ggplot2::ggsave(path, g, width = 9, height = 2.6 * dplyr::n_distinct(df$fit) + 1)
     paths <- c(paths, path)
   }
+  paths
+}
+
+#' The case fatality ratio by onset week from separate nowcasts of the cases
+#' and the deaths
+#'
+#' The nowcasts are fitted separately, so their draws are paired by index;
+#' the ratio of each week is that of its projected deaths to its projected
+#' cases. Weeks whose last day is fewer than min_age days before the fit
+#' date are marked as recent: most of their deaths are still to come, so
+#' their ratio rests on the delay learned from earlier weeks.
+#'
+#' @param cases,deaths as fit_nowcast for cases_reported and deaths_reported,
+#'   fitted to the same date
+#' @param analysis_later an analysis to a later date (as
+#'   prepare_bvd_deaths_analysis)
+#' @param min_age the days from the end of a week to the fit date below which
+#'   it is recent
+#' @return a tibble by onset week of the ratio's quantiles, the ratio of the
+#'   counts the later report shows, and whether the week is recent
+nowcast_cfr <- function(cases, deaths, analysis_later, min_age = 21) {
+  stopifnot(identical(cases$date_now, deaths$date_now),
+            identical(colnames(cases$draws_weekly), colnames(deaths$draws_weekly)))
+  n <- min(nrow(cases$draws_weekly), nrow(deaths$draws_weekly))
+  ratio <- deaths$draws_weekly[seq_len(n), , drop = FALSE] /
+    pmax(cases$draws_weekly[seq_len(n), , drop = FALSE], 1)
+  later <- analysis_later$snapshots %>%
+    dplyr::group_by(.data$time_onset) %>%
+    dplyr::filter(.data$time_reported == max(.data$time_reported)) %>%
+    dplyr::ungroup() %>%
+    dplyr::mutate(date_onset = analysis_later$dates$date[.data$time_onset],
+                  week = as.character(as.Date(cut(.data$date_onset, "week")))) %>%
+    dplyr::group_by(.data$week) %>%
+    dplyr::summarise(later = sum(.data$deaths_reported) / pmax(sum(.data$cases_reported), 1))
+  week <- as.Date(colnames(ratio))
+  dplyr::tibble(
+    date_now = cases$date_now, week = week,
+    p05 = apply(ratio, 2, stats::quantile, 0.05, names = FALSE),
+    p50 = apply(ratio, 2, stats::quantile, 0.5, names = FALSE),
+    p95 = apply(ratio, 2, stats::quantile, 0.95, names = FALSE),
+    recent = as.numeric(cases$date_now - (week + 6)) < min_age) %>%
+    dplyr::left_join(later %>% dplyr::mutate(week = as.Date(.data$week)), by = "week")
+}
+
+#' Writes the case fatality ratios of the nowcasts and plots them
+#'
+#' @param cfr a tibble of the rows of nowcast_cfr for each fit date
+#' @param out the folder
+#' @return the paths of the files written
+write_nowcast_cfr <- function(cfr, out) {
+  dir.create(out, recursive = TRUE, showWarnings = FALSE)
+  paths <- file.path(out, c("cfr.csv", "nowcast_cfr.png"))
+  utils::write.csv(cfr, paths[1], row.names = FALSE)
+  df <- dplyr::mutate(cfr, fit = factor(format(.data$date_now, "Fit to %d %b"),
+                                        levels = format(sort(unique(.data$date_now)), "Fit to %d %b")),
+                      weeks = ifelse(.data$recent, "Recent (under 3 weeks old)", "Older"))
+  g <- ggplot2::ggplot(df, ggplot2::aes(.data$week)) +
+    ggplot2::geom_pointrange(ggplot2::aes(y = .data$p50, ymin = .data$p05, ymax = .data$p95,
+                                          colour = .data$weeks), size = 0.25) +
+    ggplot2::geom_point(ggplot2::aes(y = .data$later, shape = "Shown in the last report"),
+                        size = 1.8) +
+    ggplot2::facet_wrap(~fit, ncol = 1) +
+    ggplot2::scale_colour_manual(NULL, values = c("Older" = "#1f4e9c",
+                                                  "Recent (under 3 weeks old)" = "#e6550d")) +
+    ggplot2::scale_shape_manual(NULL, values = 4) +
+    ggplot2::coord_cartesian(ylim = c(0, 1)) +
+    ggplot2::labs(x = "Week of onset", y = "Deaths / cases (90% interval)") +
+    ggplot2::theme_bw() + ggplot2::theme(legend.position = "bottom")
+  ggplot2::ggsave(paths[2], g, width = 9, height = 2.6 * dplyr::n_distinct(df$fit) + 1)
   paths
 }

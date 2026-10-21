@@ -79,6 +79,7 @@ misdated_scenarios <- function() {
     "hold_before_exact", "Backlog held 21 days, fitted on day 50 in the exact form", "The exact form", "Before the clearing.",
     "hold_none_exact", "No backlog, fitted with the holding period in the exact form", "The exact form", "Is a backlog found where there is none?",
     "real_like_exact", "Like the outbreak, fitted to all reports in the exact form", "The exact form", "The fit to 7 October as the truth.",
+    "real_like_exact_collapsed", "Like the outbreak in the exact form, the fraction dated by death integrated out of the changes to which cases are", "The exact form", "Does the fraction mix faster?",
     "real_like_exact_triggered_fixed", "Like the outbreak in the exact form, the share reported when the death is recorded held at 0.95", "The exact form", "Are the fraction dated by death and the totals recovered once the share is fixed?",
     "real_like_0801_exact", "Like the outbreak, fitted to the reports to 1 August in the exact form", "The exact form", "Part way through the clearing.",
     "real_like", "Like the outbreak (the fit to 7 October as truth), fitted to all reports", "Like the outbreak", "How well are the share and rate recovered in the outbreak's setting?",
@@ -111,7 +112,9 @@ misdated_scenarios <- function() {
 #' 'fit_tail'; 'fit_fatal_delay'; 'fit_cfr', NULL or a named list of 'alpha'
 #' and 'beta' of a beta prior for a case fatality ratio which does not
 #' change; 'fit_start_truth', TRUE to start the backlog at its truth;
-#' 'fit_dated_exact', TRUE for the exact form of the cases dated by death)
+#' 'fit_dated_exact', TRUE for the exact form of the cases dated by death;
+#' 'fit_collapse_fraction', TRUE to change which cases are dated by death
+#' with the estimated fraction integrated out)
 misdated_scenario_settings <- function(scenario) {
   f_constant <- function(value) function(t) value + 0 * t
   f_step <- function(day, before, after) function(t) ifelse(t < day, before, after)
@@ -130,7 +133,8 @@ misdated_scenario_settings <- function(scenario) {
     correction = NULL, fit_until = NULL,
     fit_onset_to_death = onset_to_death, fit_dated = TRUE, fit_triggered = TRUE,
     fit_tail = FALSE, fit_report = FALSE, fit_backlog = FALSE, fit_fatal_delay = FALSE,
-    fit_cfr = NULL, fit_start_truth = FALSE, fit_dated_exact = FALSE)
+    fit_cfr = NULL, fit_start_truth = FALSE, fit_dated_exact = FALSE,
+    fit_collapse_fraction = FALSE)
   tail <- list(weight = 0.15, mean = 40)
   correction <- list(time_reported = 45, onset_times = 1:20, wrong = 0.08,
                      missing = 0.03, misdated = 0.1)
@@ -242,6 +246,8 @@ misdated_scenario_settings <- function(scenario) {
     hold_before_exact = f_hold(backlog, c(fit, exact, list(fit_until = 50))),
     hold_none_exact = c(backlog_days, fit, exact),
     real_like_exact = if(startsWith(scenario, "real_like")) c(real_like_settings(), exact),
+    real_like_exact_collapsed = if(startsWith(scenario, "real_like"))
+      c(real_like_settings(), exact, list(fit_collapse_fraction = TRUE)),
     real_like_exact_triggered_fixed = if(startsWith(scenario, "real_like"))
       c(real_like_settings(), exact, list(fit_triggered = 0.95)),
     real_like_0801_exact = if(startsWith(scenario, "real_like"))
@@ -435,7 +441,8 @@ fit_misdated_chain <- function(dataset, chain, niterations,
     if(isTRUE(options$fit_dated))
       settings$dated_by_death <- list(
         fraction = list(alpha = 1, beta = 1, initial = c(0.25, 0.15, 0.35)[k]),
-        exact = isTRUE(options$fit_dated_exact))
+        exact = isTRUE(options$fit_dated_exact),
+        collapse_fraction = isTRUE(options$fit_collapse_fraction))
     else if(is.numeric(options$fit_dated))
       settings$dated_by_death <- list(fraction = options$fit_dated)
     if(options$fit_tail)

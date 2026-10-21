@@ -1,0 +1,161 @@
+# Runs the data-driven nowcast (_targets_nowcast.R) on GitHub: one job for
+# each fit date, which fits the columns asked for and, with both cases and
+# deaths, the case fatality ratio by onset week; then a job which joins the
+# dates and uploads the scores, the ratios and the plots as the artifact
+# nowcast-outputs. A batch is a file of nowcast/batches/ with lines
+#   dates: <dates, separated by commas>
+#   columns: <columns, separated by commas> (default cases and deaths)
+#   iterations: <warm-up and kept draws of each chain> (default 500)
+#   model: <the Stan file> (default stan/nowcast_simple.stan)
+#   package: <owner>/<repository>@<branch> (for the data's preparation)
+# and a push which changes the file starts it.
+name: nowcast
+run-name: ${{ inputs.batch || github.event.head_commit.message }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      batch:
+        description: "A batch: the name of a file of nowcast/batches/, without .txt"
+        required: true
+  push:
+    paths:
+      - nowcast/batches/*.txt
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      dates: ${{ steps.plan.outputs.dates }}
+      columns: ${{ steps.plan.outputs.columns }}
+      iterations: ${{ steps.plan.outputs.iterations }}
+      model: ${{ steps.plan.outputs.model }}
+      package: ${{ steps.plan.outputs.package }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - id: plan
+        env:
+          BATCH: ${{ inputs.batch }}
+        run: |
+          if [ -n "$BATCH" ]; then
+            file="nowcast/batches/$BATCH.txt"
+          else
+            file=$(git diff --name-only --diff-filter=AM HEAD^ HEAD -- 'nowcast/batches/*.txt' | head -n 1)
+          fi
+          f_line() { sed -n "s/^$1:[[:space:]]*\(.*\)$/\1/p" "$file" | head -n 1 | tr -d ' '; }
+          dates=$(f_line dates)
+          echo "dates=$(echo "$dates" | jq -Rc 'split(",")')" >> "$GITHUB_OUTPUT"
+          echo "columns=$(f_line columns)" >> "$GITHUB_OUTPUT"
+          echo "iterations=$(f_line iterations)" >> "$GITHUB_OUTPUT"
+          echo "model=$(f_line model)" >> "$GITHUB_OUTPUT"
+          package=$(f_line package)
+          echo "package=github::${package:-ben18785/incidenceinflation_2.0@sampler-speed}" >> "$GITHUB_OUTPUT"
+          echo "Batch $file: dates $dates"
+
+  fit:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    name: fit ${{ matrix.date }}
+    strategy:
+      fail-fast: false
+      matrix:
+        date: ${{ fromJson(needs.plan.outputs.dates) }}
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"hard"'
+          packages: |
+            any::targets
+            any::tarchetypes
+            any::dplyr
+            any::tidyr
+            any::ggplot2
+            any::purrr
+            any::posterior
+            any::withr
+            github::stan-dev/cmdstanr
+            ${{ needs.plan.outputs.package }}
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cmdstan
+          key: cmdstan-${{ runner.os }}-2
+      - name: Install CmdStan
+        run: Rscript -e 'if(is.null(cmdstanr::cmdstan_version(error_on_NA = FALSE))) cmdstanr::install_cmdstan(cores = 4)'
+      - name: Restore the data
+        env:
+          BVD_DATA_KEY: ${{ secrets.BVD_DATA_KEY }}
+        run: |
+          printf '%s' "$BVD_DATA_KEY" > "$RUNNER_TEMP/bvd_data_key"
+          BVD_DATA_KEY_FILE="$RUNNER_TEMP/bvd_data_key" scripts/decrypt_bvd_data.sh
+          rm "$RUNNER_TEMP/bvd_data_key"
+      - name: Fit
+        env:
+          NOWCAST_DATES: ${{ matrix.date }}
+          NOWCAST_COLUMNS: ${{ needs.plan.outputs.columns }}
+          NOWCAST_ITERATIONS: ${{ needs.plan.outputs.iterations }}
+          NOWCAST_MODEL: ${{ needs.plan.outputs.model }}
+        run: |
+          Rscript -e 'targets::tar_make(script = "_targets_nowcast.R", store = "_targets_nowcast", reporter = "timestamp")'
+          mkdir -p parts
+          Rscript -e 'saveRDS(list(scores = targets::tar_read(nowcast_scores, store = "_targets_nowcast"), cfr = targets::tar_read(nowcast_cfr_table, store = "_targets_nowcast"), fits = lapply(targets::tar_read(nowcast_fits, store = "_targets_nowcast"), function(x) x[c("column", "date_now", "parameters", "diagnostics")])), file.path("parts", paste0(Sys.getenv("NOWCAST_DATES"), ".rds")))'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nowcast-part-${{ matrix.date }}
+          path: parts/*.rds
+          retention-days: 30
+
+  collect:
+    needs: [plan, fit]
+    if: always() && needs.plan.result == 'success'
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
+      - uses: r-lib/actions/setup-r-dependencies@v2
+        with:
+          dependencies: '"hard"'
+          packages: |
+            any::targets
+            any::dplyr
+            any::tidyr
+            any::ggplot2
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: nowcast-part-*
+          path: parts
+          merge-multiple: true
+      - name: Join the dates
+        run: |
+          ls -l parts
+          Rscript -e '
+            suppressMessages(library(dplyr)); source("R/nowcast.R")
+            parts <- lapply(list.files("parts", full.names = TRUE), readRDS)
+            write_nowcast_outputs(unlist(lapply(parts, `[[`, "scores"), recursive = FALSE), "outputs/nowcast")
+            cfr <- bind_rows(lapply(parts, `[[`, "cfr"))
+            if (nrow(cfr) > 0) write_nowcast_cfr(cfr, "outputs/nowcast")
+            fits <- unlist(lapply(parts, `[[`, "fits"), recursive = FALSE)
+            diag <- bind_rows(lapply(fits, function(x) as_tibble(c(list(column = x$column, date_now = x$date_now), x$diagnostics))))
+            write.csv(diag, "outputs/nowcast/diagnostics.csv", row.names = FALSE); print(diag)
+            pars <- bind_rows(lapply(fits, function(x) mutate(x$parameters, column = x$column, date_now = x$date_now)))
+            write.csv(pars, "outputs/nowcast/parameters.csv", row.names = FALSE)'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nowcast-outputs
+          path: outputs/nowcast
+          retention-days: 30
