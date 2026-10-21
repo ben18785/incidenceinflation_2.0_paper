@@ -1,0 +1,12 @@
+# The outbreak-like simulation of batch 12 (the same dataset, chains and
+# settings) with the fraction dated by death integrated out of the changes
+# to which fatal cases are (package branch collapsed-fraction, which is
+# sampler-speed with that option), to see whether the fraction (truth 0.413)
+# mixes faster: three chains to 1500 iterations, each stopped after 330
+# minutes if it has not finished.
+package: ben18785/incidenceinflation_2.0@collapsed-fraction
+replicates: 1
+chains: 3
+iterations: 1500
+time_limit: 330
+real_like_exact_collapsed
