@@ -1,0 +1,6 @@
+# The back-test with the tau_t prior by series (0.2 for cases, 0.5 for deaths).
+dates: 2026-08-01,2026-09-02,2026-09-30
+columns: cases_reported,deaths_reported
+iterations: 500
+model: stan/nowcast_simple.stan
+
