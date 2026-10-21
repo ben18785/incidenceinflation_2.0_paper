@@ -1,0 +1,19 @@
+# The series of fits of batch 17 (the exact form, the backlog held 21 days)
+# to the reports to each date from 1 August to 14 October, with the share of
+# fatal cases reported when their death is recorded held at 0.95, started
+# afresh to 3000 iterations with the faster package, carrying themselves on
+# for up to 3 more runs.
+package: ben18785/incidenceinflation_2.0@sampler-speed
+iterations: 3000
+rounds: 3
+joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0801
+joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0809
+joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0819
+joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0826
+joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0902
+joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0909
+joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0916
+joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0924
+joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0930
+joint_no_tail_misdated_triggered_fixed_july_backlog_exact_1007
+joint_no_tail_misdated_triggered_fixed_july_backlog_exact_1014
