@@ -203,6 +203,21 @@ deaths_priors:
     recording_backlog: {hold_days: 21}
     label: "counted on day of death (exact form), deaths bring reports, recording delay fixed to 31 July, backlog held 21 days"
 
+  # as the last, with the share of fatal cases reported when their death is
+  # recorded held at 0.95 (the earlier fits estimated 0.94, 0.82 to 1.00),
+  # since in simulations it competes with the delay to a death being recorded
+  # and the fraction dated by death, and holding it lets these be recovered
+  misdated_triggered_fixed_july_backlog_exact: &misdated_triggered_fixed_july_backlog_exact
+    onset_to_death: {mean: 9.3, sd: 5.5}
+    dated_by_death: {fraction: {alpha: 1, beta: 1, initial: 0.25}, exact: true}
+    initial_delay: {mean: 3, sd: 2.5}
+    delay_prior: {mean_mu: 4, mean_sigma: 4, sd_mu: 4, sd_sigma: 4}
+    triggered: {initial: 0.95, n_steps: 0}
+    fatal_delay: false
+    recording_fixed_until: 2026-07-31
+    recording_backlog: {hold_days: 21}
+    label: "counted on day of death (exact form), deaths bring reports (share held at 0.95), recording delay fixed to 31 July, backlog held 21 days"
+
 experiments:
   # reports to 5 September, deaths alone with no heavier tail
   deaths_0905: {model: deaths, tail: false}
@@ -335,6 +350,19 @@ experiments:
   joint_no_tail_misdated_triggered_july_backlog_exact_0924: {model: joint, date: 2026-09-24, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1550}
   joint_no_tail_misdated_triggered_july_backlog_exact_0930: {model: joint, date: 2026-09-30, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1550}
   joint_no_tail_misdated_triggered_july_backlog_exact_1014: {model: joint, date: 2026-10-14, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1550}
+
+  # the series with the share whose death brings the report held at 0.95
+  joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0801: {model: joint, date: 2026-08-01, tail: false, deaths_prior: *misdated_triggered_fixed_july_backlog_exact, iterations: 3000}
+  joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0809: {model: joint, date: 2026-08-09, tail: false, deaths_prior: *misdated_triggered_fixed_july_backlog_exact, iterations: 3000}
+  joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0819: {model: joint, date: 2026-08-19, tail: false, deaths_prior: *misdated_triggered_fixed_july_backlog_exact, iterations: 3000}
+  joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0826: {model: joint, date: 2026-08-26, tail: false, deaths_prior: *misdated_triggered_fixed_july_backlog_exact, iterations: 3000}
+  joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0902: {model: joint, date: 2026-09-02, tail: false, deaths_prior: *misdated_triggered_fixed_july_backlog_exact, iterations: 3000}
+  joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0909: {model: joint, date: 2026-09-09, tail: false, deaths_prior: *misdated_triggered_fixed_july_backlog_exact, iterations: 3000}
+  joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0916: {model: joint, date: 2026-09-16, tail: false, deaths_prior: *misdated_triggered_fixed_july_backlog_exact, iterations: 3000}
+  joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0924: {model: joint, date: 2026-09-24, tail: false, deaths_prior: *misdated_triggered_fixed_july_backlog_exact, iterations: 3000}
+  joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0930: {model: joint, date: 2026-09-30, tail: false, deaths_prior: *misdated_triggered_fixed_july_backlog_exact, iterations: 3000}
+  joint_no_tail_misdated_triggered_fixed_july_backlog_exact_1007: {model: joint, date: 2026-10-07, tail: false, deaths_prior: *misdated_triggered_fixed_july_backlog_exact, iterations: 3000}
+  joint_no_tail_misdated_triggered_fixed_july_backlog_exact_1014: {model: joint, date: 2026-10-14, tail: false, deaths_prior: *misdated_triggered_fixed_july_backlog_exact, iterations: 3000}
 
   # cases and deaths together
   joint_1001: {model: joint, date: 2026-10-01, iterations: 800}
