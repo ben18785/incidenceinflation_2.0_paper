@@ -1,0 +1,8 @@
+# The nowcast back-test: the simpler form fitted to the reports to 1 August,
+# 2 September and 30 September, cases and deaths separately, projected to the
+# last report and scored against it, with the case fatality ratio by onset
+# week from the two.
+dates: 2026-08-01,2026-09-02,2026-09-30
+columns: cases_reported,deaths_reported
+iterations: 500
+model: stan/nowcast_simple.stan
