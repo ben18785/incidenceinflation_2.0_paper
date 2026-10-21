@@ -164,12 +164,12 @@ nowcast_inits <- function(data, chains, seed = 1, parameters = NULL) {
 #' @param analysis as prepare_bvd_deaths_analysis
 #' @inheritParams nowcast_stan_data
 #' @param date_target the date to which counts are projected
-#' @param chains,iter_warmup,iter_sampling,seed as cmdstanr's sample
+#' @param chains,iter_warmup,iter_sampling,seed,adapt_delta as cmdstanr's sample
 #' @return a named list: 'by_day' (the projected count of each onset day,
 #'   with the count now, and the mean delay), 'parameters' (summaries of the
 #'   scalar parameters), 'diagnostics' and 'draws_total' (the projected total)
 fit_nowcast <- function(analysis, column, date_target, chains = 4,
-                        iter_warmup = 500, iter_sampling = 500, seed = 1,
+                        iter_warmup = 500, iter_sampling = 500, seed = 1, adapt_delta = 0.95,
                         model_file = "stan/nowcast.stan", output_dir = NULL) {
   day_target <- as.integer(as.Date(date_target) - analysis$dates$date[1]) + 1L
   data <- nowcast_stan_data(analysis$snapshots, column, day_target)
@@ -177,6 +177,7 @@ fit_nowcast <- function(analysis, column, date_target, chains = 4,
   time_start <- Sys.time()
   fit <- model$sample(data = data, chains = chains, parallel_chains = chains,
                       iter_warmup = iter_warmup, iter_sampling = iter_sampling,
+                      adapt_delta = adapt_delta,
                       init = nowcast_inits(data, chains, seed, names(model$variables()$parameters)),
                       seed = seed, refresh = 0, show_messages = FALSE,
                       output_dir = output_dir)
