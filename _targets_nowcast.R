@@ -4,7 +4,10 @@
 #   targets::tar_make(script = "_targets_nowcast.R", store = "_targets_nowcast")
 # NOWCAST_DATES and NOWCAST_COLUMNS (separated by commas) choose the fits;
 # NOWCAST_ITERATIONS the warm-up and kept draws of each chain; NOWCAST_MODEL
-# the form of the model (by default the simpler stan/nowcast_simple.stan).
+# the form of the model (by default the simpler stan/nowcast_simple.stan);
+# NOWCAST_TARGET "last" (the default) projects counts to the last report, to
+# score them against it, and "eventual" until every delay has elapsed, for
+# the eventual counts and case fatality ratio.
 # Where both cases and deaths are fitted to a date, the case fatality ratio
 # by onset week is the ratio of their projections.
 
@@ -33,7 +36,7 @@ fits <- tar_map(
   values = grid, names = "id",
   tar_target(nowcast, fit_nowcast(
     prepare_bvd_deaths_analysis(nowcast_snapshots, as.Date(date)), column,
-    nowcast_date_last, iter_warmup = iterations, iter_sampling = iterations,
+    nowcast_date_target, iter_warmup = iterations, iter_sampling = iterations,
     model_file = nowcast_model)),
   tar_target(nowcast_score, score_nowcast(
     nowcast, prepare_bvd_deaths_analysis(nowcast_snapshots, nowcast_date_last)$snapshots)))
@@ -46,6 +49,9 @@ list(
              format = "file", cue = tar_cue(mode = "always")),
   tar_target(nowcast_snapshots, build_bvd_snapshots(nowcast_files)),
   tar_target(nowcast_date_last, max(nowcast_snapshots$date_reported)),
+  # a year after the last report is beyond the longest delay of any onset day
+  tar_target(nowcast_date_target,
+             nowcast_date_last + if(f_env("NOWCAST_TARGET", "last") == "eventual") 365 else 0),
   tar_target(nowcast_stan, f_env("NOWCAST_MODEL", "stan/nowcast_simple.stan"),
              format = "file"),
   # compiled once here, so that fits run at once do not compile it together

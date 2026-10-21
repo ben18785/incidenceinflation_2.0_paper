@@ -8,6 +8,7 @@
 #   iterations: <warm-up and kept draws of each chain> (default 500)
 #   model: <the Stan file> (default stan/nowcast_simple.stan)
 #   package: <owner>/<repository>@<branch> (for the data's preparation)
+#   target: last (project to the last report, the default) or eventual
 # and a push which changes the file starts it.
 name: nowcast
 run-name: ${{ inputs.batch || github.event.head_commit.message }}
@@ -33,6 +34,7 @@ jobs:
       columns: ${{ steps.plan.outputs.columns }}
       iterations: ${{ steps.plan.outputs.iterations }}
       model: ${{ steps.plan.outputs.model }}
+      target: ${{ steps.plan.outputs.target }}
       package: ${{ steps.plan.outputs.package }}
     steps:
       - uses: actions/checkout@v4
@@ -53,6 +55,7 @@ jobs:
           echo "columns=$(f_line columns)" >> "$GITHUB_OUTPUT"
           echo "iterations=$(f_line iterations)" >> "$GITHUB_OUTPUT"
           echo "model=$(f_line model)" >> "$GITHUB_OUTPUT"
+          echo "target=$(f_line target)" >> "$GITHUB_OUTPUT"
           package=$(f_line package)
           echo "package=github::${package:-ben18785/incidenceinflation_2.0@sampler-speed}" >> "$GITHUB_OUTPUT"
           echo "Batch $file: dates $dates"
@@ -106,6 +109,7 @@ jobs:
           NOWCAST_COLUMNS: ${{ needs.plan.outputs.columns }}
           NOWCAST_ITERATIONS: ${{ needs.plan.outputs.iterations }}
           NOWCAST_MODEL: ${{ needs.plan.outputs.model }}
+          NOWCAST_TARGET: ${{ needs.plan.outputs.target }}
         run: |
           Rscript -e 'targets::tar_make(script = "_targets_nowcast.R", store = "_targets_nowcast", reporter = "timestamp")'
           mkdir -p parts
