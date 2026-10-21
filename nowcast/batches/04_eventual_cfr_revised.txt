@@ -1,0 +1,8 @@
+# The fit to all reports of batch 02 with the revised nowcast model, cases and
+# deaths, projected until every delay has elapsed, for the eventual case
+# fatality ratio by onset week.
+dates: 2026-10-14
+columns: cases_reported,deaths_reported
+iterations: 500
+model: stan/nowcast_simple.stan
+target: eventual
