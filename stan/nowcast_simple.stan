@@ -51,9 +51,15 @@ data {
   // its delay then, and the day to which counts are projected
   array[T] int count_last;
   array[T] int<lower=0, upper=D> delay_last;
+  // the log probabilities of a reference delay distribution, about which g
+  // varies (an offset, so that the prior on beta_g is centred on it)
+  vector[D + 1] log_p_ref;
   int<lower=0> day_target;             // as an onset day; 0 for no projection
   // prior scales
   real<lower=0> sigma_lambda_scale;
+  real<lower=0> beta_g_scale;
+  real log_phi_mu;
+  real<lower=0> log_phi_sd;
   real<lower=0> tau_t_scale;
   real<lower=0> sigma_u_scale;
   real<lower=0> rho_scale;
@@ -67,11 +73,11 @@ parameters {
   real<lower=0> tau_t;
   vector[R] z_u;
   real<lower=0> sigma_u;
-  real<lower=0> inv_sqrt_phi;
+  real log_phi;
   real<lower=0> rho;
 }
 transformed parameters {
-  real phi = 1 / square(inv_sqrt_phi);
+  real phi = exp(log_phi);
   vector[T] log_lambda = log_lambda_1 +
     append_row(0, cumulative_sum(sigma_lambda * z_lambda));
   vector[R] u = sigma_u * z_u;
@@ -84,7 +90,7 @@ transformed parameters {
       cum[k] = cum[k - 1] + steps[k];
     matrix[Kt, Kd] beta_h = append_col(rep_vector(0, Kt), cum);
     vector[Kd] beta_g = append_row(0, beta_g_free);
-    matrix[T, D + 1] eta = rep_matrix((Bd * beta_g)', T) + Bt * beta_h * Bd';
+    matrix[T, D + 1] eta = rep_matrix((log_p_ref + Bd * beta_g)', T) + Bt * beta_h * Bd';
     for (i in 1:T)
       log_p[i] = log_softmax(eta[i]')';
   }
@@ -93,12 +99,12 @@ model {
   log_lambda_1 ~ normal(log(5), 3);
   z_lambda ~ std_normal();
   sigma_lambda ~ normal(0, sigma_lambda_scale);
-  beta_g_free ~ normal(0, 5);
+  beta_g_free ~ normal(0, beta_g_scale);
   to_vector(z_h) ~ std_normal();
   tau_t ~ normal(0, tau_t_scale);
   z_u ~ std_normal();
   sigma_u ~ normal(0, sigma_u_scale);
-  inv_sqrt_phi ~ normal(0, 1);
+  log_phi ~ normal(log_phi_mu, log_phi_sd);
   rho ~ normal(0, rho_scale);
   for (i in 1:N) {
     real log_mu_a = log_lambda[t[i]] + log_sum_exp(log_p[t[i], (lo[i] + 1):(hi[i] + 1)]) + u[r[i]];

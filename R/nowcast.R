@@ -33,42 +33,103 @@ nowcast_triangle <- function(snapshots, column) {
                      count = .data$count)
 }
 
+#' Knots of the basis in delay: quantiles of the delays at which records were added
+#'
+#' Each rise in a count between consecutive reports is taken as records added
+#' at the delay of the later report, weighted by the size of the rise. First
+#' counts of onset days made more than first_max days after onset are left
+#' out, since the delays of their records are not known.
+#'
+#' @param tri as nowcast_triangle
+#' @param probs the quantiles
+#' @param first_max the longest delay of a first count which is used
+#' @return the delays (in days) of the interior knots
+nowcast_delay_knots <- function(tri, probs = c(0.25, 0.5, 0.75), first_max = 7) {
+  added <- dplyr::filter(tri, .data$n > 0, !(.data$lo == 0 & .data$hi > first_max))
+  o <- order(added$hi)
+  cumulative <- cumsum(added$n[o]) / sum(added$n)
+  knots <- vapply(probs, function(p) added$hi[o][which(cumulative >= p)[1]], numeric(1))
+  knots <- unique(knots)
+  knots[knots > 0 & knots < max(tri$hi)]
+}
+
 #' The data for stan/nowcast.stan
+#'
+#' The basis in delay is cubic in log(1 + d), with interior knots at quantiles
+#' of the delays at which records were added (nowcast_delay_knots); the basis
+#' in onset time is cubic, with interior knots every onset_knot_days days.
 #'
 #' @inheritParams nowcast_triangle
 #' @param day_target the day (counted as the onset days are) to which counts
 #'   are projected, or 0 for none
-#' @param days_per_knot the days of onset time between knots of h
-#' @param Kd the basis functions in log delay
+#' @param onset_knot_days the days of onset time between knots of h
 #' @param priors a named list of the prior scales
 #' @return a named list
-nowcast_stan_data <- function(snapshots, column, day_target = 0L, days_per_knot = 18,
-                              Kd = 7, priors = nowcast_priors()) {
+nowcast_stan_data <- function(snapshots, column, day_target = 0L, onset_knot_days = 14,
+                              priors = nowcast_priors(column)) {
   tri <- nowcast_triangle(snapshots, column)
   n_days <- max(tri$t)
   stopifnot(identical(sort(unique(tri$t)), seq_len(n_days)))
   delay_max <- max(tri$hi)
   reports <- sort(unique(tri$time_reported))
-  Kt <- max(3L, as.integer(round(n_days / days_per_knot)))
+  delay_knots <- nowcast_delay_knots(tri)
+  Bd <- splines::bs(log1p(0:delay_max), knots = log1p(delay_knots), degree = 3,
+                    intercept = TRUE, Boundary.knots = c(0, log1p(delay_max)))
+  onset_knots <- seq(1 + onset_knot_days, n_days - 1, by = onset_knot_days)
+  Bt <- splines::bs(seq_len(n_days), knots = onset_knots, degree = 3, intercept = TRUE,
+                    Boundary.knots = c(1, n_days))
   last <- tri %>% dplyr::group_by(.data$t) %>%
     dplyr::filter(.data$time_reported == max(.data$time_reported)) %>%
     dplyr::ungroup() %>% dplyr::arrange(.data$t)
   c(list(
-    T = n_days, D = delay_max, Kt = Kt, Kd = Kd,
-    Bt = splines::bs(seq_len(n_days), df = Kt, degree = 3, intercept = TRUE),
-    Bd = splines::bs(log1p(0:delay_max), df = Kd, degree = 3, intercept = TRUE),
+    T = n_days, D = delay_max, Kt = ncol(Bt), Kd = ncol(Bd),
+    Bt = unclass(Bt), Bd = unclass(Bd),
     R = length(reports), N = nrow(tri), t = tri$t, lo = tri$lo, hi = tri$hi,
     r = match(tri$time_reported, reports), report_day = as.integer(reports), n = tri$n,
-    # removals at a rate up to about a twentieth of the additions
-    w_max = pmax(0L, -tri$n) + 4L + as.integer(ceiling(0.08 * abs(tri$n))),
+    # the removals summed over, enough for removals of up to about half of
+    # the additions
+    w_max = pmax(0L, -tri$n) + 6L + as.integer(ceiling(0.5 * abs(tri$n))),
     count_last = last$count, delay_last = last$hi,
-    day_target = as.integer(day_target)), priors)
+    day_target = as.integer(day_target),
+    log_p_ref = nowcast_reference_delay(delay_max, priors$reference_mean, priors$reference_sd),
+    delay_knots = delay_knots, onset_knots = onset_knots),
+    priors[setdiff(names(priors), c("reference_mean", "reference_sd"))])
 }
 
-#' Prior scales of the nowcast (half-normal)
-nowcast_priors <- function()
+#' The log probabilities of the reference delay distribution
+#'
+#' A gamma distribution, discretised to whole days as the reporting delay of
+#' the mechanistic model is (the probability of (d - 1/2, d + 1/2], from 0),
+#' and renormalised over the delays 0 to D.
+#'
+#' @param D the longest delay
+#' @param mean,sd of the gamma distribution, in days
+#' @return a vector of log probabilities for the delays 0 to D
+nowcast_reference_delay <- function(D, mean, sd) {
+  shape <- mean^2 / sd^2
+  rate <- mean / sd^2
+  p <- diff(stats::pgamma(c(0, seq_len(D + 1) - 0.5), shape, rate))
+  log(p / sum(p))
+}
+
+#' Priors of the nowcast
+#'
+#' The scales of the half-normal priors; the prior on the departures of the
+#' delay distribution from a reference (beta_g_scale), which is a gamma
+#' distribution with the mean and sd of the prior centre of the reporting
+#' delay of the mechanistic model (7 and 10 days) for cases, and, for deaths,
+#' with a mean of 13 days (the time from onset to death of 9.3 days and the
+#' prior centre of 4 days of the delay from death to recording); and a
+#' log-normal prior on the overdispersion phi, centred on 20 (the prior mean
+#' of the overdispersion of transmission in the mechanistic model).
+#'
+#' @param column the count: "cases_reported" or "deaths_reported"
+#' @return a named list
+nowcast_priors <- function(column = "cases_reported")
   list(sigma_lambda_scale = 0.3, sigma_g_scale = 0.03, tau_s_scale = 0.05,
-       kappa_scale = 2, tau_t_scale = 0.2, sigma_u_scale = 0.5, rho_scale = 0.05)
+       kappa_scale = 2, tau_t_scale = 0.5, sigma_u_scale = 0.5, rho_scale = 0.25,
+       beta_g_scale = 3, log_phi_mu = log(20), log_phi_sd = 1.5,
+       reference_mean = if(column == "deaths_reported") 13 else 7, reference_sd = 10)
 
 #' Initial values of the nowcast
 #'
@@ -94,7 +155,7 @@ nowcast_inits <- function(data, chains, seed = 1, parameters = NULL) {
          z_h = matrix(f_z(data$Kt * (data$Kd - 1)), data$Kt),
          tau_t = data$tau_t_scale / 2, z_s = f_z(data$R - 1),
          tau_s = data$tau_s_scale / 2, z_u = f_z(data$R),
-         sigma_u = data$sigma_u_scale / 2, kappa = 1, inv_sqrt_phi = 0.1, rho = 0.02)
+         sigma_u = data$sigma_u_scale / 2, kappa = 1, log_phi = data$log_phi_mu, rho = 0.05)
   }) %>% lapply(function(x) if(is.null(parameters)) x else x[intersect(names(x), parameters)]))
 }
 
