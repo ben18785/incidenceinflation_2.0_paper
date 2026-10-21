@@ -1,0 +1,8 @@
+# The back-test of batch 01 with the revised nowcast model: delay knots at
+# quantiles of the observed delays, onset knots every 14 days, the delay prior
+# centred on a reference distribution, the revised priors on tau_t, rho and
+# phi, and adapt_delta 0.95.
+dates: 2026-08-01,2026-09-02,2026-09-30
+columns: cases_reported,deaths_reported
+iterations: 500
+model: stan/nowcast_simple.stan
