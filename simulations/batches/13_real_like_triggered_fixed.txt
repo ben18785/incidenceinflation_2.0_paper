@@ -1,0 +1,11 @@
+# The outbreak-like simulation of batch 12 (the same dataset and package)
+# with the share of fatal cases reported when their death is recorded held
+# at 0.95 (its truth 0.947), to see whether the fraction dated by death
+# (truth 0.413) and the totals are then recovered: three chains to 1500
+# iterations, each stopped after 330 minutes if it has not finished.
+package: ben18785/incidenceinflation_2.0@sampler-speed
+replicates: 1
+chains: 3
+iterations: 1500
+time_limit: 330
+real_like_exact_triggered_fixed
