@@ -1,0 +1,6 @@
+# The fit to all reports, projected until every delay has elapsed, with the tau_t prior by series.
+dates: 2026-10-14
+columns: cases_reported,deaths_reported
+iterations: 500
+model: stan/nowcast_simple.stan
+target: eventual
