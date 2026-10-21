@@ -125,11 +125,20 @@ nowcast_reference_delay <- function(D, mean, sd) {
 #'
 #' @param column the count: "cases_reported" or "deaths_reported"
 #' @return a named list
-nowcast_priors <- function(column = "cases_reported")
+nowcast_priors <- function(column = "cases_reported") {
+  is_deaths <- column == "deaths_reported"
   list(sigma_lambda_scale = 0.3, sigma_g_scale = 0.03, tau_s_scale = 0.05,
-       kappa_scale = 2, tau_t_scale = 0.5, sigma_u_scale = 0.5, rho_scale = 0.25,
+       kappa_scale = 2,
+       # the delay of deaths changed more over the outbreak (the backlog)
+       tau_t_scale = if(is_deaths) 0.5 else 0.2,
+       sigma_u_scale = 0.5, rho_scale = 0.25,
        beta_g_scale = 3, log_phi_mu = log(20), log_phi_sd = 1.5,
-       reference_mean = if(column == "deaths_reported") 13 else 7, reference_sd = 10)
+       reference_mean = if(is_deaths) 13 else 7, reference_sd = 10,
+       # stan/nowcast_tail.stan: the cut-off delay, beyond which about 5% of
+       # cases and 8% of deaths are added, and the prior on that share
+       d_c = if(is_deaths) 42L else 28L,
+       q_alpha = 2, q_beta = if(is_deaths) 23 else 38)
+}
 
 #' Initial values of the nowcast
 #'
@@ -155,7 +164,8 @@ nowcast_inits <- function(data, chains, seed = 1, parameters = NULL) {
          z_h = matrix(f_z(data$Kt * (data$Kd - 1)), data$Kt),
          tau_t = data$tau_t_scale / 2, z_s = f_z(data$R - 1),
          tau_s = data$tau_s_scale / 2, z_u = f_z(data$R),
-         sigma_u = data$sigma_u_scale / 2, kappa = 1, log_phi = data$log_phi_mu, rho = 0.05)
+         sigma_u = data$sigma_u_scale / 2, kappa = 1, log_phi = data$log_phi_mu, rho = 0.05,
+         q = data$q_alpha / (data$q_alpha + data$q_beta))
   }) %>% lapply(function(x) if(is.null(parameters)) x else x[intersect(names(x), parameters)]))
 }
 
