@@ -1,0 +1,7 @@
+# The back-test with cases and deaths fitted together (stan/nowcast_joint.stan):
+# the expected deaths of each onset day are its expected cases times a case
+# fatality ratio which is a random walk over onset days; cases with the common
+# tail, deaths with the smooth delay, the tau_t prior by series.
+dates: 2026-08-01,2026-09-02,2026-09-30
+iterations: 500
+model: joint
