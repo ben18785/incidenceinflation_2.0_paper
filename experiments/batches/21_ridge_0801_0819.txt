@@ -1,0 +1,10 @@
+# The fits to the reports to 1 August and 19 August of batch 19 (the share of
+# fatal cases reported when their death is recorded held at 0.95), with the
+# joint move of the fraction dated by death and the delay to a death being
+# recorded (package branch ridge-move), to see whether the chains then
+# converge: 19 August had the slowest fraction of batch 19 (R-hat 2.0).
+package: ben18785/incidenceinflation_2.0@ridge-move
+iterations: 3000
+rounds: 2
+joint_no_tail_misdated_ridge_triggered_fixed_july_backlog_exact_0801
+joint_no_tail_misdated_ridge_triggered_fixed_july_backlog_exact_0819
