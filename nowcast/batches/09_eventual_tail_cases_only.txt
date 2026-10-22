@@ -1,0 +1,6 @@
+# The fit to all reports, projected until every delay has elapsed, with the common tail for cases only (deaths keep the smooth delay) and the tau_t prior by series.
+dates: 2026-10-14
+columns: cases_reported,deaths_reported
+iterations: 500
+model: cases_reported=stan/nowcast_tail.stan,deaths_reported=stan/nowcast_simple.stan
+target: eventual
