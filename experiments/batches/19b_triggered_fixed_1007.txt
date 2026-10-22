@@ -1,0 +1,8 @@
+# The fit to 7 October of batch 19, carried on from round 4 (run 39799705609)
+# so that its third chain, started afresh after its runner was lost, reaches
+# 3000 iterations; the other three chains are already there.
+package: ben18785/incidenceinflation_2.0@sampler-speed
+iterations: 3000
+rounds: 0
+continue: 39799705609
+joint_no_tail_misdated_triggered_fixed_july_backlog_exact_1007
