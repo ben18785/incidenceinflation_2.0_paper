@@ -218,6 +218,20 @@ deaths_priors:
     recording_backlog: {hold_days: 21}
     label: "counted on day of death (exact form), deaths bring reports (share held at 0.95), recording delay fixed to 31 July, backlog held 21 days"
 
+  # as the last, with the fraction dated by death also held, at 0.43 (the
+  # fits to 14 October estimated 0.43), to see whether the slow mixing of the
+  # other parameters comes from it
+  misdated_fraction_fixed_triggered_fixed_july_backlog_exact: &misdated_fraction_fixed_triggered_fixed_july_backlog_exact
+    onset_to_death: {mean: 9.3, sd: 5.5}
+    dated_by_death: {fraction: 0.43, exact: true}
+    initial_delay: {mean: 3, sd: 2.5}
+    delay_prior: {mean_mu: 4, mean_sigma: 4, sd_mu: 4, sd_sigma: 4}
+    triggered: {initial: 0.95, n_steps: 0}
+    fatal_delay: false
+    recording_fixed_until: 2026-07-31
+    recording_backlog: {hold_days: 21}
+    label: "counted on day of death (exact form, fraction held at 0.43), deaths bring reports (share held at 0.95), recording delay fixed to 31 July, backlog held 21 days"
+
 experiments:
   # reports to 5 September, deaths alone with no heavier tail
   deaths_0905: {model: deaths, tail: false}
@@ -352,6 +366,7 @@ experiments:
   joint_no_tail_misdated_triggered_july_backlog_exact_1014: {model: joint, date: 2026-10-14, tail: false, deaths_prior: *misdated_triggered_july_backlog_exact, iterations: 1550}
 
   # the series with the share whose death brings the report held at 0.95
+  joint_no_tail_misdated_fraction_fixed_triggered_fixed_july_backlog_exact_0801: {model: joint, date: 2026-08-01, tail: false, deaths_prior: *misdated_fraction_fixed_triggered_fixed_july_backlog_exact, iterations: 3000}
   joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0801: {model: joint, date: 2026-08-01, tail: false, deaths_prior: *misdated_triggered_fixed_july_backlog_exact, iterations: 3000}
   joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0809: {model: joint, date: 2026-08-09, tail: false, deaths_prior: *misdated_triggered_fixed_july_backlog_exact, iterations: 3000}
   joint_no_tail_misdated_triggered_fixed_july_backlog_exact_0819: {model: joint, date: 2026-08-19, tail: false, deaths_prior: *misdated_triggered_fixed_july_backlog_exact, iterations: 3000}
