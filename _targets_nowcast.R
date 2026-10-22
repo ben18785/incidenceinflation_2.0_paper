@@ -5,7 +5,8 @@
 # NOWCAST_DATES and NOWCAST_COLUMNS (separated by commas) choose the fits;
 # NOWCAST_ITERATIONS the warm-up and kept draws of each chain; NOWCAST_MODEL
 # the form of the model (by default the simpler stan/nowcast_simple.stan),
-# either one Stan file for every column or pairs <column>=<Stan file>;
+# either one Stan file for every column or pairs <column>=<Stan file>, or
+# "joint" for stan/nowcast_joint.stan, which fits cases and deaths together;
 # NOWCAST_TARGET "last" (the default) projects counts to the last report, to
 # score them against it, and "eventual" until every delay has elapsed, for
 # the eventual counts and case fatality ratio.
@@ -33,7 +34,12 @@ grid <- tidyr::expand_grid(
 grid$id <- paste0(gsub("-", "", grid$date), "_", sub("_reported$", "", grid$column))
 # the Stan file of each column
 models <- f_env("NOWCAST_MODEL", "stan/nowcast_simple.stan")
-if(any(grepl("=", models))) {
+is_joint <- identical(models, "joint")
+if(is_joint) {
+  grid <- dplyr::distinct(grid, date)
+  grid$id <- gsub("-", "", grid$date)
+  grid$model <- "stan/nowcast_joint.stan"
+} else if(any(grepl("=", models))) {
   pairs <- strsplit(models, "=", fixed = TRUE)
   models <- setNames(vapply(pairs, `[`, "", 2), vapply(pairs, `[`, "", 1))
   if(!all(grid$column %in% names(models)))
@@ -42,7 +48,15 @@ if(any(grepl("=", models))) {
 } else grid$model <- models
 iterations <- as.integer(f_env("NOWCAST_ITERATIONS", "500"))
 
-fits <- tar_map(
+fits <- if(is_joint) tar_map(
+  # each fit gives a list of the fits of cases and of deaths, with paired draws
+  values = grid, names = "id",
+  tar_target(nowcast, fit_nowcast_joint(
+    prepare_bvd_deaths_analysis(nowcast_snapshots, as.Date(date)),
+    nowcast_date_target, iter_warmup = iterations, iter_sampling = iterations,
+    model_file = nowcast_model)),
+  tar_target(nowcast_score, lapply(nowcast, score_nowcast,
+    prepare_bvd_deaths_analysis(nowcast_snapshots, nowcast_date_last)$snapshots))) else tar_map(
   values = grid, names = "id",
   tar_target(nowcast, fit_nowcast(
     prepare_bvd_deaths_analysis(nowcast_snapshots, as.Date(date)), column,
@@ -50,6 +64,12 @@ fits <- tar_map(
     model_file = nowcast_model[match(model, nowcast_stan)])),
   tar_target(nowcast_score, score_nowcast(
     nowcast, prepare_bvd_deaths_analysis(nowcast_snapshots, nowcast_date_last)$snapshots)))
+# the fits of the joint model are lists of two, which are joined into one list
+f_combine <- function(name, targets) {
+  if(is_joint)
+    tar_combine_raw(name, targets, command = quote(do.call(c, unname(list(!!!.x)))))
+  else tar_combine_raw(name, targets, command = quote(list(!!!.x)))
+}
 
 list(
   # the raw files are not tracked: scripts/decrypt_bvd_data.sh restores them
@@ -69,11 +89,10 @@ list(
     nowcast_stan
   }, deployment = "main"),
   fits,
-  tar_combine(nowcast_scores, fits[["nowcast_score"]],
-              command = list(!!!.x)),
+  f_combine("nowcast_scores", fits[["nowcast_score"]]),
   tar_target(files_nowcast, write_nowcast_outputs(nowcast_scores, "outputs/nowcast"),
              format = "file"),
-  tar_combine(nowcast_fits, fits[["nowcast"]], command = list(!!!.x)),
+  f_combine("nowcast_fits", fits[["nowcast"]]),
   tar_target(nowcast_cfr_table, {
     analysis_later <- prepare_bvd_deaths_analysis(nowcast_snapshots, nowcast_date_last)
     columns <- vapply(nowcast_fits, `[[`, "", "column")

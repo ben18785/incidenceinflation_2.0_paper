@@ -205,9 +205,10 @@ fit_nowcast <- function(analysis, column, date_target, chains = 4,
 #' @inheritParams fit_nowcast
 #' @param minutes the time it took
 #' @return as fit_nowcast
-summarise_nowcast <- function(fit, data, analysis, column, date_target, minutes = NA) {
-  draws_projected <- posterior::as_draws_matrix(fit$draws("projected"))
-  draws_delay <- posterior::as_draws_matrix(fit$draws("mean_delay"))
+summarise_nowcast <- function(fit, data, analysis, column, date_target, minutes = NA,
+                              suffix = "", extra = character(0)) {
+  draws_projected <- posterior::as_draws_matrix(fit$draws(paste0("projected", suffix)))
+  draws_delay <- posterior::as_draws_matrix(fit$draws(paste0("mean_delay", suffix)))
   f_q <- function(m, p) apply(m, 2, stats::quantile, p, names = FALSE)
   by_day <- dplyr::tibble(
     time_onset = seq_len(data$T),
@@ -217,12 +218,15 @@ summarise_nowcast <- function(fit, data, analysis, column, date_target, minutes 
     p95 = f_q(draws_projected, 0.95),
     mean_delay = f_q(draws_delay, 0.5), mean_delay_p05 = f_q(draws_delay, 0.05),
     mean_delay_p95 = f_q(draws_delay, 0.95))
-  # the forms of the model have different parameters
+  # the forms of the model have different parameters; in the joint model
+  # those of each series end in its suffix, and some are shared
   variables <- fit$metadata()$stan_variables
-  scalars <- intersect(c("sigma_lambda", "sigma_g", "tau_t", "tau_s", "sigma_u", "kappa",
-                         "phi", "rho"), variables)
+  f_named <- function(names) intersect(c(names, paste0(names, suffix)), variables)
+  scalars <- c(f_named(c("sigma_lambda", "sigma_g", "tau_t", "tau_s", "sigma_u", "kappa",
+                         "phi", "rho", "q")), intersect(extra, variables))
   diagnostics <- fit$diagnostic_summary(quiet = TRUE)
-  summary_all <- fit$summary(intersect(c(scalars, "log_lambda", "z_h", "s"), variables))
+  summary_all <- fit$summary(c(scalars, f_named(c("log_lambda", "z_h", "s", "logit_cfr")),
+                               intersect(extra, variables)))
   # the projected count of each onset week (weeks from Monday), for the case
   # fatality ratio
   week <- as.Date(cut(analysis$dates$date[seq_len(data$T)], "week"))
@@ -230,7 +234,8 @@ summarise_nowcast <- function(fit, data, analysis, column, date_target, minutes 
   colnames(draws_weekly) <- as.character(sort(unique(week)))
   list(column = column, date_now = analysis$date_now, date_target = as.Date(date_target),
        by_day = by_day,
-       parameters = fit$summary(scalars),
+       parameters = fit$summary(scalars) %>%
+         dplyr::mutate(variable = sub(paste0(suffix, "(\\[|$)"), "\\1", .data$variable)),
        draws_total = rowSums(draws_projected),
        draws_weekly = draws_weekly,
        diagnostics = list(minutes = minutes,
@@ -302,6 +307,98 @@ write_nowcast_outputs <- function(scores, out) {
     paths <- c(paths, path)
   }
   paths
+}
+
+#' The data for stan/nowcast_joint.stan
+#'
+#' Those of nowcast_stan_data for cases and for deaths, with the suffixes _c
+#' and _d, and the onset days, longest delay, reports and basis in onset time
+#' shared. Cases have the common tail beyond their d_c; deaths have none (d_c
+#' set to the longest delay).
+#'
+#' @inheritParams nowcast_stan_data
+#' @return a named list, with elements 'cases' and 'deaths' holding the data
+#'   of each series as nowcast_stan_data gives them
+nowcast_joint_stan_data <- function(snapshots, day_target = 0L, onset_knot_days = 14) {
+  cases <- nowcast_stan_data(snapshots, "cases_reported", day_target, onset_knot_days)
+  deaths <- nowcast_stan_data(snapshots, "deaths_reported", day_target, onset_knot_days)
+  deaths$d_c <- deaths$D
+  stopifnot(cases$T == deaths$T, cases$D == deaths$D, cases$R == deaths$R,
+            isTRUE(all.equal(cases$Bt, deaths$Bt)))
+  shared <- c("T", "D", "Kt", "Bt", "R", "day_target")
+  own <- c("Kd", "Bd", "N", "t", "lo", "hi", "r", "n", "w_max", "count_last",
+           "delay_last", "log_p_ref", "d_c", "q_alpha", "q_beta", "beta_g_scale",
+           "log_phi_mu", "log_phi_sd", "tau_t_scale", "sigma_u_scale", "rho_scale")
+  f_own <- function(x, suffix) stats::setNames(x[own], paste0(own, suffix))
+  c(cases[shared], f_own(cases, "_c"), list(sigma_lambda_scale_c = cases$sigma_lambda_scale),
+    f_own(deaths, "_d"), nowcast_joint_priors(),
+    list(cases = cases, deaths = deaths))
+}
+
+#' Priors of the case fatality ratio of the joint nowcast
+#'
+#' The logit of the ratio of the first onset day is normal, centred on a
+#' ratio of 0.5 with sd 1.5 (from about 0.08 to 0.92, 90%), and it follows a
+#' random walk over onset days whose sd has a half-normal prior of scale 0.05:
+#' at that scale, over four weeks the logit changes with sd 0.26, a change in
+#' a ratio of 0.5 of about 0.07.
+#'
+#' @return a named list
+nowcast_joint_priors <- function() {
+  list(logit_cfr_mu = 0, logit_cfr_sd = 1.5, sigma_cfr_scale = 0.05)
+}
+
+#' Initial values of the joint nowcast
+#'
+#' Those of nowcast_inits for each series, with the ratio starting at that of
+#' all the deaths to all the cases.
+#'
+#' @param data as nowcast_joint_stan_data
+#' @inheritParams nowcast_inits
+#' @return a list of lists, one for each chain
+nowcast_joint_inits <- function(data, chains, seed = 1) {
+  cases <- nowcast_inits(data$cases, chains, seed)
+  deaths <- nowcast_inits(data$deaths, chains, seed + 1)
+  own <- c("beta_g_free", "z_h", "tau_t", "z_u", "sigma_u", "log_phi", "rho")
+  ratio <- sum(data$count_last_d) / sum(data$count_last_c)
+  withr::with_seed(seed, lapply(seq_len(chains), function(k) {
+    out <- c(cases[[k]][c("log_lambda_1", "z_lambda", "sigma_lambda")],
+             stats::setNames(cases[[k]][own], paste0(own, "_c")),
+             stats::setNames(deaths[[k]][own], paste0(own, "_d")),
+             list(logit_cfr_1 = stats::qlogis(ratio), z_cfr = stats::rnorm(data$T - 1, 0, 0.1),
+                  sigma_cfr = data$sigma_cfr_scale / 2))
+    if(data$d_c_c < data$D)
+      out$q_c <- array(cases[[k]]$q)
+    out
+  }))
+}
+
+#' Fits the joint nowcast of cases and deaths to the reports up to a date
+#'
+#' @inheritParams fit_nowcast
+#' @return a list of two results as fit_nowcast, for cases_reported and
+#'   deaths_reported, whose draws are paired: draw i of each is from the same
+#'   draw of the joint posterior
+fit_nowcast_joint <- function(analysis, date_target, chains = 4, iter_warmup = 500,
+                              iter_sampling = 500, seed = 1, adapt_delta = 0.95,
+                              model_file = "stan/nowcast_joint.stan", output_dir = NULL) {
+  day_target <- as.integer(as.Date(date_target) - analysis$dates$date[1]) + 1L
+  data <- nowcast_joint_stan_data(analysis$snapshots, day_target)
+  model <- cmdstanr::cmdstan_model(model_file)
+  time_start <- Sys.time()
+  fit <- model$sample(data = data[setdiff(names(data), c("cases", "deaths"))],
+                      chains = chains, parallel_chains = chains,
+                      iter_warmup = iter_warmup, iter_sampling = iter_sampling,
+                      adapt_delta = adapt_delta, init = nowcast_joint_inits(data, chains, seed),
+                      seed = seed, refresh = 0, show_messages = FALSE,
+                      output_dir = output_dir)
+  if(any(fit$return_codes() != 0))
+    stop("A chain of the joint nowcast failed: ", paste(fit$return_codes(), collapse = " "))
+  minutes <- as.numeric(Sys.time() - time_start, units = "mins")
+  list(summarise_nowcast(fit, data$cases, analysis, "cases_reported", date_target,
+                         minutes, "_c"),
+       summarise_nowcast(fit, data$deaths, analysis, "deaths_reported", date_target,
+                         minutes, "_d", "sigma_cfr"))
 }
 
 #' The case fatality ratio by onset week from separate nowcasts of the cases
