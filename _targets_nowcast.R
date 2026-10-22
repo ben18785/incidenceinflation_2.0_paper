@@ -4,7 +4,8 @@
 #   targets::tar_make(script = "_targets_nowcast.R", store = "_targets_nowcast")
 # NOWCAST_DATES and NOWCAST_COLUMNS (separated by commas) choose the fits;
 # NOWCAST_ITERATIONS the warm-up and kept draws of each chain; NOWCAST_MODEL
-# the form of the model (by default the simpler stan/nowcast_simple.stan);
+# the form of the model (by default the simpler stan/nowcast_simple.stan),
+# either one Stan file for every column or pairs <column>=<Stan file>;
 # NOWCAST_TARGET "last" (the default) projects counts to the last report, to
 # score them against it, and "eventual" until every delay has elapsed, for
 # the eventual counts and case fatality ratio.
@@ -30,6 +31,15 @@ grid <- tidyr::expand_grid(
   date = f_env("NOWCAST_DATES", c("2026-08-01", "2026-09-02", "2026-09-30")),
   column = f_env("NOWCAST_COLUMNS", c("cases_reported", "deaths_reported")))
 grid$id <- paste0(gsub("-", "", grid$date), "_", sub("_reported$", "", grid$column))
+# the Stan file of each column
+models <- f_env("NOWCAST_MODEL", "stan/nowcast_simple.stan")
+if(any(grepl("=", models))) {
+  pairs <- strsplit(models, "=", fixed = TRUE)
+  models <- setNames(vapply(pairs, `[`, "", 2), vapply(pairs, `[`, "", 1))
+  if(!all(grid$column %in% names(models)))
+    stop("NOWCAST_MODEL names no Stan file for ", setdiff(grid$column, names(models)))
+  grid$model <- unname(models[grid$column])
+} else grid$model <- models
 iterations <- as.integer(f_env("NOWCAST_ITERATIONS", "500"))
 
 fits <- tar_map(
@@ -37,7 +47,7 @@ fits <- tar_map(
   tar_target(nowcast, fit_nowcast(
     prepare_bvd_deaths_analysis(nowcast_snapshots, as.Date(date)), column,
     nowcast_date_target, iter_warmup = iterations, iter_sampling = iterations,
-    model_file = nowcast_model)),
+    model_file = nowcast_model[match(model, nowcast_stan)])),
   tar_target(nowcast_score, score_nowcast(
     nowcast, prepare_bvd_deaths_analysis(nowcast_snapshots, nowcast_date_last)$snapshots)))
 
@@ -52,11 +62,10 @@ list(
   # a year after the last report is beyond the longest delay of any onset day
   tar_target(nowcast_date_target,
              nowcast_date_last + if(f_env("NOWCAST_TARGET", "last") == "eventual") 365 else 0),
-  tar_target(nowcast_stan, f_env("NOWCAST_MODEL", "stan/nowcast_simple.stan"),
-             format = "file"),
-  # compiled once here, so that fits run at once do not compile it together
+  tar_target(nowcast_stan, c(!!!unique(grid$model)), format = "file"),
+  # compiled once here, so that fits run at once do not compile them together
   tar_target(nowcast_model, {
-    cmdstanr::cmdstan_model(nowcast_stan)
+    for(f in nowcast_stan) cmdstanr::cmdstan_model(f)
     nowcast_stan
   }, deployment = "main"),
   fits,

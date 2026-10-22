@@ -6,7 +6,8 @@
 #   dates: <dates, separated by commas>
 #   columns: <columns, separated by commas> (default cases and deaths)
 #   iterations: <warm-up and kept draws of each chain> (default 500)
-#   model: <the Stan file> (default stan/nowcast_simple.stan)
+#   model: <the Stan file> (default stan/nowcast_simple.stan), or pairs
+#     <column>=<Stan file> separated by commas
 #   package: <owner>/<repository>@<branch> (for the data's preparation)
 #   target: last (project to the last report, the default) or eventual
 # and a push which changes the file starts it.
