@@ -1,0 +1,7 @@
+# The fit to the reports to 1 August of batch 19 (the share of fatal cases
+# reported when their death is recorded held at 0.95), with the fraction dated
+# by death also held, at 0.43: does the slow mixing go when it is held?
+package: ben18785/incidenceinflation_2.0@sampler-speed
+iterations: 3000
+rounds: 1
+joint_no_tail_misdated_fraction_fixed_triggered_fixed_july_backlog_exact_0801
