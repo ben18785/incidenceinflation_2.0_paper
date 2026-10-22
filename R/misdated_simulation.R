@@ -81,6 +81,7 @@ misdated_scenarios <- function() {
     "real_like_exact", "Like the outbreak, fitted to all reports in the exact form", "The exact form", "The fit to 7 October as the truth.",
     "real_like_exact_collapsed", "Like the outbreak in the exact form, the fraction dated by death integrated out of the changes to which cases are", "The exact form", "Does the fraction mix faster?",
     "real_like_exact_triggered_fixed", "Like the outbreak in the exact form, the share reported when the death is recorded held at 0.95", "The exact form", "Are the fraction dated by death and the totals recovered once the share is fixed?",
+    "real_like_exact_ridge", "As the last, with the joint move of the fraction dated by death and the delay to a death being recorded", "The exact form", "Is the posterior unchanged by the joint move, and do the chains mix faster?",
     "real_like_0801_exact", "Like the outbreak, fitted to the reports to 1 August in the exact form", "The exact form", "Part way through the clearing.",
     "real_like", "Like the outbreak (the fit to 7 October as truth), fitted to all reports", "Like the outbreak", "How well are the share and rate recovered in the outbreak's setting?",
     "real_like_0801", "Like the outbreak, fitted to the reports to 1 August (day 83)", "Like the outbreak", "The same at the stage of the fit to 1 August.")
@@ -114,7 +115,9 @@ misdated_scenarios <- function() {
 #' change; 'fit_start_truth', TRUE to start the backlog at its truth;
 #' 'fit_dated_exact', TRUE for the exact form of the cases dated by death;
 #' 'fit_collapse_fraction', TRUE to change which cases are dated by death
-#' with the estimated fraction integrated out)
+#' with the estimated fraction integrated out; 'fit_ridge', TRUE for the joint
+#' move of the fraction dated by death and the delay to a death being
+#' recorded)
 misdated_scenario_settings <- function(scenario) {
   f_constant <- function(value) function(t) value + 0 * t
   f_step <- function(day, before, after) function(t) ifelse(t < day, before, after)
@@ -134,7 +137,7 @@ misdated_scenario_settings <- function(scenario) {
     fit_onset_to_death = onset_to_death, fit_dated = TRUE, fit_triggered = TRUE,
     fit_tail = FALSE, fit_report = FALSE, fit_backlog = FALSE, fit_fatal_delay = FALSE,
     fit_cfr = NULL, fit_start_truth = FALSE, fit_dated_exact = FALSE,
-    fit_collapse_fraction = FALSE)
+    fit_collapse_fraction = FALSE, fit_ridge = FALSE)
   tail <- list(weight = 0.15, mean = 40)
   correction <- list(time_reported = 45, onset_times = 1:20, wrong = 0.08,
                      missing = 0.03, misdated = 0.1)
@@ -250,6 +253,8 @@ misdated_scenario_settings <- function(scenario) {
       c(real_like_settings(), exact, list(fit_collapse_fraction = TRUE)),
     real_like_exact_triggered_fixed = if(startsWith(scenario, "real_like"))
       c(real_like_settings(), exact, list(fit_triggered = 0.95)),
+    real_like_exact_ridge = if(startsWith(scenario, "real_like"))
+      c(real_like_settings(), exact, list(fit_triggered = 0.95, fit_ridge = TRUE)),
     real_like_0801_exact = if(startsWith(scenario, "real_like"))
       c(real_like_settings(), exact, list(fit_until = 83)),
     real_like = if(startsWith(scenario, "real_like")) real_like_settings(),
@@ -438,12 +443,17 @@ fit_misdated_chain <- function(dataset, chain, niterations,
     settings$onset_to_death <- options$fit_onset_to_death
     settings$initial_delay <- list(list(mean = 3, sd = 2.5), list(mean = 4, sd = 3),
                                    list(mean = 2.5, sd = 2))[[k]]
-    if(isTRUE(options$fit_dated))
+    if(isTRUE(options$fit_dated)) {
       settings$dated_by_death <- list(
         fraction = list(alpha = 1, beta = 1, initial = c(0.25, 0.15, 0.35)[k]),
-        exact = isTRUE(options$fit_dated_exact),
-        collapse_fraction = isTRUE(options$fit_collapse_fraction))
-    else if(is.numeric(options$fit_dated))
+        exact = isTRUE(options$fit_dated_exact))
+      # only when asked for, so that versions of the package without these
+      # settings can still be used
+      if(isTRUE(options$fit_collapse_fraction))
+        settings$dated_by_death$collapse_fraction <- TRUE
+      if(isTRUE(options$fit_ridge))
+        settings$dated_by_death$ridge <- TRUE
+    } else if(is.numeric(options$fit_dated))
       settings$dated_by_death <- list(fraction = options$fit_dated)
     if(options$fit_tail)
       settings$recording_tail <- list()
