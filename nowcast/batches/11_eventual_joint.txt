@@ -1,0 +1,7 @@
+# The fit to all reports with cases and deaths fitted together
+# (stan/nowcast_joint.stan), projected until every delay has elapsed, for the
+# eventual counts and the case fatality ratio by onset week.
+dates: 2026-10-14
+iterations: 500
+model: joint
+target: eventual
