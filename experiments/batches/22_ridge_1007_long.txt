@@ -1,0 +1,9 @@
+# The fit to 7 October with the joint move of the fraction dated by death and
+# the delay to a death being recorded (package branch ridge-move), with chains
+# twice as long as batch 19's, whose fit to this date did not converge (R-hat
+# 2.5 for total deaths at 3000 iterations). A round reaches roughly 1000
+# iterations, so the run carries itself on for up to six more rounds.
+package: ben18785/incidenceinflation_2.0@ridge-move
+iterations: 6000
+rounds: 6
+joint_no_tail_misdated_ridge_triggered_fixed_july_backlog_exact_1007
