@@ -329,6 +329,77 @@ write_nowcast_outputs <- function(scores, out) {
   paths
 }
 
+#' Writes a table of what the nowcasts infer, in meaningful units: the mean
+#' delay from onset to a record for onset days through the outbreak, and the
+#' other parameters re-expressed as quantities which can be read directly
+#'
+#' Each row is a quantity for a series (cases, deaths, or both when the
+#' quantity joins them), and each column a fit date, with the posterior median
+#' and 90% interval. The re-expressed parameters are monotone functions of a
+#' single parameter, so their quantiles are those of the parameter carried
+#' through. The mean delay is that of the onset day on the 15th of each month
+#' (from summarise_nowcast), omitted for onset days within 14 days of the last
+#' report fitted, whose delay is mostly carried forward from earlier days.
+#'
+#' @param pars the parameters of the fits: the rows of the parameters of
+#'   summarise_nowcast, with columns column and date_now
+#' @param by_day the rows of by_day of score_nowcast, with columns column and
+#'   date_now
+#' @param out the folder
+#' @return the paths of the files written (csv and markdown)
+write_nowcast_parameters <- function(pars, by_day, out) {
+  dir.create(out, recursive = TRUE, showWarnings = FALSE)
+  f_num <- function(x) sub("\\.$", "", formatC(signif(x, 2), digits = 2, format = "fg", flag = "#"))
+  f_cell <- function(m, lo, hi) paste0(f_num(m), " (", f_num(pmin(lo, hi)), "-", f_num(pmax(lo, hi)), ")")
+  series <- function(column) sub("_reported$", "", column)
+  delays <- by_day %>%
+    dplyr::mutate(date = as.Date(.data$date), date_now = as.Date(.data$date_now)) %>%
+    dplyr::filter(format(.data$date, "%d") == "15", .data$date <= .data$date_now - 14) %>%
+    dplyr::transmute(group = "Delay", order = as.numeric(.data$date),
+                     quantity = paste("Mean delay from onset to record (days), onset", format(.data$date, "%d %b")),
+                     series = series(.data$column), date_now = .data$date_now,
+                     value = f_cell(.data$mean_delay, .data$mean_delay_p05, .data$mean_delay_p95))
+  # each quantity as a function of its parameter, applied to the median and
+  # to the 5% and 95% quantiles
+  inv_logit <- function(x) 1 / (1 + exp(-x))
+  re <- list(
+    sigma_lambda = list("Factor by which expected cases can change over a week (95% of weeks)",
+                        function(s) exp(1.96 * s * sqrt(7))),
+    sigma_cfr = list("Case fatality ratio of 0.5 after four weeks, upper end of 95% range",
+                     function(s) inv_logit(1.96 * s * sqrt(28))),
+    `q[1]` = list("Cases recorded more than 28 days after onset (%)", function(q) 100 * q),
+    sigma_u = list("Factor by which a report can add more (or fewer) records than expected (95% of reports)",
+                   function(s) exp(1.96 * s)),
+    phi = list("Variance over mean of the records added, when 50 are expected",
+               function(phi) 1 + 50 / phi),
+    rho = list("Records removed for each 100 added", function(rho) 100 * rho))
+  shared <- c("sigma_lambda", "sigma_cfr")
+  others <- pars %>%
+    dplyr::filter(.data$variable %in% names(re)) %>%
+    dplyr::mutate(series = ifelse(.data$variable %in% shared, "cases and deaths", series(.data$column)),
+                  date_now = as.Date(.data$date_now)) %>%
+    dplyr::distinct(.data$date_now, .data$variable, .data$series, .keep_all = TRUE) %>%
+    dplyr::rowwise() %>%
+    dplyr::mutate(group = "Other", order = match(.data$variable, names(re)),
+                  quantity = re[[.data$variable]][[1]],
+                  value = {f <- re[[.data$variable]][[2]]; f_cell(f(.data$median), f(.data$q5), f(.data$q95))}) %>%
+    dplyr::ungroup()
+  wide <- dplyr::bind_rows(delays, dplyr::select(others, dplyr::all_of(names(delays)))) %>%
+    dplyr::mutate(series = factor(.data$series, c("cases and deaths", "cases", "deaths")),
+                  group = factor(.data$group, c("Delay", "Other")), fit = format(.data$date_now, "%d %b")) %>%
+    dplyr::arrange(.data$group, .data$series, .data$order, .data$date_now) %>%
+    dplyr::select("quantity", "series", "fit", "value") %>%
+    tidyr::pivot_wider(names_from = "fit", values_from = "value")
+  paths <- file.path(out, c("parameters_table.csv", "parameters_table.md"))
+  utils::write.csv(wide, paths[1], row.names = FALSE)
+  md <- as.matrix(dplyr::mutate(wide, dplyr::across(dplyr::everything(), ~ifelse(is.na(.x), "", as.character(.x)))))
+  writeLines(c("Posterior median (90% interval), for each fit date.", "",
+               paste("|", paste(colnames(md), collapse = " | "), "|"),
+               paste0("|", paste(rep("---", ncol(md)), collapse = "|"), "|"),
+               apply(md, 1, function(r) paste("|", paste(r, collapse = " | "), "|"))), paths[2])
+  paths
+}
+
 #' The data for stan/nowcast_joint.stan
 #'
 #' Those of nowcast_stan_data for cases and for deaths, with the suffixes _c

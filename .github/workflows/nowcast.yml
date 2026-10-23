@@ -159,7 +159,8 @@ jobs:
             diag <- bind_rows(lapply(fits, function(x) as_tibble(c(list(column = x$column, date_now = x$date_now), x$diagnostics))))
             write.csv(diag, "outputs/nowcast/diagnostics.csv", row.names = FALSE); print(diag)
             pars <- bind_rows(lapply(fits, function(x) mutate(x$parameters, column = x$column, date_now = x$date_now)))
-            write.csv(pars, "outputs/nowcast/parameters.csv", row.names = FALSE)'
+            write.csv(pars, "outputs/nowcast/parameters.csv", row.names = FALSE)
+            write_nowcast_parameters(pars, read.csv("outputs/nowcast/by_day.csv"), "outputs/nowcast")'
       - uses: actions/upload-artifact@v4
         with:
           name: nowcast-outputs
