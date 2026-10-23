@@ -1,0 +1,8 @@
+# The fit to 19 August of batch 21 carried on (run 39846582145), to bring its
+# chains to 3000 iterations: chains 1, 2 and 4 stopped at the time limit short
+# of it, and chain 3 hung and was cancelled, so starts afresh.
+package: ben18785/incidenceinflation_2.0@ridge-move
+iterations: 3000
+rounds: 1
+continue: 39846582145
+joint_no_tail_misdated_ridge_triggered_fixed_july_backlog_exact_0819
