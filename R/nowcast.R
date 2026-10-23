@@ -272,6 +272,26 @@ score_nowcast <- function(nowcast, snapshots_later) {
          rhat_max = nowcast$diagnostics$rhat_max))
 }
 
+#' The number of columns of panels in a plot of the nowcasts: two for more
+#' than three fit dates, one otherwise
+#'
+#' @param fit the fit date of each row
+#' @return 1 or 2
+nowcast_columns <- function(fit) {
+  if(dplyr::n_distinct(fit) > 3) 2 else 1
+}
+
+#' Saves a plot of the nowcasts, one panel for each fit date
+#'
+#' @param path the file
+#' @param g the plot
+#' @param fit the fit date of each row
+nowcast_save <- function(path, g, fit) {
+  ncol <- nowcast_columns(fit)
+  ggplot2::ggsave(path, g, width = c(9, 15)[ncol],
+                  height = 2.6 * ceiling(dplyr::n_distinct(fit) / ncol) + 1)
+}
+
 #' Writes the scores of the nowcasts and plots them against the later counts
 #'
 #' @param scores a list of results of score_nowcast
@@ -297,13 +317,13 @@ write_nowcast_outputs <- function(scores, out) {
                            alpha = 0.6) +
       ggplot2::geom_line(ggplot2::aes(y = .data$p50, colour = "Nowcast (median)")) +
       ggplot2::geom_line(ggplot2::aes(y = .data$later, colour = "Shown in the last report")) +
-      ggplot2::facet_wrap(~fit, ncol = 1, scales = "free_y") +
+      ggplot2::facet_wrap(~fit, ncol = nowcast_columns(df$fit), scales = "free_y") +
       ggplot2::scale_fill_manual(NULL, values = c("#a6c8f0", "grey80")) +
       ggplot2::scale_colour_manual(NULL, values = c("#1f4e9c", "black")) +
       ggplot2::labs(x = "Onset date", y = sub("_reported$", "", col)) +
       ggplot2::theme_bw() + ggplot2::theme(legend.position = "bottom")
     path <- file.path(out, paste0("nowcast_", sub("_reported$", "", col), ".png"))
-    ggplot2::ggsave(path, g, width = 9, height = 2.6 * dplyr::n_distinct(df$fit) + 1)
+    nowcast_save(path, g, df$fit)
     paths <- c(paths, path)
   }
   paths
@@ -459,13 +479,13 @@ write_nowcast_cfr <- function(cfr, out) {
                                           colour = .data$weeks), size = 0.25) +
     ggplot2::geom_point(ggplot2::aes(y = .data$later, shape = "Shown in the last report"),
                         size = 1.8) +
-    ggplot2::facet_wrap(~fit, ncol = 1) +
+    ggplot2::facet_wrap(~fit, ncol = nowcast_columns(df$fit)) +
     ggplot2::scale_colour_manual(NULL, values = c("Older" = "#1f4e9c",
                                                   "Recent (under 3 weeks old)" = "#e6550d")) +
     ggplot2::scale_shape_manual(NULL, values = 4) +
     ggplot2::coord_cartesian(ylim = c(0, 1)) +
     ggplot2::labs(x = "Week of onset", y = "Deaths / cases (90% interval)") +
     ggplot2::theme_bw() + ggplot2::theme(legend.position = "bottom")
-  ggplot2::ggsave(paths[2], g, width = 9, height = 2.6 * dplyr::n_distinct(df$fit) + 1)
+  nowcast_save(paths[2], g, df$fit)
   paths
 }
