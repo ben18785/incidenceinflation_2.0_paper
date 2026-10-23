@@ -1,0 +1,6 @@
+# The back-test of batch 10 (cases and deaths fitted together) at the dates of
+# the mechanistic model's fits, with half the iterations so that each fit ends
+# within the 6-hour job limit (at 500, the fit to 30 September did not).
+dates: 2026-08-01,2026-08-09,2026-08-19,2026-08-26,2026-09-02,2026-09-09,2026-09-16,2026-09-24,2026-09-30,2026-10-07
+iterations: 250
+model: joint
